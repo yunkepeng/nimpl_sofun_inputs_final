@@ -1,0 +1,148 @@
+---
+title: "Statistical models for C-N cycles"
+author: "Yunke Peng, Beni Stocker"
+date: "Sep 16, 2020; revision Jan 17 2021"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+
+
+
+The analysis below shows four statistical models separately
+
+1. TNPP_model - The logit function of (TNPP_1/GPP) predicted by measured soil C:N, measured age, and observed fAPAR
+
+2. ANPP_model - The logit function of (ANPP_2/GPP) predicted by measured soil C:N,measured age, and observed fAPAR
+
+3. NPPleaf_model - The logit function of (NPP.foliage/ANPP_2) predidicted by PPFD, Tg and vpd
+
+They were all using mixed-effects model. it considered (1|site) as the only random factor. 
+
+The coefficient generated in summary below will be used in next-step: global mapping of C and N cycle.
+
+For data sources, units, and basic information of input please refer to README in relevant location in Euler.
+
+The climate data of all 672 samples were saved in ~/data/NPP_Yunke/climate
+
+```{r}
+library(lme4)
+library(nlme)
+library(lmerTest)
+library("PerformanceAnalytics")
+library(MuMIn)
+library(tidyverse)
+
+#For how to collect them. see L1-714 of "/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/NPP/Forest_site_orig.R"
+NPP_Forest <- read.csv("/Users/yunpeng/data/NPP_final/NPP_Forest.csv")
+#aggregate them to apply gwr to get climate input
+NPP_Forest1 <- NPP_Forest[,c("lon","lat","z","Begin_year","End_year")]
+gwr_sites <- aggregate(NPP_Forest1,by=list(NPP_Forest1$lon,NPP_Forest1$lat,NPP_Forest1$z,NPP_Forest1$Begin_year,NPP_Forest1$End_year), FUN=mean, na.rm=TRUE)
+gwr_sites <- gwr_sites[,c("lon","lat","z","Begin_year","End_year")]
+
+#convert before 1980 to 1980-1989
+gwr_sites$year_start <- gwr_sites$Begin_year
+gwr_sites$year_end <- gwr_sites$End_year
+gwr_sites$year_start[gwr_sites$Begin_year<=1980] <- 1980
+gwr_sites$year_end[gwr_sites$Begin_year<=1980] <- 1989
+
+summary(gwr_sites)
+dim(gwr_sites)
+
+tmn_output <- read.csv("/Users/yunpeng/data/NPP_final/forest_climates_gwr/forest_tmn.csv") #monthly degree celcius
+tmx_output <- read.csv("/Users/yunpeng/data/NPP_final/forest_climates_gwr/forest_tmx.csv") #monthly degree celcius
+vap_output <- read.csv("/Users/yunpeng/data/NPP_final/forest_climates_gwr/forest_vap.csv")#monthly hPa
+pre_output <- read.csv("/Users/yunpeng/data/NPP_final/forest_climates_gwr/forest_pre.csv") #monthly mm/month
+radi_output<- read.csv("/Users/yunpeng/data/NPP_final/forest_climates_gwr/forest_radi.csv") #monthly w/m2
+alpha_output <- read.csv("/Users/yunpeng/data/NPP_final/forest_climates_gwr/forest_alpha.csv")
+lat <- gwr_sites$lat
+
+tmn_site <- tmn_output[,8:247]
+tmx_site <- tmx_output[,8:247]
+vap_site <- vap_output[,8:247]
+pre_site <- pre_output[,8:247]
+radi_site <- radi_output[,8:247]
+alpha_site <- alpha_output[,8:247]
+
+#just check the data between sites and climates are consistent
+summary(tmx_output$lon-gwr_sites$lon)
+summary(tmx_output$lat-gwr_sites$lat)
+summary(tmx_output$z-gwr_sites$z)
+summary(tmx_output$Begin_year-gwr_sites$Begin_year)
+summary(tmx_output$End_year-gwr_sites$End_year)
+
+#1. Tg
+#solar declination from Jan to Dec
+s1 <- (-23.1+ -17.3)/2
+s2 <- (-17.3 + -8)/2
+s3 <- (-8 + 4.1)/2
+s4 <- (4.1 + 14.8)/2
+s5 <- (14.8 + 21.9)/2
+s6 <- (21.9 + 23.2)/2
+s7 <- (23.2 + 18.3)/2
+s8 <- (18.3 + 8.6)/2
+s9 <-  (8.6 + -2.8)/2
+s10 <- (-2.8 + -14.1)/2
+s11 <- (-14.1 + -21.6)/2
+s12 <- (-21.6 + -23.1)/2
+
+s <- c(s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12)
+lat <- gwr_sites$lat
+xx <- data.frame(matrix(, nrow=nrow(gwr_sites), ncol=240))
+output_Tg <- data.frame(matrix(, nrow=nrow(gwr_sites), ncol=240))
+#xx = acos(h), h = hour angle of the sun
+for (a in 1:12){ 
+  month_no <- seq(from = 1, to = 240, by = 12)+a-1
+  xx[1:nrow(gwr_sites),month_no]<- -tan(pi*lat/180)*tan(s[a]*pi/180)
+}
+
+#check each part of Tg formula
+part1 <- (0.5+((1-xx^2)^(0.5))/(2*acos(xx)))[,1:12]
+part2 <- (0.5-((1-xx^2)^(0.5))/(2*acos(xx)))[,1:12]
+summary(part1)
+summary(part2)
+
+#the percentage of tmx was dominated overall
+Tg_site <- tmx_site*(0.5+((1-xx^2)^(0.5))/(2*acos(xx)))+ tmn_site*(0.5-((1-xx^2)^(0.5))/(2*acos(xx)))
+Tg_site[Tg_site =="NaN"] <- NA
+Tg_site[Tg_site < 0] <- NA
+
+vpd_site <- 0.611*exp(17.27*(Tg_site)/((Tg_site)+237.3))-vap_site*0.1 #vap in hPa
+vpd_site[vpd_site =="NaN"] <- NA
+vpd_site[vpd_site < 0] <- NA
+
+PPFD_site <- radi_site*0.5*4.6 + Tg_site - Tg_site # here + Tg - Tg means it considered growth season
+PPFD_site[PPFD_site =="NaN"] <- NA
+PPFD_site[PPFD_site < 0] <- NA
+
+alpha_Tg_site <- alpha_site+ Tg_site - Tg_site # here + Tg - Tg means it considered growth season
+alpha_Tg_site[alpha_Tg_site >1] <- 1
+alpha_Tg_site[alpha_Tg_site < 0] <- NA
+
+
+#merged now
+gwr_sites$alpha_gwr <- rowMeans(alpha_Tg_site,na.rm=TRUE)
+gwr_sites$PPFD_gwr <- rowMeans(PPFD_site,na.rm=TRUE)
+gwr_sites$Tg_gwr <- rowMeans(Tg_site,na.rm=TRUE)
+gwr_sites$vpd_gwr <- rowMeans(vpd_site,na.rm=TRUE)
+
+gwr_sites <- gwr_sites[,!(names(gwr_sites) %in% c("year_start","year_end"))]
+
+
+NPP_Forest_gwr <- merge(NPP_Forest,gwr_sites,by=c("lon","lat","z","Begin_year","End_year"),all.x=TRUE)
+NPP_statistical <- subset(NPP_Forest_gwr,rep_info!="rep" &rep_info!="rep2")
+
+mod_tnpp <- lmer(log((TNPP_1/GPP)/(1-(TNPP_1/GPP))) ~ log(soilCN) + log(age) +observedfAPAR  + (1|site), data = NPP_statistical)
+summary(mod_tnpp)
+r.squaredGLMM(mod_tnpp)
+
+mod_anpp <- lmer(log((ANPP_2/GPP)/(1-(ANPP_2/GPP))) ~ log(soilCN) + log(age) +observedfAPAR + (1|site), data = NPP_statistical)
+summary(mod_anpp)
+r.squaredGLMM(mod_anpp)
+
+mod_lnpp <- lmer(log((NPP.foliage/ANPP_2)/(1-(NPP.foliage/ANPP_2))) ~ log(PPFD_gwr) + Tg_gwr + log(vpd_gwr) + (1|site), data = subset(NPP_statistical,file=="Sara Vicca"|file=="ForC"))
+summary(mod_lnpp)
+r.squaredGLMM(mod_lnpp)
+
+```
