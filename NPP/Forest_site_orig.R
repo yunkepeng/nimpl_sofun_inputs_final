@@ -1,3 +1,4 @@
+rm(list=ls())
 ##1.Sara Vicca
 #1.1 NPP
 Sara_NPP <- read.csv("/Users/yunpeng/data/NPP_Yunke/NPP_Vicca/orig/Forests_Colin_NPP.csv")
@@ -675,18 +676,11 @@ NPP$NPP.coarse[NPP$NPP.coarse==0] <- NA
 NPP$ANPP_2[NPP$ANPP_2==0] <- NA
 NPP$TNPP_1[NPP$TNPP_1==0] <- NA
 
-###used for site simulation of grassland npp, including use ingestr for fapar and climate forcing, and rsofun (see relevant contents in grassland/)
-#NPP_grassland <- subset(NPP,pft2=="Grassland")
-#dim(NPP_grassland)
-#csvfile <- paste("~/data/grassland_npp/NPP_grassland.csv")
-#write_csv(NPP_grassland, path = csvfile)
-
 ### collect unchanged climate forcing data, based on same lon+lat+z+Begin_year+End_year, 
 NPP_Forest <- subset(NPP,pft=="Forest")
 dim(NPP_Forest)
 
 NPP_Forest <- NPP_Forest[order(NPP_Forest$site,NPP_Forest$lon,NPP_Forest$lat,NPP_Forest$ANPP_2,NPP_Forest$NPP.foliage,NPP_Forest$Begin_year,NPP_Forest$End_year), ]
-
 
 #read old one 
 NPP_old <- read.csv("/Users/yunpeng/data/forest_npp/NPP_Forest_corrected_Malhi_coord.csv")
@@ -709,40 +703,435 @@ NPP_Forest$sitename_fpar <- NPP_old$sitename_fpar
 NPP_Forest$sitename <- NPP_old$sitename
 NPP_Forest$rep_info <- NPP_old$rep_info
 
+#ignore below######
+#and here is info we need to re-interpolate to update (as recently re-interpolate elevation or measurement year, and using original year info)
+corrected_info <- NPP_Forest$sitename[NPP_Forest$z!=NPP_old$z |
+                      NPP_Forest$Begin_year!=NPP_old$Begin_year|
+                      NPP_Forest$End_year!=NPP_old$End_year]
+corrected_info
+length(corrected_info) #90
+#see this update in "/Users/yunpeng/data/NPP_final/reprocessing_climates/"
+
+#mark it here
+NPP_Forest$sitename_replace[NPP_Forest$z!=NPP_old$z |
+                              NPP_Forest$Begin_year!=NPP_old$Begin_year|
+                              NPP_Forest$End_year!=NPP_old$End_year] <- "yes"
+
+NPP_Forest$file[NPP_Forest$z!=NPP_old$z |
+                  NPP_Forest$Begin_year!=NPP_old$Begin_year|
+                  NPP_Forest$End_year!=NPP_old$End_year]
+
 #In NPP_foerst Only line 392 and 393 were flipped (see their start_year) - when comparing with NPP_old - let's accept it anyways
 csvfile <- paste("/Users/yunpeng/data/NPP_final/NPP_Forest.csv")
 write_csv(NPP_Forest, path = csvfile)
 
+### Grassland: collect unchanged climate forcing data, based on same lon+lat+z+Begin_year+End_year, 
+#old
+NPP_grassland  <- read.csv("/Users/yunpeng/data/grassland_npp/NPP_grassland.csv")
+#create an old_no to make sure it can be best ordered
+NPP_grassland$old_no <- c(1:nrow(NPP_grassland))
+NPP_Grassland_old <- NPP_grassland[order(NPP_grassland$lon,NPP_grassland$lat,
+                                             NPP_grassland$z,NPP_grassland$ANPP_2,NPP_grassland$TNPP_1), ]
 
-#ignore below######
+#new
+NPP_Grassland_new <- subset(NPP,pft!="Forest")
+
+NPP_Grassland_new <- NPP_Grassland_new[order(NPP_Grassland_new$lon,NPP_Grassland_new$lat,
+                                             NPP_Grassland_new$z,NPP_Grassland_new$ANPP_2,NPP_Grassland_new$TNPP_1), ]
+
+summary(NPP_Grassland_new$lon - NPP_Grassland_old$lon)
+summary(NPP_Grassland_new$lat - NPP_Grassland_old$lat)
+summary(NPP_Grassland_new$z - NPP_Grassland_old$z)
+summary(NPP_Grassland_new$ANPP_2 - NPP_Grassland_old$ANPP_2)
+summary(NPP_Grassland_new$TNPP_1 - NPP_Grassland_old$TNPP_1)
+
+NPP_Grassland_new$site[NPP_Grassland_new$Begin_year!=NPP_Grassland_old$Begin_year|
+                         NPP_Grassland_new$End_year!=NPP_Grassland_old$End_year]
+NPP_Grassland_new$Begin_year[NPP_Grassland_new$Begin_year!=NPP_Grassland_old$Begin_year|
+                         NPP_Grassland_new$End_year!=NPP_Grassland_old$End_year]
+NPP_Grassland_new$End_year[NPP_Grassland_new$Begin_year!=NPP_Grassland_old$Begin_year|
+                               NPP_Grassland_new$End_year!=NPP_Grassland_old$End_year]
+
+NPP_Grassland_old$Begin_year[NPP_Grassland_new$Begin_year!=NPP_Grassland_old$Begin_year|
+                               NPP_Grassland_new$End_year!=NPP_Grassland_old$End_year]
+NPP_Grassland_old$End_year[NPP_Grassland_new$Begin_year!=NPP_Grassland_old$Begin_year|
+                             NPP_Grassland_new$End_year!=NPP_Grassland_old$End_year]
+
+#convert them to 2002
+NPP_Grassland_new$Begin_year[NPP_Grassland_new$Begin_year!=NPP_Grassland_old$Begin_year|
+                               NPP_Grassland_new$End_year!=NPP_Grassland_old$End_year] <- 2002
+NPP_Grassland_new$End_year[NPP_Grassland_new$Begin_year!=NPP_Grassland_old$Begin_year|
+                             NPP_Grassland_new$End_year!=NPP_Grassland_old$End_year] <- 2002
 
 
-#and here is info we need to re-interpolate (as recently re-interpolate elevation, and using original year info)
-NPP_Forest$sitename[NPP_Forest$z!=NPP_old$z |
-                      NPP_Forest$Begin_year!=NPP_old$Begin_year|
-                      NPP_Forest$End_year!=NPP_old$End_year]
-#mark it here
-NPP_Forest$sitename_replace[NPP_Forest$z!=NPP_old$z |
-                      NPP_Forest$Begin_year!=NPP_old$Begin_year|
-                      NPP_Forest$End_year!=NPP_old$End_year] <- "yes"
+summary(NPP_Grassland_new$Begin_year - NPP_Grassland_old$Begin_year)
+summary(NPP_Grassland_new$End_year - NPP_Grassland_old$End_year)
 
-NPP_Forest$file[NPP_Forest$z!=NPP_old$z |
-                      NPP_Forest$Begin_year!=NPP_old$Begin_year|
-                      NPP_Forest$End_year!=NPP_old$End_year]
+#in keith's one site- it was set to 2002, while now setting back to 1991-2010, since it is planation - let's ignore it anyways.
+#now we can cbind old_no, as originally ranked in old df - it will be used to create sitename later in site simulaion
+NPP_Grassland_new$old_no <- NPP_Grassland_old$old_no
+NPP_Grassland_new <- NPP_Grassland_new[order(NPP_Grassland_new$old_no), ]
+NPP_Grassland_old <- NPP_Grassland_old[order(NPP_Grassland_old$old_no), ]
+summary(NPP_Grassland_new$lon - NPP_Grassland_old$lon)
+summary(NPP_Grassland_new$lat - NPP_Grassland_old$lat)
+summary(NPP_Grassland_new$z - NPP_Grassland_old$z)
+summary(NPP_Grassland_new$Begin_year - NPP_Grassland_old$Begin_year)
+summary(NPP_Grassland_new$End_year - NPP_Grassland_old$End_year)
+summary(NPP_Grassland_new$ANPP_2 - NPP_Grassland_old$ANPP_2)
+summary(NPP_Grassland_new$TNPP_1 - NPP_Grassland_old$TNPP_1)
 
-#test each variables
-NPP_old2 <- NPP_old[,c("CN_leaf_final","CN_stem_final","CN_root_final","TNPP_1","ANPP_2",
-             "NPP.foliage","NPP.wood","BNPP_1","lnf_obs_final","lnf_obs_org",
-             "bnf_obs_final","wnf_obs_final","GPP")]
-names(NPP_old2) <- c("CN_leaf_final2","CN_stem_final2","CN_root_final2","TNPP_12","ANPP_22",
-                     "NPP.foliage2","NPP.wood2","BNPP_12","lnf_obs_final2","lnf_obs_org2",
-                     "bnf_obs_final2","wnf_obs_final2","GPP2")
-NPP_two <- cbind(NPP_Forest,NPP_old2)
+NPP_Grassland_new$rep_info <- NPP_Grassland_old$rep_info
+subset(NPP_Grassland_new,rep_info=="rep" | rep_info=="rep2"| rep_info=="rep3")
 
-subset(NPP_two,GPP-GPP2>0.01|GPP-GPP2< -0.01) %>% group_by(file) %>% summarise(number = n())
-#For diff between two dataset:
-#(1) now, merged with GPP primarily based on plot + start.year + end.year and secondarily based on average of plot; previously - it was just based on eye-looking
-#ForC aggregation method reset
-#Malhi now using different Cmass 0.46
+###########
+#now, it is the time to merge with c3c4 information from three different sources
+###########
+NPP_grassland <- NPP_Grassland_new[,!(names(NPP_Grassland_new) %in% c("age","LAI","observedfAPAR","alpha","soilCN","Evergreen.Deciduous"))]
+head(NPP_grassland)
 
+#1. Tian Di's data
+tiandi_df_sp <- read.csv("/Users/yunpeng/data/npp_stoichiometry_grasslands_tiandi/China_grassland_CN_stoichiometry_with_matched_NPP_species_legume_20201214.csv")
+
+list_df <- vector(mode = "list", length = nrow(tiandi_df_sp))
+
+for (i in (1:nrow(tiandi_df_sp))){
+  list_df[[i]] <- strsplit(tiandi_df_sp$Species_CN[i], "_", fixed = FALSE, perl = FALSE, useBytes = FALSE)
+  
+}
+
+for (a in (1:nrow(tiandi_df_sp))){
+  tiandi_df_sp[a,21:33] <- list_df[[a]][[1]][1:13]
+}
+
+t1 <- tiandi_df_sp[,21:33] 
+for (i in (1:nrow(t1))){
+  t1$no[i] <- i
+}
+
+library(reshape)
+t2 <- melt(t1, id.vars=c('no'),var='species')
+t3 <- na.omit(t2)
+t4 <- t3[order(t3$no), ]
+t5 <- t4[,c("no","value")]
+dim(t5) # number of individuals overall
+
+final_species <- aggregate(no~value,FUN=mean,na.rm=TRUE,data=t5)
+dim(final_species) #number of species type
+
+#separate into genus species
+for (i in (1:nrow(final_species))){
+  final_species[i,3] <- strsplit(final_species$value[i], " ", fixed = FALSE, perl = FALSE, useBytes = FALSE)[[1]][1] #genus
+  final_species[i,4] <- strsplit(final_species$value[i], " ", fixed = FALSE, perl = FALSE, useBytes = FALSE)[[1]][2] #species
+}
+head(final_species)
+final_species <- final_species[,c(1,3,4)] 
+names(final_species) <- c("speciesname","genus","species")
+dim(final_species)
+#csvfile <- paste("/Users/yunpeng/data/npp_stoichiometry_grasslands_tiandi/species_name.csv")
+#write.csv(final_species, csvfile, row.names = TRUE)
+
+#now, input c3/c4 information from TRY database
+c3c4 <- read.csv("/Users/yunpeng/data/c3c4_species/Try20201218143430TRY_Categorical_Traits_Lookup_Table_2012_03_17_TestRelease/TRY_Categorical_Traits_Lookup_Table_2012_03_17_TestRelease.csv")
+data1 <- c3c4[,c(2,4,5,18)]
+dim(data1)
+names(data1) <- c("speciesname","genus","species","c3")
+
+
+final_species2 <- merge(final_species,data1,by=c("speciesname"),all.x=TRUE)
+
+#after having a look at original TRY data, for NA data of final_species2: if the same Genus in TRY database all have recorded c3, then we transfer our NA of same Genus to c3;
+# if c3/c4 existed in the same Genus, or Genus is missing, then we set to unknown.
+final_species2$c3_final <- final_species2$c3
+final_species2$c3_final[6] <- "C4"
+final_species2$c3_final[c(16,17,69,70,91,98,100,106,108,110,111,113,114,
+                          115,116,117,122,123,124,133,142,153,154,177,178,179,180,206)] <- "unknown"
+final_species2$c3_final[final_species2$c3_final==""] <- "tranfered_c3"
+final_species2$c3_final[is.na(final_species2$c3_final)==TRUE] <- "tranfered_c3"
+
+#have a look at finalspecies c3c4 data and create a new variable name for percentage
+final_species2$c3_percentage <- NA
+
+final_species2$c3_percentage[final_species2$c3_final=="C3"] <- 1
+final_species2$c3_percentage[final_species2$c3_final=="tranfered_c3"] <- 1 #with same genus in TRY that all = c3, then also converted to C3
+final_species2$c3_percentage[final_species2$c3_final=="C4"] <- 0
+final_species2$c3_percentage[final_species2$c3_final=="unknown"] <- NA
+
+#now, time to merge with all individuals data
+final_sp_tian <- final_species2[,c("speciesname","c3_percentage")]
+names(t5) <- c("no","speciesname")
+
+all_individuals_tian <- merge(t5,final_sp_tian,by=c("speciesname"),all.x=TRUE)
+all_individuals_tian <- all_individuals_tian[order(all_individuals_tian$no), ]
+#if na occured in certain speciees, then omit (na.rm=TRUE)
+all_individuals_tian2 <- aggregate(all_individuals_tian,by=list(all_individuals_tian$no), FUN=mean, na.rm=TRUE)
+summary(all_individuals_tian2)
+all_individuals_tian2 <- all_individuals_tian2[order(all_individuals_tian2$no), ]
+
+hist(all_individuals_tian2$c3_percentage)
+
+#finally, cbind to original data
+tiandi_df_sp2 <- tiandi_df_sp[,1:20]
+tiandi_df_sp2$c3_percentage <- all_individuals_tian2$c3_percentage
+summary(tiandi_df_sp2)
+subset(tiandi_df_sp2,is.na(c3_percentage)==TRUE)
+
+tiandi_df_sp3 <- tiandi_df_sp2[,c("Longitude_CN","Latitude_CN","Altitude_CN","CN_ratio_leaf","ANPP","c3_percentage")]
+names(tiandi_df_sp3) <- c("lon","lat","z","CN_leaf_final","ANPP_2","c3_percentage_tiandi")
+
+head(NPP_grassland)
+
+NPP_grassland_final4 <- merge(NPP_grassland,tiandi_df_sp3,by=c("lon","lat","z","CN_leaf_final","ANPP_2"),all.x=TRUE)
+summary(NPP_grassland_final4)
+
+
+#2. Keith's data
+keith_c3c4 <- read.csv("/Users/yunpeng/data/NPP_Yunke/NPP_Keith/orig/ABPE.csv")
+keith2 <- keith_c3c4[,c("Site","ANPP","C_cycle")]
+keith2$c3_percentage_keith[keith2$C_cycle=="C3"] <- 1
+keith2$c3_percentage_keith[keith2$C_cycle=="C4"] <- 0
+keith2$c3_percentage_keith[keith2$C_cycle=="NA"] <- NA
+
+keith2 <- keith2[,c("Site","ANPP","c3_percentage_keith")]
+names(keith2) <- c("site","ANPP_2","c3_percentage_keith")
+#merged with site and ANPP_2 (so that each individual is unique).
+NPP_grassland_final5 <- merge(NPP_grassland_final4,keith2,by=c("site","ANPP_2"),all.x=TRUE)
+summary(NPP_grassland_final5) # 1097-1053 = 44 points were filled now
+
+#3. Campioli
+Campioli_c3c4 <- read.csv("/Users/yunpeng/data/campioli/structured_Database1Grassland.csv")
+Campioli2 <- Campioli_c3c4[,c("ID","type")]
+Campioli2$c3_percentage_Campioli[Campioli2$type=="c3"] <- 1
+Campioli2$c3_percentage_Campioli[Campioli2$type=="c4"] <- 0
+Campioli2$c3_percentage_Campioli[Campioli2$type=="c3c4"] <- NA # we don't know how much percentage they have (i.e. species number) so we can only extract them from c3c4 percentage map.
+Campioli2$c3_percentage_Campioli[Campioli2$type=="NA"] <- NA
+
+Campioli2 <- Campioli2[,c("ID","c3_percentage_Campioli")]
+names(Campioli2) <- c("site","c3_percentage_Campioli")
+NPP_grassland_final6 <- merge(NPP_grassland_final5,Campioli2,by=c("site"),all.x=TRUE)
+summary(NPP_grassland_final6) 
+#1097-1012 = 86 points were filled now, which is much less than 142 --> have a look at na table and see which site' missing c3c4 can be filled manually (because the site information given by Cambiopli in two times email are NOT completely the same!!!)
+atest <- subset(NPP_grassland_final6,file=="MCampioli" & is.na(c3_percentage_Campioli)==TRUE)
+#below is the manually step to fill the c3c4 based on orig c3c4 data given (it was missing in merge because the sitename was not perfectly matached)
+NPP_grassland_final6$c3_percentage_Campioli[c(18,19,20,21,22,23,27,28,29,30,31,32,858,859)] <- 1
+NPP_grassland_final6$c3_percentage_Campioli[c(807,808,809,810,846,853,856,857,877,878)] <- 0 #US-ccc-D01, US-ccc-D02,US-Kon-D05, US-paw-D01,US-Seg-D01,VE-ori-D01,VE-ori-D02
+summary(NPP_grassland_final6) 
+
+##Finally, combine the three above to one dataset
+NPP_grassland_final7 <- NPP_grassland_final6 %>% 
+  mutate(c3_percentage = coalesce(c3_percentage_tiandi,c3_percentage_keith,c3_percentage_Campioli))
+summary(NPP_grassland_final7)
+
+#Alternatively (last), now let's use c3c4 map to fill in those 82 points.
+library(rbeni)
+c4_still <- as.data.frame(nc_to_df(read_nc_onefile(
+  "/Users/yunpeng/data/c4_still/final/c4_percentage.nc"),
+  varnam = "c4"))
+
+#use extract function to extract c4 (not gwr!)
+names(c4_still) <- c("lon","lat","c4")
+coordinates(c4_still) <- ~lon+lat 
+gridded(c4_still) <- TRUE
+rc4_global <- raster(c4_still, "c4") 
+
+#aggregate based on lon and lat firstly
+NPP_grassland_final7_site <- aggregate(NPP_grassland_final7,by=list(NPP_grassland_final7$lon,NPP_grassland_final7$lat), FUN=mean, na.rm=TRUE) #site-mean
+NPP_grassland_final7_site <- NPP_grassland_final7_site[,c("lon","lat")]
+
+sp_sites <- SpatialPoints(NPP_grassland_final7_site) # only select lon and lat
+
+NPP_grassland_final7_site <- raster::extract(rc4_global, sp_sites, sp = TRUE) %>% as_tibble() %>% 
+  right_join(NPP_grassland_final7_site, by = c("lon", "lat")) %>% 
+  dplyr::rename( c4_percentage_map = c4)
+dim(NPP_grassland_final7_site)
+hist(NPP_grassland_final7_site$c4_percentage_map) # most c4 percentage =0, which is great.
+
+#now, merge back to site
+NPP_grassland_final7_site$c3_precentage_map <- 1-NPP_grassland_final7_site$c4_percentage_map
+NPP_grassland_final7_site <- NPP_grassland_final7_site[,c("lon","lat","c3_precentage_map")]
+
+NPP_grassland_final8 <- merge(NPP_grassland_final7,NPP_grassland_final7_site,by=c("lon","lat"),all.x=TRUE)
+dim(NPP_grassland_final8)
+
+summary(NPP_grassland_final8)
+
+#compare measured and predicted c3 percentage --> very different!
+plot(NPP_grassland_final8$c3_percentage~NPP_grassland_final8$c3_precentage_map)
+
+NPP_grassland_final8 <- NPP_grassland_final8[order(NPP_grassland_final8$old_no), ]
+
+#now, combine them: primary based on measured data, alternatively based on map data.
+NPP_grassland_final9 <- NPP_grassland_final8 %>% 
+  mutate(c3_percentage_final = coalesce(c3_percentage,c3_precentage_map))
+#which points were filled by map
+subset(NPP_grassland_final9,is.na(c3_percentage)==TRUE)$c3_percentage_final
+
+#additional step: 
+#add more gpp data from Compioli et al. SI table 1, and remove repeated data
+#NPP_grassland_final9_v2
+NPP_grassland_final9$GPP[NPP_grassland_final9$site=="IT-bea-D02"] <- 1568
+NPP_grassland_final9$GPP[NPP_grassland_final9$site=="US-che-D01"] <- 626
+NPP_grassland_final9$GPP[NPP_grassland_final9$site=="DE-gri-D01"] <- 1233#repeated
+NPP_grassland_final9$GPP[NPP_grassland_final9$site=="CN-Hab-F01"] <- 634
+NPP_grassland_final9$GPP[NPP_grassland_final9$site=="RU-ha1-F01"] <- 519#repeated
+NPP_grassland_final9$GPP[NPP_grassland_final9$site=="RU-ha3-F01"] <- 526 #repeated
+NPP_grassland_final9$GPP[NPP_grassland_final9$site=="CN-Inn-D01_C"] <- 182
+NPP_grassland_final9$GPP[NPP_grassland_final9$site=="US-kbs-D01"] <- 1015
+NPP_grassland_final9$GPP[NPP_grassland_final9$site=="US-kbs-D04"] <- 512
+NPP_grassland_final9$GPP[NPP_grassland_final9$site=="US-kbs-D05"] <- 374
+NPP_grassland_final9$GPP[NPP_grassland_final9$site=="US-kbs-D03"] <- 793
+NPP_grassland_final9$GPP[NPP_grassland_final9$site=="US-jas-D01"] <- 516
+NPP_grassland_final9$GPP[NPP_grassland_final9$site=="US-kon-D05"] <- 1151
+NPP_grassland_final9$GPP[NPP_grassland_final9$site=="RU-krs-D01"] <- 1611
+NPP_grassland_final9$GPP[NPP_grassland_final9$site=="CA-Let-F01"] <- 280
+NPP_grassland_final9$GPP[NPP_grassland_final9$site=="CA-mat-D01"] <- 786
+NPP_grassland_final9$GPP[NPP_grassland_final9$site=="US-osg-D01"] <- 1890
+NPP_grassland_final9$GPP[NPP_grassland_final9$site=="CG-tch-D01"] <- 1572
+NPP_grassland_final9$GPP[NPP_grassland_final9$site=="US-Spe-D01"] <- 829
+
+#interpolate gpp to Cambioli's data from keith's source (with same site name)
+NPP_grassland_final9$GPP[NPP_grassland_final9$site=="CN-Inn-F01"] <- 204 #this value is reasonable comparing with NPP/GPP
+#NPP_grassland_final9$GPP[NPP_grassland_final9$site=="KZ-shr-D01"] <- 357 #incosistent between keith and cambiopli's data! (i.e. leading to unreasonable values with GPP < TNPP)
+#NPP_grassland_final9$GPP[NPP_grassland_final9$site=="RU-ha2-F01"] <- 648 #incosistent between keith and cambiopli's data!  (i.e. leading to unreasonable values with GPP slightly higher than TNPP - CUE =94%)
+
+NPP_grassland_final9$BNPP_1 <- NPP_grassland_final9$TNPP_1 - NPP_grassland_final9$ANPP_2
+NPP_grassland_final10 <- NPP_grassland_final9
+
+#add more data from /Users/yunpeng/data/NPP_Yunke/NPP_Keith/orig/Bremer and Ham 2010.pdf from keith's grassland data
+#based on its Table 3 - GPP, for example, at the site below, was calculated as averages of 2 values (at 2 period) from site BA, so does site BB. 
+NPP_grassland_final10$TNPP_1[NPP_grassland_final10$site=="US-Kon-D02"] <- ((1669-1354) + (2269-1666))/2
+NPP_grassland_final10$TNPP_1[NPP_grassland_final10$site=="US-Kon-D03"] <- ((1368-1185) + (1997-1495))/2
+
+NPP_grassland_final10$BNPP_1[NPP_grassland_final10$site=="US-Kon-D02"] <- NPP_grassland_final10$TNPP_1[NPP_grassland_final10$site=="US-Kon-D02"] - NPP_grassland_final10$ANPP_2[NPP_grassland_final10$site=="US-Kon-D02"]
+NPP_grassland_final10$BNPP_1[NPP_grassland_final10$site=="US-Kon-D03"] <- NPP_grassland_final10$TNPP_1[NPP_grassland_final10$site=="US-Kon-D03"] - NPP_grassland_final10$ANPP_2[NPP_grassland_final10$site=="US-Kon-D03"]
+
+summary(NPP_grassland_final10)
+
+NPP_grassland_final11 <- NPP_grassland_final10
+NPP_grassland_final12 <- NPP_grassland_final11[,!(names(NPP_grassland_final11) %in% c("c3_percentage_tiandi","c3_percentage_keith","c3_percentage_Campioli","c3_precentage_map"))]
+NPP_grassland_final12 <- NPP_grassland_final12[order(NPP_grassland_final12$old_no), ]
+
+#double check if two df is the same - to cbind with sitename later on in site simulation in another file: grassland_simulation
+NPP_grassland  <- read.csv("/Users/yunpeng/data/grassland_npp/NPP_grassland.csv")
+summary(NPP_grassland_final12$lon - NPP_grassland$lon)
+summary(NPP_grassland_final12$lat - NPP_grassland$lat)
+summary(NPP_grassland_final12$z - NPP_grassland$z)
+summary(NPP_grassland_final12$Begin_year - NPP_grassland$Begin_year)
+summary(NPP_grassland_final12$End_year - NPP_grassland$End_year)
+summary(NPP_grassland_final12$ANPP_2 - NPP_grassland$ANPP_2)
+summary(NPP_grassland_final12$TNPP_1 - NPP_grassland$TNPP_1)
+
+csvfile <- paste("/Users/yunpeng/data/NPP_Grassland_final/NPP_grassland.csv")
+write_csv(NPP_grassland_final12, path = csvfile)
+
+#now, newly add net minerlization rate and GCME N uptake sites
+#### Input N uptake
+#(1) newly added Nmin rate data from Finzi
+Finzi <- read.csv("/Users/yunpeng/data/NPP_Yunke/Nmin_Finzi/Nmin_Finzi.csv")
+names(Finzi)[names(Finzi) == "Lat"] <- "lat"
+names(Finzi)[names(Finzi) == "Long"] <- "lon"
+devtools::load_all("/Users/yunpeng/yunkepeng/Grassland_new_ingestr_rsofun_20210326/ingestr/")
+
+Finzi$pft <- "Forest"
+Finzi$pft[Finzi$Biome=="temp grass"]<- "Grassland"
+
+Finzi_Forest_sitemean <- aggregate(Finzi,by=list(Finzi$lon,Finzi$lat), FUN=mean, na.rm=TRUE) #site-mean
+dim(Finzi_Forest_sitemean)
+for (i in 1:nrow(Finzi_Forest_sitemean)){
+  Finzi_Forest_sitemean$sitename[i] <- paste("Finzi_Forest",i,sep = "") # this is also sitename for fpar
+}
+df_etopo <- ingest(Finzi_Forest_sitemean,source = "etopo1",dir = "~/data/etopo/" )
+Finzi_Forest_sitemean$z <- as.numeric(as.data.frame(df_etopo$data))
+Finzi_Forest_sitemean$z[Finzi_Forest_sitemean$z< 0] <- 0
+
+Finzi_Forest_sitemean2 <- Finzi_Forest_sitemean[,c("lon","lat","z","sitename")]
+
+Finzi_all <-Reduce(function(x,y) merge(x = x, y = y, by = c("lon","lat"),all.x=TRUE), 
+                   list(Finzi,Finzi_Forest_sitemean2))
+
+Finzi_all$Begin_year <- 1984
+Finzi_all$End_year <- 2013
+
+Finzi_all <- Finzi_all[,c("lon","lat","z","pft","Nmin","Begin_year","End_year","sitename")]
+names(Finzi_all) <- c("lon","lat","z","pft","Nuptake","Begin_year","End_year","site")
+Finzi_all$file <- "Finzi, Nmin"
+
+head(Finzi_all)
+
+#(2) Nuptake from gcme
+gcme_nuptake <- read.csv("/Users/yunpeng/data/NPP_Yunke/Nuptake_gcme/gcme_nuptake_coord_interpolated.csv")
+for (i in 1:nrow(gcme_nuptake)){
+  gcme_nuptake$sitename[i] <- paste("gcme",i,sep = "")
+}
+
+#elv
+df_etopo <- ingest(gcme_nuptake,source = "etopo1",dir = "~/data/etopo/" )
+gcme_nuptake$z <- as.numeric(as.data.frame(df_etopo$data))
+gcme_nuptake$z[gcme_nuptake$z<0] <- 0
+
+siteinfo_gcme <- data.frame(
+  sitename = gcme_nuptake$sitename,
+  lon = gcme_nuptake$lon,
+  lat = gcme_nuptake$lat,
+  elv = gcme_nuptake$z,
+  year_start = gcme_nuptake$start_yr,
+  year_end = gcme_nuptake$start_yr + gcme_nuptake$Year_long -1
+)
+
+siteinfo_gcme$exp_nam <- gcme_nuptake$exp_nam
+
+gcme_data <- read.csv("/Users/yunpeng/data/NPP_Yunke/Nuptake_gcme/gcme_nuptake_data.csv")
+gcme_data <- gcme_data[,c("exp_nam","ambient","Unit")]
+#all converting to gN/m2/yr
+gcme_data$ambient[gcme_data$Unit=="Kg_N_ha-1"] <- gcme_data$ambient[gcme_data$Unit=="Kg_N_ha-1"]/10
+gcme_data$ambient[gcme_data$Unit=="kg_N/ha"] <- gcme_data$ambient[gcme_data$Unit=="kg_N/ha"]/10
+gcme_data$ambient[gcme_data$Unit=="mg_N/kg*day_"] <- NA #quite weired about the unit, for one site. Disregard them first
+hist(gcme_data$ambient)
+#why some values are too low?
+gcme_data <- subset(gcme_data,ambient>0)
+subset(gcme_data,ambient<1) %>% group_by(exp_nam) %>% summarise(number = n())
+#after look, "RiceFACE_Japan_A_1998_39,40_141" looks fine, as most of them were still in good range. But remove the other 5 sites (they may be wrong due to measurement mistakes or unit errors, we don't know)
+gcme_data_final <- subset(gcme_data,exp_nam!="Michigan_UNDERC_bog" & exp_nam!="Michigan_UNDERC_intermFen" & exp_nam!="Michigan_UNDERC_richFen"&
+                            exp_nam!="RiceFACE_China_32N_120E_Or_Tr_7"& exp_nam!="TL_7")
+hist(gcme_data_final$ambient)
+
+#finally, mergeing them to obtain siteinfo
+gcme_data_final_forest <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp_nam"),all.x=TRUE),list(gcme_data_final,siteinfo_gcme))
+
+gcme_data_final_forest <- gcme_data_final_forest[,c("exp_nam","ambient","lon","lat","elv","year_start","year_end")]
+names(gcme_data_final_forest) <- c("site","Nuptake","lon","lat","z","Begin_year","End_year")
+gcme_data_final_forest$file <- "GCME, Nuptake"
+gcme_data_final_forest$pft <- "Forest" 
+#rbind them to get final Nmin. data
+Nmin_final <- dplyr::bind_rows(Finzi_all,gcme_data_final_forest)
+Nmin_final
+
+#Final dataset to be ingested together
+dim(NPP_Forest)
+dim(NPP_grassland_final12)
+dim(Nmin_final)
+
+siteinfo_final <- dplyr::bind_rows(NPP_Forest,NPP_grassland_final12,Nmin_final)
+
+siteinfo_final_ingest <- aggregate(siteinfo_final,by=list(siteinfo_final$lon,siteinfo_final$lat,siteinfo_final$z,siteinfo_final$Begin_year,siteinfo_final$End_year), FUN=mean, na.rm=TRUE)
+siteinfo_final_ingest <- siteinfo_final_ingest[,c("lon","lat","z","Begin_year","End_year")]
+
+siteinfo_final_ingest$year_start <- siteinfo_final_ingest$Begin_year
+siteinfo_final_ingest$year_end <- siteinfo_final_ingest$End_year
+siteinfo_final_ingest$year_start[siteinfo_final_ingest$Begin_year<1979] <- 1979
+siteinfo_final_ingest$year_end[siteinfo_final_ingest$Begin_year<1979] <- 1988
+
+summary(siteinfo_final_ingest)
+
+for (i in 1:nrow(siteinfo_final_ingest)){
+  siteinfo_final_ingest$sitename_new[i] <- paste("final",i,sep = "") # this is also sitename for fpar
+}
+dim(siteinfo_final_ingest)
+
+siteinfo_final_ingest <-  siteinfo_final_ingest %>% dplyr::mutate(date_start = lubridate::ymd(paste0(year_start, "-01-01"))) %>%
+  dplyr::mutate(date_end = lubridate::ymd(paste0(year_end, "-12-31"))) 
+
+head(siteinfo_final_ingest)
+
+aaa <-Reduce(function(x,y) merge(x = x, y = y, by = c("lon","lat","z","Begin_year","End_year"),all.x=TRUE), 
+                   list(siteinfo_final,siteinfo_final_ingest[,c("lon","lat","z","Begin_year","End_year","sitename_new")]))
 

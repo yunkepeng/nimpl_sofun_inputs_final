@@ -1,15 +1,15 @@
 #prepare sites
 rm(list=ls())
 #input site info
-NPP_Forest <- read.csv("/Users/yunpeng/data/NPP_final/NPP_Forest.csv")
-gwr_sites <- aggregate(NPP_Forest,by=list(NPP_Forest$lon,NPP_Forest$lat,NPP_Forest$z,NPP_Forest$Begin_year,NPP_Forest$End_year), FUN=mean, na.rm=TRUE)
-gwr_sites <- gwr_sites[,c("lon","lat","z","Begin_year","End_year")]
-
+NPP_grassland <- read.csv("/Users/yunpeng/data/NPP_Grassland_final/NPP_grassland.csv")
 #convert before 1980 to 1980-1989
-gwr_sites$year_start <- gwr_sites$Begin_year
-gwr_sites$year_end <- gwr_sites$End_year
-gwr_sites$year_start[gwr_sites$Begin_year<1980] <- 1980
-gwr_sites$year_end[gwr_sites$Begin_year<1980] <- 1989
+NPP_grassland$year_start <- NPP_grassland$Begin_year
+NPP_grassland$year_end <- NPP_grassland$End_year
+NPP_grassland$year_start[NPP_grassland$Begin_year<=1980] <- 1980
+NPP_grassland$year_end[NPP_grassland$Begin_year<=1980] <- 1989
+
+gwr_sites <- aggregate(NPP_grassland,by=list(NPP_grassland$lon,NPP_grassland$lat,NPP_grassland$z,NPP_grassland$year_start,NPP_grassland$year_end), FUN=mean, na.rm=TRUE)
+gwr_sites <- gwr_sites[,c("lon","lat","z","Begin_year","End_year","year_start","year_end")]
 
 summary(gwr_sites)
 dim(gwr_sites)
@@ -18,7 +18,7 @@ dim(gwr_sites)
 load(file = "/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/climates_30yrs_monthly/WFDEI_CRU_1980_2016.Rdata")
 
 total_month <- (2016-1980+1) * 12
-
+library(rbeni)
 elev <- as.data.frame(nc_to_df(read_nc_onefile("~/data/watch_wfdei/WFDEI-elevation.nc"), varnam = "elevation"))
 
 monthly_tmn$lon <- elev$lon
@@ -122,28 +122,28 @@ gwr_methods <- function(sites,monthly_grid){
 
 
 alpha_output <- gwr_methods(gwr_sites,empty_alpha)
-#csvfile <- paste("/Users/yunpeng/data/NPP_final/forest_climates_gwr/forest_alpha.csv")
-#write_csv(alpha_output, path = csvfile)
+csvfile <- paste("/Users/yunpeng/data/NPP_Grassland_final/grassland_climates_gwr/grassland_alpha.csv")
+write_csv(alpha_output, path = csvfile)
 
 tmx_output <- gwr_methods(gwr_sites,monthly_tmx)
-#csvfile <- paste("/Users/yunpeng/data/NPP_final/forest_climates_gwr/forest_tmx.csv")
-#write_csv(tmx_output, path = csvfile)
+csvfile <- paste("/Users/yunpeng/data/NPP_Grassland_final/grassland_climates_gwr/grassland_tmx.csv")
+write_csv(tmx_output, path = csvfile)
 
 tmn_output <- gwr_methods(gwr_sites,monthly_tmn)
-#csvfile <- paste("/Users/yunpeng/data/NPP_final/forest_climates_gwr/forest_tmn.csv")
-#write_csv(tmn_output, path = csvfile)
+csvfile <- paste("/Users/yunpeng/data/NPP_Grassland_final/grassland_climates_gwr/grassland_tmn.csv")
+write_csv(tmn_output, path = csvfile)
 
 vap_output <- gwr_methods(gwr_sites,monthly_vap)
-#csvfile <- paste("/Users/yunpeng/data/NPP_final/forest_climates_gwr/forest_vap.csv")
-#write_csv(vap_output, path = csvfile)
+csvfile <- paste("/Users/yunpeng/data/NPP_Grassland_final/grassland_climates_gwr/grassland_vap.csv")
+write_csv(vap_output, path = csvfile)
 
 pre_output <- gwr_methods(gwr_sites,monthly_pre)
-#csvfile <- paste("/Users/yunpeng/data/NPP_final/forest_climates_gwr/forest_pre.csv")
-#write_csv(pre_output, path = csvfile)
+csvfile <- paste("/Users/yunpeng/data/NPP_Grassland_final/grassland_climates_gwr/grassland_pre.csv")
+write_csv(pre_output, path = csvfile)
 
 radi_output <- gwr_methods(gwr_sites,monthly_radi)
-#csvfile <- paste("/Users/yunpeng/data/NPP_final/forest_climates_gwr/forest_radi.csv")
-#write_csv(radi_output, path = csvfile)
+csvfile <- paste("/Users/yunpeng/data/NPP_Grassland_final/grassland_climates_gwr/grassland_radi.csv")
+write_csv(radi_output, path = csvfile)
 
 
 # now, calculate Tg, vpd and PPFD 

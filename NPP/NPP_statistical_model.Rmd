@@ -22,9 +22,7 @@ They were all using mixed-effects model. it considered (1|site) as the only rand
 
 The coefficient generated in summary below will be used in next-step: global mapping of C and N cycle.
 
-For data sources, units, and basic information of input please refer to README in relevant location in Euler.
-
-The climate data of all 672 samples were saved in ~/data/NPP_Yunke/climate
+All using ForC + Sara vicca dataset. For data sources, units, and basic information of input please refer to README in relevant location in Euler.
 
 ```{r}
 library(lme4)
@@ -133,16 +131,344 @@ gwr_sites <- gwr_sites[,!(names(gwr_sites) %in% c("year_start","year_end"))]
 NPP_Forest_gwr <- merge(NPP_Forest,gwr_sites,by=c("lon","lat","z","Begin_year","End_year"),all.x=TRUE)
 NPP_statistical <- subset(NPP_Forest_gwr,rep_info!="rep" &rep_info!="rep2")
 
-mod_tnpp <- lmer(log((TNPP_1/GPP)/(1-(TNPP_1/GPP))) ~ log(soilCN) + log(age) +observedfAPAR  + (1|site), data = NPP_statistical)
+NPP_statistical$age[NPP_statistical$age==999] <- NA
+hist(NPP_statistical$age)
+hist(NPP_statistical$soilCN)
+hist(NPP_statistical$observedfAPAR)
+
+subset(NPP_statistical,GPP<=TNPP_1) # from ForC - might be due to two different sources combined for gpp and npp - ignored it anyways
+NPP_statistical$GPP[NPP_statistical$GPP<=NPP_statistical$TNPP_1] <- NA
+
+tnpp_gpp_a <- log((NPP_statistical$TNPP_1/NPP_statistical$GPP)/(1-(NPP_statistical$TNPP_1/NPP_statistical$GPP)))
+soilCN_a <- log(NPP_statistical$soilCN)
+age_a <- log(NPP_statistical$age)
+observedfAPAR_a <- NPP_statistical$observedfAPAR
+site_a <- NPP_statistical$site
+
+mod_tnpp <- lmer( tnpp_gpp_a ~ soilCN_a + age_a + observedfAPAR_a  + (1|site_a))
 summary(mod_tnpp)
 r.squaredGLMM(mod_tnpp)
+library(visreg)
+visreg(mod_tnpp,"soilCN_a",type="contrast",line=list(col="black",lwd=2), points=list(cex=0.5, pch=16,col="black"),
+       ylab=" ",xlab=" ")
+visreg(mod_tnpp,"age_a",type="contrast",line=list(col="black",lwd=2), points=list(cex=0.5, pch=16,col="black"),
+       ylab=" ",xlab=" ")
+visreg(mod_tnpp,"observedfAPAR_a",type="contrast",line=list(col="black",lwd=2), points=list(cex=0.5, pch=16,col="black"),
+       ylab=" ",xlab=" ")
 
-mod_anpp <- lmer(log((ANPP_2/GPP)/(1-(ANPP_2/GPP))) ~ log(soilCN) + log(age) +observedfAPAR + (1|site), data = NPP_statistical)
+
+anpp_gpp_b <- log((NPP_statistical$ANPP_2/NPP_statistical$GPP)/(1-(NPP_statistical$ANPP_2/NPP_statistical$GPP)))
+mod_anpp <- lmer(anpp_gpp_b ~ soilCN_a + age_a + observedfAPAR_a  + (1|site_a))
 summary(mod_anpp)
 r.squaredGLMM(mod_anpp)
+visreg(mod_anpp,"soilCN_a",type="contrast",line=list(col="black",lwd=2), points=list(cex=0.5, pch=16,col="black"),
+       ylab=" ",xlab=" ")
+visreg(mod_anpp,"age_a",type="contrast",line=list(col="black",lwd=2), points=list(cex=0.5, pch=16,col="black"),
+       ylab=" ",xlab=" ")
+visreg(mod_anpp,"observedfAPAR_a",type="contrast",line=list(col="black",lwd=2), points=list(cex=0.5, pch=16,col="black"),
+       ylab=" ",xlab=" ")
 
-mod_lnpp <- lmer(log((NPP.foliage/ANPP_2)/(1-(NPP.foliage/ANPP_2))) ~ log(PPFD_gwr) + Tg_gwr + log(vpd_gwr) + (1|site), data = subset(NPP_statistical,file=="Sara Vicca"|file=="ForC"))
+
+
+lnpp_data <- subset(NPP_statistical,file=="Sara Vicca"|file=="ForC")
+lnpp_anpp_c <- log((lnpp_data$NPP.foliage/lnpp_data$ANPP_2)/(1-(lnpp_data$NPP.foliage/lnpp_data$ANPP_2)))
+PPFD_c <- log(lnpp_data$PPFD_gwr)
+Tg_c <- lnpp_data$Tg_gwr
+vpd_c <- log(lnpp_data$vpd_gwr)
+site_c <- lnpp_data$site
+mod_lnpp <- lmer(lnpp_anpp_c ~ PPFD_c + Tg_c + vpd_c + (1|site_c))
 summary(mod_lnpp)
 r.squaredGLMM(mod_lnpp)
 
+visreg(mod_lnpp,"PPFD_c",type="contrast",line=list(col="black",lwd=2), points=list(cex=0.5, pch=16,col="black"),
+       ylab=" ",xlab=" ")
+visreg(mod_lnpp,"Tg_c",type="contrast",line=list(col="black",lwd=2), points=list(cex=0.5, pch=16,col="black"),
+       ylab=" ",xlab=" ")
+visreg(mod_lnpp,"vpd_c",type="contrast",line=list(col="black",lwd=2), points=list(cex=0.5, pch=16,col="black"),
+       ylab=" ",xlab=" ")
+
+```
+
+4. Leaf Nmass ~ Vcmax25/LMA (site-species mean), using mixed-effects model. it considered (1|site) and (1|species) as the only random factor. 
+```{r}
+library(lme4)
+library(nlme)
+library(lmerTest)
+library("PerformanceAnalytics")
+library(MuMIn)
+library(tidyverse)
+
+SP_input <- read.csv(file="/Users/yunpeng/data/leaf_traits/combined_leaf_traits.csv") #new one 
+
+SP_input$Vcmax.25 <- SP_input$Vcmax25
+SP_input$Elevation <- SP_input$z
+
+SP_input2 <- SP_input[,c("lat","lon","Elevation","Vcmax.25","narea","lma")]
+sitemean <- aggregate(SP_input2,by=list(SP_input2$lon,SP_input2$lat), FUN=mean, na.rm=TRUE) #site-mean
+
+sitemean$sitename <- paste0("s", 1:nrow(sitemean),sep="") # define sitename (s1,s2..s276)
+
+SP_site1 <- sitemean[,c("lon","lat","sitename")]
+SP_final1 <- merge(SP_input,SP_site1,by=c("lat","lon"),all.x=TRUE) #merged sitename to SP data
+
+SP_Vcmax.25 <- aggregate(Vcmax.25~sitename+species,SP_final1,mean) #umol/m2/s
+SP_Elevation <- aggregate(Elevation~sitename+species,SP_final1,mean)
+SP_narea<- aggregate(narea~sitename+species,SP_final1,mean) # g/m2
+SP_lma<- aggregate(lma~sitename+species,SP_final1,mean) # g/m2
+SP_lat<- aggregate(lat~sitename+species,SP_final1,mean)
+SP_lon<- aggregate(lon~sitename+species,SP_final1,mean)
+
+#merging all observed traits in a site-species dataset.
+sitespecies_final <-Reduce(function(x,y) merge(x = x, y = y, by = c("sitename","species"),all.x=TRUE), 
+                           list(SP_lon,SP_lat,SP_Elevation,SP_Vcmax.25,
+                                SP_narea,SP_lma))
+
+#2. obtain Nrubisco and Nstructural from this large dataset
+#firstly, for site-species data
+nmass_a <- sitespecies_final$narea/sitespecies_final$lma
+vcmax25_lma_a <- sitespecies_final$Vcmax.25/sitespecies_final$lma
+sitename_a <- sitespecies_final$sitename
+species_a <- sitespecies_final$species
+
+hist(sitespecies_final$narea) # g/m2
+hist(sitespecies_final$lma) # g/m2
+hist(sitespecies_final$Vcmax.25) # umol/m2/s
+
+library(lme4)
+
+#3. Fit (Nmass) ~ Ns + Nr * (Vcmax25/LMA) - for site-species data
+
+
+n1 <- lmer(nmass_a~vcmax25_lma_a + (1|sitename_a)+(1|species_a))
+summary(n1)
+r.squaredGLMM(n1)
+
+visreg(n1,"vcmax25_lma_a",type="contrast",line=list(col="black",lwd=2), points=list(cex=0.5, pch=16,col="black"),
+       ylab=" ",xlab=" ")
+
+```
+
+5. N resorption efficiency ~ Tg + log (vpd) for site-mean.
+```{r}
+require(data.table)
+library(maps)
+library(lme4)
+library(MuMIn)
+library(lmerTest)
+library(elevatr)
+library(raster)
+library(devtools)
+devtools::load_all("/Users/yunpeng/yunkepeng/Grassland_new_ingestr_rsofun_20210326/ingestr/")
+library(tibble)
+library(spgwr)
+library(rworldmap)
+library(colorRamps)
+
+#2. Input NRE from different sources, rbind, remove repeated data and plot maps, and test a lm model
+#Dong is species-based, Du is site-based. To make them consistent, let's use site-based for both df
+
+NRE_Du <- read.csv(file="~/data/NRE_various/NRE_Du/NRE_Du.csv")
+NRE_Dong <- read.csv(file="~/data/NRE_various/NRE_Deng/NRE_Deng.csv")
+
+NRE_Du_df <- NRE_Du[,c("lon","lat","NRE","MAT","MAP")]
+NRE_Du_df <- aggregate(NRE_Du_df,by=list(NRE_Du_df$lon,NRE_Du_df$lat), FUN=mean, na.rm=TRUE) #site-mean
+NRE_Du_df <- NRE_Du_df[,c(3:7)]
+head(NRE_Du_df)
+dim(NRE_Du_df)
+
+NRE_Dong_df <- NRE_Dong[,c("Longitude","Latitude","NRE.nitrogen.resorption.efficiency.","MAT","MAP")]
+names(NRE_Dong_df) <- c("lon","lat","NRE","MAT","MAP")
+head(NRE_Dong_df)
+NRE_Dong_df <- aggregate(NRE_Dong_df,by=list(NRE_Dong_df$lon,NRE_Dong_df$lat), FUN=mean, na.rm=TRUE) #site-mean
+NRE_Dong_df <- NRE_Dong_df[,c(3:7)]
+dim(NRE_Dong_df)
+
+
+NRE_Dong_df$source <- "Dong"
+NRE_Du_df$source <- "Du"
+NRE_df <- rbind(NRE_Du_df,NRE_Dong_df)
+summary(NRE_df)
+
+#check repeated data, and remove 6 repeated points from Du et al. paper
+NRE_df$repeated <- duplicated(NRE_df[,c("lon","lat")])
+summary(NRE_df$repeated)
+NRE_df <- subset(NRE_df,repeated==FALSE)
+
+#project data
+newmap <- getMap(resolution = "low")
+plot(newmap, xlim = c(-180, 180), ylim = c(-75, 75), asp = 1)
+
+points(NRE_df$lon,NRE_df$lat, col="red", pch=16,cex=1)
+
+#3. add elevation in this df, based on ingtestr 
+siteinfo <- NRE_df[,c("lon","lat")] # present x and y separately
+siteinfo$date_start <- lubridate::ymd(paste0(1982, "-01-01"))
+siteinfo$date_end <- lubridate::ymd(paste0(2011, "-12-31"))
+siteinfo$sitename <- paste0("s", 1:nrow(siteinfo),sep="")
+siteinfo <- as_tibble(siteinfo)
+
+df_etopo <- ingest(
+  siteinfo,
+  source = "etopo1",
+  dir = "~/data/etopo/" 
+)
+
+NRE_df$elevation <- as.numeric(as.data.frame(df_etopo$data))
+subset(NRE_df,elevation<0)
+#Some grids > 0, lets' assume -3062 as NA, and others as 0 firstly?
+NRE_df$elevation[NRE_df$elevation< -50] <- NA
+NRE_df$elevation[NRE_df$elevation< 0] <- 0
+
+#4. Extract site climate/soil/age data (from prediction fields in nimpl simulation) for all NRE sites
+#Input data from: ~/data/nimpl_sofun_inputs/map/Final_ncfile
+library(rbeni)
+
+#input elevation for global grids
+elev_nc <- read_nc_onefile("~/data/watch_wfdei/WFDEI-elevation.nc")
+elev <- as.data.frame(nc_to_df(elev_nc, varnam = "elevation"))
+head(elev) 
+
+#input nc file
+Tg <- as.data.frame(nc_to_df(read_nc_onefile(
+  "~/data/nimpl_sofun_inputs/map/Final_ncfile/Tg.nc"),
+  varnam = "Tg"))
+
+PPFD <- as.data.frame(nc_to_df(read_nc_onefile(
+  "~/data/nimpl_sofun_inputs/map/Final_ncfile/PPFD.nc"),
+  varnam = "PPFD"))
+
+vpd <- as.data.frame(nc_to_df(read_nc_onefile(
+  "~/data/nimpl_sofun_inputs/map/Final_ncfile/vpd.nc"),
+  varnam = "vpd"))
+
+alpha <- as.data.frame(nc_to_df(read_nc_onefile(
+  "~/data/nimpl_sofun_inputs/map/Final_ncfile/alpha.nc"),
+  varnam = "alpha"))
+
+fAPAR <- as.data.frame(nc_to_df(read_nc_onefile(
+  "~/data/nimpl_sofun_inputs/map/Final_ncfile/fAPAR.nc"),
+  varnam = "fAPAR"))
+
+#cbind all predictors, and its lon, lat, z
+all_predictors <- cbind(elev,Tg$myvar,PPFD$myvar,vpd$myvar,
+                        alpha$myvar,fAPAR$myvar)
+
+names(all_predictors) <- c("lon","lat","z","Tg","PPFD","vpd",
+                           "alpha","fAPAR")
+
+Tg_df <- all_predictors[,c("lon","lat","z","Tg")]
+PPFD_df <- all_predictors[,c("lon","lat","z","PPFD")]
+vpd_df <- all_predictors[,c("lon","lat","z","vpd")]
+alpha_df <- all_predictors[,c("lon","lat","z","alpha")]
+fAPAR_df <- all_predictors[,c("lon","lat","z","fAPAR")]
+
+#now, apply gwr to extract site predictors' value
+head(NRE_df)
+NRE_site <- NRE_df[,c("lon","lat","elevation")]
+names(NRE_site) <- c("lon","lat","z")
+
+#before gwr, there is one point lacks NA, it is in the sea. 
+#We just assumed them as 0 firstly, to make sure for loop can run
+#and then, set its preduction as NA at the end. 
+NRE_site[107,]
+NRE_site[107,3] <- 0 #set z =0
+NRE_site[107,]
+
+a <- 1.5 # which degree (distance) of grid when interpolating gwr from global grids
+i <- 1
+#Extract Tg, PPFD, vpd, alpha
+for (i in c(1:nrow(NRE_site))){ #one site does not have elevation (NA), therefore omitted
+  #Tg
+  Tg_global <- na.omit(Tg_df)
+  NRE_part <- subset(Tg_global,lon>(NRE_site[i,1]-a)&lon<(NRE_site[i,1]+a)&
+                       lat>(NRE_site[i,2]-a)&lat<(NRE_site[i,2]+a))
+  coordinates(NRE_part) <- c("lon","lat")
+  gridded(NRE_part) <- TRUE
+  NRE_coord <- NRE_site[i,1:3]
+  coordinates(NRE_coord) <- c("lon","lat")
+  NRE_site$Tg[i] <- (gwr(Tg ~ z, NRE_part, bandwidth = 1.06, fit.points =NRE_coord,predictions=TRUE))$SDF$pred
+  #ppfd
+  PPFD_global <- na.omit(PPFD_df)
+  NRE_part <- subset(PPFD_global,lon>(NRE_site[i,1]-a)&lon<(NRE_site[i,1]+a)&
+                       lat>(NRE_site[i,2]-a)&lat<(NRE_site[i,2]+a))
+  coordinates(NRE_part) <- c("lon","lat")
+  gridded(NRE_part) <- TRUE
+  NRE_coord <- NRE_site[i,1:3]
+  coordinates(NRE_coord) <- c("lon","lat")
+  NRE_site$PPFD[i] <- (gwr(PPFD ~ z, NRE_part, bandwidth = 1.06, fit.points =NRE_coord,predictions=TRUE))$SDF$pred
+  #vpd
+  vpd_global <- na.omit(vpd_df)
+  NRE_part <- subset(vpd_global,lon>(NRE_site[i,1]-a)&lon<(NRE_site[i,1]+a)&
+                       lat>(NRE_site[i,2]-a)&lat<(NRE_site[i,2]+a))
+  coordinates(NRE_part) <- c("lon","lat")
+  gridded(NRE_part) <- TRUE
+  NRE_coord <- NRE_site[i,1:3]
+  coordinates(NRE_coord) <- c("lon","lat")
+  NRE_site$vpd[i] <- (gwr(vpd ~ z, NRE_part, bandwidth = 1.06, fit.points =NRE_coord,predictions=TRUE))$SDF$pred
+  #alpha
+  alpha_global <- na.omit(alpha_df)
+  NRE_part <- subset(alpha_global,lon>(NRE_site[i,1]-a)&lon<(NRE_site[i,1]+a)&
+                       lat>(NRE_site[i,2]-a)&lat<(NRE_site[i,2]+a))
+  coordinates(NRE_part) <- c("lon","lat")
+  gridded(NRE_part) <- TRUE
+  NRE_coord <- NRE_site[i,1:3]
+  coordinates(NRE_coord) <- c("lon","lat")
+  NRE_site$alpha[i] <- (gwr(alpha ~ z, NRE_part, bandwidth = 1.06, fit.points =NRE_coord,predictions=TRUE))$SDF$pred
+}
+
+#As mentioned above, set the point in the sea as NA
+NRE_site[107,4:7] <- NA
+NRE_site[107,]
+
+NRE_site$fAPAR <- NA
+#additionally add fAPAR - only available in specific grids
+for (i in c(1:53,55:56,58,60:74,76:106,108:173,181:nrow(NRE_site))){ 
+  fAPAR_global <- na.omit(fAPAR_df)
+  NRE_part <- subset(fAPAR_global,lon>(NRE_site[i,1]-a)&lon<(NRE_site[i,1]+a)&
+                       lat>(NRE_site[i,2]-a)&lat<(NRE_site[i,2]+a))
+  coordinates(NRE_part) <- c("lon","lat")
+  gridded(NRE_part) <- TRUE
+  
+  NRE_coord <- NRE_site[i,1:3]
+  coordinates(NRE_coord) <- c("lon","lat")
+  NRE_site$fAPAR[i] <- (gwr(fAPAR ~ z, NRE_part, bandwidth = 1.06, fit.points =NRE_coord,predictions=TRUE))$SDF$pred
+}
+
+summary(NRE_site)
+
+#why many NA grids shown in fAPAR data? - have a look in the map
+fAPAR_NA <- subset(NRE_site,is.na(fAPAR))
+newmap <- getMap(resolution = "low")
+plot(newmap, xlim = c(-180, 180), ylim = c(-75, 75), asp = 1)
+
+points(fAPAR_NA$lon,fAPAR_NA$lat, col="red", pch=16,cex=1)
+#those 12 points may be either in the island, or edge of land...anyway, let's just keep them if not using fAPAR as a predictor then...
+
+
+#combine NRE with site extracted climate and CNrt (Tg, PPFD, vpd, alpha, CNrt)
+NRE_climate <- cbind(NRE_df[,c("NRE","MAT","MAP","source")],NRE_site)
+summary(NRE_climate)
+
+#remove 2 negative vpd points (which should be NA)
+new_DF <- subset(NRE_climate, is.na(NRE_climate))
+NRE_climate <- subset(NRE_climate, vpd>0)
+dim(NRE_climate)
+
+NRE_climate$nre <- NRE_climate$NRE/100
+
+summary(lm(log(nre/(1-nre))~MAT+log(MAP),data=NRE_climate))
+summary(lm(log(nre/(1-nre))~Tg+log(alpha),data=NRE_climate))
+
+#we use this model eventually
+
+nre_a <- log(NRE_climate$nre/(1-NRE_climate$nre))
+Tg_a <- NRE_climate$Tg
+vpd_a <- log(NRE_climate$vpd)
+
+nre_model <- lm(nre_a~Tg_a+vpd_a)
+summary(nre_model)
+visreg(nre_model,"Tg_a",type="contrast",line=list(col="black",lwd=2), points=list(cex=0.5, pch=16,col="black"),
+       ylab=" ",xlab=" ")
+visreg(nre_model,"vpd_a",type="contrast",line=list(col="black",lwd=2), points=list(cex=0.5, pch=16,col="black"),
+       ylab=" ",xlab=" ")
 ```

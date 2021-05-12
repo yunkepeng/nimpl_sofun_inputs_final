@@ -24,7 +24,7 @@ library(cowplot)
 #input the current complete version of NPP_forest
 #before start everything - convert the measurement year before 1980 to 1980-1989 (which is consistent with what we set in climate forcing), so that we can run them sucessfully in rsofun later on.
 
-#For how to collect them. see L1-714 of "/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/NPP/Forest_site_orig.R"
+#For how to collect them. see L1-714 of "/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/NPP/Forest_site_orig.R" - sitename and sitename_fapar already been well checked
 NPP_Forest <- read.csv("/Users/yunpeng/data/NPP_final/NPP_Forest.csv")
 NPP_Forest$year_start <-NPP_Forest$Begin_year
 NPP_Forest$year_end <-NPP_Forest$End_year
@@ -348,6 +348,13 @@ CNrt <- as.data.frame(nc_to_df(read_nc_onefile(
 LMA <- as.data.frame(nc_to_df(read_nc_onefile(
   "~/data/nimpl_sofun_inputs/map/Final_ncfile/LMA.nc"),
   varnam = "LMA"))
+#plot lma for a second
+coordinates(LMA) <- ~lon+lat 
+gridded(LMA) <- TRUE
+
+r4 <- raster(LMA, "myvar") 
+plot(r4)
+
 
 #2. Create a function to specify path, loop many years nc file and output a dataframe (lon, lat, var).
 inputnc <- function(name,start_year,end_year){
@@ -494,7 +501,7 @@ NPP_Forest$pred_npp <- NPP_Forest$pred_gpp_c3 * (1/(1 + exp(-(-0.36075 * log(NPP
                                                                 -0.16213 * log(NPP_Forest$age) + 
                                                                 0.72793 * NPP_Forest$fAPAR+ 0.57014))))
 
-NPP_Forest$pred_anpp <- NPP_Forest$pred_gpp * (1/(1 + exp(-(-0.55151 * log(NPP_Forest$CNrt) +
+NPP_Forest$pred_anpp <- NPP_Forest$pred_gpp_c3 * (1/(1 + exp(-(-0.55151 * log(NPP_Forest$CNrt) +
                                                               -0.20050 * log(NPP_Forest$age) + 
                                                               1.06611 * NPP_Forest$fAPAR+ 0.35817))))
 
@@ -508,15 +515,15 @@ NPP_Forest$pred_wnpp <- NPP_Forest$pred_anpp - NPP_Forest$pred_lnpp
 
 #use rsofun - site-species
 #NPP_Forest$pred_leafnc <- (0.0162/0.5) + (0.0039/0.5) * NPP_Forest$max_vcmax25/NPP_Forest$LMA
-NPP_Forest$pred_leafnc <- (0.01599/0.5) + (0.005992/0.5) * NPP_Forest$max_vcmax25/NPP_Forest$LMA
+NPP_Forest$pred_leafnc <- (0.01599/0.46) + (0.005992/0.46) * NPP_Forest$max_vcmax25/NPP_Forest$LMA
 
 NPP_Forest$pred_lnf <- NPP_Forest$pred_lnpp*NPP_Forest$pred_leafnc
 
 #summary(NPP_Forest$CN_wood_final)
-NPP_Forest$pred_wnf <- NPP_Forest$pred_wnpp/97
+NPP_Forest$pred_wnf <- NPP_Forest$pred_wnpp/100
 
 hist(NPP_Forest$CN_root_final)
-summary(NPP_Forest$CN_root_final)#using median of root.
+summary(NPP_Forest$CN_root_final)
 
 NPP_Forest$pred_bnf <- NPP_Forest$pred_bnpp/122
 
@@ -528,9 +535,16 @@ NPP_Forest$CN_leaf_org[NPP_Forest$CN_leaf_org>100] <- NA
 #correct new dataset's rep_info
 NPP_Forest$rep_info[is.na(NPP_Forest$rep_info)==TRUE] <- ""
 
+#median of wood cn and root cn
+#using median of root = 94
+#using median of wood =100
+# see below
+summary(read.csv("/Users/yunpeng/data/CN_wood/wood_cn.csv")$OrigValueStr)
+#summary(NPP_Forest2$CN_root_final)
 #Remove rep and rep2 (rep1 and rep2 are paired repetation so we can safely remover rep2 since it is ForC, while rep1 is from Sara Vicca)
 NPP_Forest2 <- subset(NPP_Forest,rep_info!="rep" & rep_info!="rep2" &file!="NPP_Schulze")
 #Remove Schulze - their c/n unit is kg/ha - which is quite strange - we don't know how many species they considered for leaf C/N! See hist of their lnf_obs_org. Also, the reference is too old, which is not reliable when just citing them in a book
+summary(NPP_Forest2$CN_root_final)
 
 NPP_Forest2_sitemean <- aggregate(NPP_Forest2,by=list(NPP_Forest2$lon,NPP_Forest2$lat,NPP_Forest2$z), FUN=mean, na.rm=TRUE) #site-mean
 
@@ -591,6 +605,7 @@ ggplot(data=NPP_Forest2, aes(x=pred_lnf, y=lnf_obs_org)) +
 summary(lm(lnf_obs_org~pred_lnf,NPP_Forest2))
 
 #wnf - assuming constant wood/cn = 97
+
 ggplot(data=NPP_Forest2, aes(x=pred_wnf, y=wnf_obs_final)) +
   geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
   xlab("Prediction")+ylab("Observation")+theme_classic()+My_Theme
@@ -601,6 +616,8 @@ ggplot(data=NPP_Forest2, aes(x=pred_bnf, y=bnf_obs_final)) +
   geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
   xlab("Prediction")+ylab("Observation")+theme_classic()+My_Theme
 summary(lm(bnf_obs_final~pred_bnf,NPP_Forest2))
+
+NPP_Forest2 %>% group_by(file) %>% summarise(number = n())
 
 #leaf cn
 #(9) leafcn
@@ -615,7 +632,7 @@ sitemean$obs_leafn <- sitemean$narea/sitemean$lma
 
 ggplot(data=sitemean, aes(x=pred_leafn, y=obs_leafn)) +
   geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
-  xlab("Predicted Nmass (mg/g)")+ylab("Measured Nmass (mg/g)")+theme_classic()+My_Theme
+  xlab("Prediction")+ylab("Observation")+theme_classic()+My_Theme
 summary(lm(obs_leafn~pred_leafn,sitemean))
 
 #nuptake
@@ -716,7 +733,7 @@ for (i in 1:nrow(NRE_df)) {
 
 NRE_df$pred_nre <- NA
 NRE_df$vpd[NRE_df$vpd<0] <- NA
-NRE_df$pred_nre <- (1/(1+exp(-(-0.0679 *NRE_df$Tg + 0.4217 * log(NRE_df$vpd) + 1.4541))))
+NRE_df$pred_nre <- (1/(1+exp(-(-0.064460 *NRE_df$Tg + 0.402850 * log(NRE_df$vpd) + 1.368935))))
 
 NRE_df$NRE <- NRE_df$NRE/100
 
@@ -790,7 +807,7 @@ NPP_Forest_by_flux$pred_wnpp <- NPP_Forest_by_flux$pred_anpp - NPP_Forest_by_flu
 
 #use rsofun - site-species
 #NPP_Forest_by_flux$pred_leafnc <- (0.0162/0.5) + (0.0039/0.5) * NPP_Forest_by_flux$max_vcmax25/NPP_Forest_by_flux$LMA
-NPP_Forest_by_flux$pred_leafnc <- (0.01599/0.5) + (0.005992/0.5) * NPP_Forest_by_flux$max_vcmax25/NPP_Forest_by_flux$LMA
+NPP_Forest_by_flux$pred_leafnc <- (0.01599/0.46) + (0.005992/0.46) * NPP_Forest_by_flux$max_vcmax25/NPP_Forest_by_flux$LMA
 
 
 NPP_Forest_by_flux$pred_lnf <- NPP_Forest_by_flux$pred_lnpp*NPP_Forest_by_flux$pred_leafnc
