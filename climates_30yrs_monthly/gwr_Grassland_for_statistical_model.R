@@ -11,6 +11,7 @@ NPP_grassland$year_end[NPP_grassland$Begin_year<=1980] <- 1989
 gwr_sites <- aggregate(NPP_grassland,by=list(NPP_grassland$lon,NPP_grassland$lat,NPP_grassland$z,NPP_grassland$year_start,NPP_grassland$year_end), FUN=mean, na.rm=TRUE)
 gwr_sites <- gwr_sites[,c("lon","lat","z","Begin_year","End_year","year_start","year_end")]
 
+#always, prepare a site with 7 rows: c("lon","lat","z","Begin_year","End_year","year_start","year_end")
 summary(gwr_sites)
 dim(gwr_sites)
 
@@ -203,7 +204,6 @@ alpha_Tg_site <- alpha_site+ Tg_site - Tg_site # here + Tg - Tg means it conside
 alpha_Tg_site[alpha_Tg_site >1] <- 1
 alpha_Tg_site[alpha_Tg_site < 0] <- NA
 
-
 #merged now
 gwr_sites$alpha_gwr <- rowMeans(alpha_Tg_site,na.rm=TRUE)
 gwr_sites$PPFD_gwr <- rowMeans(PPFD_site,na.rm=TRUE)
@@ -212,27 +212,7 @@ gwr_sites$vpd_gwr <- rowMeans(vpd_site,na.rm=TRUE)
 
 summary(gwr_sites)
 
-gwr_sites <- gwr_sites[,!(names(gwr_sites) %in% c("year_start","year_end"))]
-summary(gwr_sites)
+#output it temporaily
+csvfile <- paste("/Users/yunpeng/data/NPP_Grassland_final/grassland_climates_gwr/grassland_climates.csv")
+write_csv(gwr_sites, path = csvfile)
 
-gwr_sites$alpha_direct <- alpha_site$alpha_directly
-
-NPP_Forest <- read.csv("/Users/yunpeng/data/NPP_final/NPP_Forest.csv")
-
-NPP_Forest_gwr <- merge(NPP_Forest,gwr_sites,by=c("lon","lat","z","Begin_year","End_year"),all.x=TRUE)
-
-
-
-NPP_Forest2 <- subset(NPP_Forest_gwr,rep_info!="rep" &rep_info!="rep2")
-NPP_statistical <- NPP_Forest2
-mod_tnpp <- lmer(log((TNPP_1/GPP)/(1-(TNPP_1/GPP))) ~ log(soilCN) + log(age) +observedfAPAR  + (1|site), data = NPP_statistical)
-summary(mod_tnpp)
-r.squaredGLMM(mod_tnpp)
-
-mod_anpp <- lmer(log((ANPP_2/GPP)/(1-(ANPP_2/GPP))) ~ log(soilCN) + log(age) +observedfAPAR + (1|site), data = NPP_statistical)
-summary(mod_anpp)
-r.squaredGLMM(mod_anpp)
-
-mod_lnpp <- lmer(log((NPP.foliage/ANPP_2)/(1-(NPP.foliage/ANPP_2))) ~ log(PPFD_gwr) + Tg_gwr + log(vpd_gwr) + (1|site), data = subset(NPP_statistical,file=="Sara Vicca"|file=="ForC"))
-summary(mod_lnpp)
-r.squaredGLMM(mod_lnpp)

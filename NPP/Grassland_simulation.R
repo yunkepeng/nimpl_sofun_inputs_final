@@ -492,143 +492,111 @@ My_Theme = theme(
   axis.text.x = element_text(size = 20),
   axis.title.y = element_text(size = 14),
   axis.text.y = element_text(size = 20))
-#median = 46
-summary(NPP_grassland_final4$CN_root_final)
 
+
+#npp/gpp model. Now, sites are too less when construct model for npp/gpp, let's aggregate them firstly.
+NPP_grassland_final5_gpp_npp_anpp <- aggregate(NPP_grassland_final4,by=list(NPP_grassland_final4$lon,NPP_grassland_final4$lat,NPP_grassland_final4$z), FUN=mean, na.rm=TRUE)
+summary(lm((TNPP_1)~-1+(weightedgpp_all),data=NPP_grassland_final5_gpp_npp_anpp)) #0.435 for using weighted gpp (df = 79)
+#summary(lm((TNPP_1)~-1+(GPP),data=NPP_grassland_final5_gpp_npp_anpp)) #0.389 for using measured gpp (df=18)
+
+#anpp/gpp model.
+summary(lm((ANPP_2)~-1+(weightedgpp_all),data=NPP_grassland_final5_gpp_npp_anpp)) #anpp/tnpp = 0.44730 (df = 78)
+#leaf c/n model. median = 18
+summary(NPP_grassland_final5_gpp_npp_anpp$CN_leaf_final)
+#root c/n model median = 46
+summary(NPP_grassland_final5_gpp_npp_anpp$CN_root_final)
+
+#constant only
+NPP_grassland_final4$pred_npp <- NPP_grassland_final4$weightedgpp_all * 0.435
+NPP_grassland_final4$pred_anpp <- NPP_grassland_final4$weightedgpp_all * 0.228
+NPP_grassland_final4$pred_lnf <- NPP_grassland_final4$pred_anpp/18
+NPP_grassland_final4$pred_bnpp <- NPP_grassland_final4$pred_npp - NPP_grassland_final4$pred_anpp
+NPP_grassland_final4$pred_bnf <- NPP_grassland_final4$pred_bnpp/46
+
+#anpp_gpp <- 0.302399 + 0.0126378*NPP_grassland_final4$Tg + -0.580933*NPP_grassland_final4$fapar
+#anpp_gpp[anpp_gpp<0]
+#anpp_gpp[anpp_gpp<0] <- NA
+#NPP_grassland_final4$pred_anpp_reg <- anpp_gpp * NPP_grassland_final4$weightedgpp_all
+
+#gpp r2 = 0.29
 ggplot(NPP_grassland_final4, aes(x=weightedgpp_all, y=GPP)) +
   geom_point(aes(color=factor(file)))+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
   xlab("Predicted GPP")+ylab("Measured GPP")+theme_classic() + My_Theme +ggtitle("Observed GPP vs. Predicted GPP")
 summary(lm(GPP~weightedgpp_all,data=NPP_grassland_final4))
 
-#npp/gpp model. Now, sites are too less when construct model for npp/gpp, let's aggregate them firstly.
-NPP_grassland_final5_gpp_npp_anpp <- aggregate(NPP_grassland_final4,by=list(NPP_grassland_final4$lon,NPP_grassland_final4$lat,NPP_grassland_final4$z), FUN=mean, na.rm=TRUE)
-summary(lm((TNPP_1)~-1+(weightedgpp_all),data=NPP_grassland_final5_gpp_npp_anpp)) #0.435 for using weighted gpp (df = 79)
-summary(lm((TNPP_1)~-1+(GPP),data=NPP_grassland_final5_gpp_npp_anpp)) #0.389 for using measured gpp (df=18)
-
-summary(lm((TNPP_1/weightedgpp_all)~Tg,data=NPP_grassland_final5_gpp_npp_anpp))
-summary(lm((TNPP_1/weightedgpp_all)~vpd,data=NPP_grassland_final5_gpp_npp_anpp))
-
-#anpp/gpp model.
-summary(lm((ANPP_2)~-1+(TNPP_1),data=NPP_grassland_final5_gpp_npp_anpp)) #anpp/tnpp = 0.44730 (df = 78)
-
-summary(lmer((ANPP_2/weightedgpp_all)~Tg+fapar+(1|site),data=NPP_grassland_final4))
-r.squaredGLMM(lmer((ANPP_2/weightedgpp_all)~Tg+fapar+(1|site),data=NPP_grassland_final4))
-
-
-#now, predictions - 1. constant only
-NPP_grassland_final4$pred_npp <- NPP_grassland_final4$weightedgpp_all * 0.435
-NPP_grassland_final4$pred_anpp <- NPP_grassland_final4$pred_npp * 0.44730
-
-#now, predictions - 2. constant + regression
-NPP_grassland_final4$pred_npp <- NPP_grassland_final4$weightedgpp_all * 0.435
-# 2 points were negative - NA
-anpp_gpp <- 0.302399 + 0.0126378*NPP_grassland_final4$Tg + -0.580933*NPP_grassland_final4$fapar
-anpp_gpp[anpp_gpp<0]
-anpp_gpp[anpp_gpp<0] <- NA
-
-NPP_grassland_final4$pred_anpp_reg <- anpp_gpp * NPP_grassland_final4$weightedgpp_all
-
-#####npp
+#####npp r2 = 0.1128
 ggplot(NPP_grassland_final4, aes(x=pred_npp, y=TNPP_1)) +
-  geom_point(aes(color=factor(Management.code)))+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
+  geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
   xlab("Predicted NPP")+ylab("Measured NPP")+theme_classic() + My_Theme 
 summary(lm(TNPP_1~pred_npp,data=NPP_grassland_final4))
 
-####anpp by regressions prediction
-ggplot(NPP_grassland_final4, aes(x=pred_anpp_reg, y=ANPP_2)) +
-  geom_point(aes(color=factor(Management.code)))+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
-  xlab("Predicted ANPP")+ylab("Measured ANPP")+theme_classic() + My_Theme 
-summary(lm(ANPP_2~pred_anpp_reg,data=NPP_grassland_final4)) 
-
-#anpp by constant
+####anpp r2 = 0.1732
 ggplot(NPP_grassland_final4, aes(x=pred_anpp, y=ANPP_2)) +
-  geom_point(aes(color=factor(Management.code)))+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
+  geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
   xlab("Predicted ANPP")+ylab("Measured ANPP")+theme_classic() + My_Theme 
 summary(lm(ANPP_2~pred_anpp,data=NPP_grassland_final4)) 
 
-#anpp by constant (better, but removing SN?)
-ggplot(subset(NPP_grassland_final4,Management.code=="N"), aes(x=pred_anpp, y=ANPP_2)) +
-  geom_point(aes(color=factor(Management.code)))+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
-  xlab("Predicted ANPP")+ylab("Measured ANPP")+theme_classic() + My_Theme 
-summary(lm(ANPP_2~pred_anpp_reg,data=subset(NPP_grassland_final4,Management.code=="N"))) 
-
-NPP_grassland_final4 %>% group_by(file) %>% summarise(number = n())
-
-
-
-#calculate weighted MAX vcmax25 from max_vcmax25_c3 and max_vcmax25_c4, based on final measured c3/c4 percentage.
-NPP_grassland_final4$maxvcmax25_all <- (NPP_grassland_final4$max_vcmax25_c3 * NPP_grassland_final4$c3_percentage_final)+
-  (NPP_grassland_final4$max_vcmax25_c4 * (1-NPP_grassland_final4$c3_percentage_final))
-
-#input lma
-LMA <- as.data.frame(nc_to_df(read_nc_onefile(
-  "~/data/nimpl_sofun_inputs/map/Final_ncfile/LMA.nc"),varnam = "LMA"))
-
-LMA_df <- cbind(elev,LMA$myvar)
-names(LMA_df) <- c("lon","lat","z","LMA")
-a <- 1.5
-
-NPP_grassland_final4$LMA <- NA
-
-for (i in 1:nrow(NPP_grassland_final4)) {
-  tryCatch({
-    #LMA
-    LMA_global <- na.omit(LMA_df)
-    NRE_part <- subset(LMA_global,lon>(NPP_grassland_final4[i,"lon"]-a)&lon<(NPP_grassland_final4[i,"lon"]+a)&
-                         lat>(NPP_grassland_final4[i,"lat"]-a)&lat<(NPP_grassland_final4[i,"lat"]+a))
-    coordinates(NRE_part) <- c("lon","lat")
-    gridded(NRE_part) <- TRUE
-    NRE_coord <- NPP_grassland_final4[i, c("lon","lat","z")]
-    coordinates(NRE_coord) <- c("lon","lat")
-    NPP_grassland_final4[i,c("LMA")]  <- (gwr(LMA ~ z, NRE_part, bandwidth = 1.06, fit.points =NRE_coord,predictions=TRUE))$SDF$pred
-  }, error=function(e){})} 
-
-
-#using weighted max vcmax25 from rsofun, from c3/c4 measured info
-NPP_grassland_final4$pred_leafnc <- (0.01599/0.46) + (0.005992/0.46) * NPP_grassland_final4$maxvcmax25_all/NPP_grassland_final4$LMA 
-
-NPP_grassland_final4$pred_lnf <- NPP_grassland_final4$pred_leafnc*NPP_grassland_final4$pred_anpp_reg
-
-
+#leaf N flux r2 = 0.096
 ggplot(NPP_grassland_final4, aes(x=pred_lnf, y=lnf_obs_final)) +
   geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+ xlim(c(0,10))+
   xlab("Predicted leaf N flux")+ylab("Measured leaf N flux")+theme_classic() + My_Theme
-summary(lm(pred_lnf~lnf_obs_final,data=NPP_grassland_final4))
+summary(lm(lnf_obs_final~pred_lnf,data=NPP_grassland_final4)) 
 
-NPP_grassland_final4$pred_bnpp <- NPP_grassland_final4$pred_npp - NPP_grassland_final4$pred_anpp_reg
-NPP_grassland_final4$pred_bnf <- NPP_grassland_final4$pred_bnpp/46
+#add legume and biome
+legume_N <- read.csv("/Users/yunpeng/data/npp_stoichiometry_grasslands_tiandi/China_grassland_CN_stoichiometry_with_matched_NPP_species_legume_20201214.csv")
+legume_N_only <- subset(legume_N,Legume_CN=="N"|Legume_CN=="N_N"|
+                          Legume_CN=="N_N_N"|Legume_CN=="N_N_N_N"|Legume_CN=="N_N_N_N_N")
+legume_N_only <- legume_N_only[,c("Longitude_CN","Latitude_CN","Altitude_CN")]
+legume_N_only_site <- aggregate(legume_N_only,by=list(legume_N_only$Longitude_CN,
+                                                      legume_N_only$Latitude_CN,
+                                                      legume_N_only$Altitude_CN), mean,na.rm=TRUE)
+legume_N_only_site <- legume_N_only_site[,c("Longitude_CN","Latitude_CN","Altitude_CN")]
+names(legume_N_only_site) <- c("lon","lat","z")
+legume_N_only_site$legume <- "N"
+NPP_grassland_final4$no <- c(1:nrow(NPP_grassland_final4))
+NPP_grassland_final4_legume <-Reduce(function(x,y) merge(x = x, y = y, by = c("lon","lat","z"),all.x=TRUE), 
+                                     list(NPP_grassland_final4,legume_N_only_site))
+NPP_grassland_final4_legume <- NPP_grassland_final4_legume[order(NPP_grassland_final4_legume$no), ]
 
+subset(NPP_grassland_final4_legume,lnf_obs_final>0) %>% group_by(legume) %>% summarise(number = n())
+summary(subset(NPP_grassland_final4_legume,legume=="N")$CN_leaf_final)
+summary(subset(NPP_grassland_final4_legume,is.na(legume)==TRUE)$CN_leaf_final)
 
+ggplot(NPP_grassland_final4_legume, aes(x=pred_lnf, y=lnf_obs_final)) +
+  geom_point(aes(color=factor(legume)))+geom_abline(intercept=0,slope=1)+geom_smooth(aes(color=factor(legume)),method = "lm", se = TRUE)+ xlim(c(0,10))+
+  xlab("Predicted leaf N flux")+ylab("Measured leaf N flux")+theme_classic() + My_Theme
+summary(lm(lnf_obs_final~pred_lnf,data=NPP_grassland_final4)) 
+summary(lm(lnf_obs_final~pred_lnf,data=subset(NPP_grassland_final4_legume,legume=="N"))) 
+
+china <- (subset(NPP_grassland_final4_legume,file=="Tiandi Grassland"))
+
+china <- china[order(china$lon,china$lat,china$z,china$ANPP_2,china$CN_leaf_final), ]
+dim(china)
+
+biome_more <- read.csv("/Users/yunpeng/data/npp_stoichiometry_grasslands_tiandi/npp_stoichiometry_china_grassland_CN_stoichiometry_with_matched_NPP_data_from_Prof_Fang_group_20201026.csv")
+dim(biome_more)
+biome_more <- biome_more[order(biome_more$Longitude_stoichiometry,biome_more$Latitude_stoichiometry,
+                               biome_more$Altitude_stoichiometry,biome_more$ANPP,biome_more$CNratio_leaf), ]
+summary(biome_more$Longitude_stoichiometry - china$lon)
+summary(biome_more$Latitude_stoichiometry - china$lat)
+summary(biome_more$Altitude_stoichiometry - china$z)
+
+china$Vegetation_type_stoichiometry <- biome_more$Vegetation_type_stoichiometry
+
+china$pred_lnf_new <- china$weightedgpp_all*0.228/18
+ggplot(china, aes(x=pred_lnf, y=lnf_obs_final)) +geom_abline(intercept=0,slope=1)+geom_smooth(aes(color=factor(Vegetation_type_stoichiometry)),method = "lm", se = TRUE)+ xlim(c(0,10))+
+  xlab("Predicted leaf N flux")+ylab("Measured leaf N flux")+theme_classic() + My_Theme
+
+#bnpp
 ggplot(NPP_grassland_final4, aes(x=pred_bnpp, y=BNPP_1)) +
   geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+ 
   xlab("Predicted BNPP")+ylab("Measured BNPP")+theme_classic() + My_Theme
+summary(lm(BNPP_1~pred_bnpp,data=NPP_grassland_final4)) 
 
+#bnf
 ggplot(NPP_grassland_final4, aes(x=pred_bnf, y=bnf_obs_final)) +
   geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+ 
   xlab("Predicted BNF")+ylab("Measured BNF")+theme_classic() + My_Theme
+summary(lm(bnf_obs_final~pred_bnf,data=NPP_grassland_final4)) 
 
 save.image(file = "/Users/yunpeng/data/NPP_Grassland_final/grass_simulation.Rdata")
-
-####gpp
-ggplot(NPP_grassland_final4, aes(x=weightedgpp_all, y=GPP)) +
-  geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
-  xlab("Predicted GPP")+ylab("Measured GPP")+theme_classic() + My_Theme +ggtitle("Observed GPP vs. Predicted GPP")
-summary(lm(GPP~weightedgpp_all,data=NPP_grassland_final4))
-
-#####npp
-ggplot(NPP_grassland_final4, aes(x=pred_npp, y=TNPP_1)) +
-  geom_point(aes(color=factor(Management.code)))+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
-  xlab("Predicted NPP")+ylab("Measured NPP")+theme_classic() + My_Theme 
-summary(lm(TNPP_1~pred_npp,data=NPP_grassland_final4))
-
-####anpp by regressions prediction
-ggplot(NPP_grassland_final4, aes(x=pred_anpp_reg, y=ANPP_2)) +
-  geom_point(aes(color=factor(Management.code)))+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
-  xlab("Predicted ANPP")+ylab("Measured ANPP")+theme_classic() + My_Theme 
-summary(lm(ANPP_2~pred_anpp_reg,data=NPP_grassland_final4)) 
-
-ggplot(NPP_grassland_final4, aes(x=pred_lnf, y=lnf_obs_final)) +
-  geom_point(aes(color=factor(Management.code)))+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+ xlim(c(0,10))+
-  xlab("Predicted leaf N flux")+ylab("Measured leaf N flux")+theme_classic() + My_Theme
-summary(lm(pred_lnf~lnf_obs_final,data=NPP_grassland_final4))
-
