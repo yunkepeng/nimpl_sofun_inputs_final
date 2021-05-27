@@ -494,8 +494,8 @@ CN_Malhi <- read.csv(file="~/data/NPP_Yunke/npp_cn/CN_Malhi.csv")
 #No original data of cmass but we can assume cmass = 46%, because (1) it is consistent with what we find in mean values of ~/data/leaf_traits/combined_leaf_traits.csv, equals to 46% and (2) see Enquist et al. 2017 https://onlinelibrary.wiley.com/doi/full/10.1111/geb.12645 - fig.2, overall the cmass was within a very small variance through this elevation transect, and we can just assume this value as 0.48!
 #set Average Cmass as 46%, based on latest (and largest) leaf traits database in ~/data/leaf_traits/combined_leaf_traits.csv
 
-CN_Malhi$CN_leaf_alt_malhi <- 0.46/(CN_Malhi$narea/CN_Malhi$lma) # use CN_leaf_alt as a new and alternative variable, by storing data when Cmass or (c%) is lacking.
-CN_Malhi <- na.omit(CN_Malhi)
+CN_Malhi$CN_leaf_alt_malhi <- CN_Malhi$cmass/CN_Malhi$nmass 
+CN_Malhi <- subset(CN_Malhi,CN_leaf_alt_malhi>0)
 CN_Malhi2 <- CN_Malhi[,c("site","CN_leaf_alt_malhi")]
 
 
@@ -737,8 +737,8 @@ NPP_Forest$file[NPP_Forest$z!=NPP_old$z |
 #aaa <- subset(NPP_Forest,NPP.foliage - NPP.foliage_old > 0.1 | NPP.foliage - NPP.foliage_old < -0.1)
 #aaa <- subset(NPP_Forest,CN_leaf_org - CN_leaf_org_old > 0.1 | CN_leaf_org - CN_leaf_org_old < -0.1)
 
-#csvfile <- paste("/Users/yunpeng/data/NPP_final/NPP_Forest.csv")
-#write_csv(NPP_Forest, path = csvfile)
+csvfile <- paste("/Users/yunpeng/data/NPP_final/NPP_Forest.csv")
+write_csv(NPP_Forest, path = csvfile)
 
 ### Grassland: collect unchanged climate forcing data, based on same lon+lat+z+Begin_year+End_year, 
 #old

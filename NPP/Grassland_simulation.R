@@ -494,15 +494,22 @@ My_Theme = theme(
   axis.text.y = element_text(size = 20))
 
 
-#npp/gpp model. Now, sites are too less when construct model for npp/gpp, let's aggregate them firstly.
 NPP_grassland_final5_gpp_npp_anpp <- aggregate(NPP_grassland_final4,by=list(NPP_grassland_final4$lon,NPP_grassland_final4$lat,NPP_grassland_final4$z), FUN=mean, na.rm=TRUE)
-summary(lm((TNPP_1)~-1+(weightedgpp_all),data=NPP_grassland_final5_gpp_npp_anpp)) #0.435 for using weighted gpp (df = 79)
+
+#npp/gpp model. Now, sites are too less when construct model for npp/gpp, let's aggregate them firstly.
+tnpp_grass <- (lm((TNPP_1)~-1+(weightedgpp_all),data=NPP_grassland_final5_gpp_npp_anpp)) #0.435 for using weighted gpp (df = 79)
+summary(tnpp_grass)
 #summary(lm((TNPP_1)~-1+(GPP),data=NPP_grassland_final5_gpp_npp_anpp)) #0.389 for using measured gpp (df=18)
+save(tnpp_grass, file = "/Users/yunpeng/data/NPP_grassland_final/statistical_model/tnpp_grass.RData")
 
 #anpp/gpp model.
-summary(lm((ANPP_2)~-1+(weightedgpp_all),data=NPP_grassland_final5_gpp_npp_anpp)) #anpp/tnpp = 0.44730 (df = 78)
+anpp_grass <- (lm((ANPP_2)~-1+(weightedgpp_all),data=NPP_grassland_final5_gpp_npp_anpp)) #anpp/tnpp = 0.44730 (df = 78)
+summary(anpp_grass)
+save(anpp_grass, file = "/Users/yunpeng/data/NPP_grassland_final/statistical_model/anpp_grass.RData")
+
 #leaf c/n model. median = 18
 summary(NPP_grassland_final5_gpp_npp_anpp$CN_leaf_final)
+
 #root c/n model median = 46
 summary(NPP_grassland_final5_gpp_npp_anpp$CN_root_final)
 
@@ -511,7 +518,7 @@ NPP_grassland_final4$pred_npp <- NPP_grassland_final4$weightedgpp_all * 0.435
 NPP_grassland_final4$pred_anpp <- NPP_grassland_final4$weightedgpp_all * 0.228
 NPP_grassland_final4$pred_lnf <- NPP_grassland_final4$pred_anpp/18
 NPP_grassland_final4$pred_bnpp <- NPP_grassland_final4$pred_npp - NPP_grassland_final4$pred_anpp
-NPP_grassland_final4$pred_bnf <- NPP_grassland_final4$pred_bnpp/46
+NPP_grassland_final4$pred_bnf <- NPP_grassland_final4$pred_bnpp/41
 
 #anpp_gpp <- 0.302399 + 0.0126378*NPP_grassland_final4$Tg + -0.580933*NPP_grassland_final4$fapar
 #anpp_gpp[anpp_gpp<0]
@@ -519,9 +526,13 @@ NPP_grassland_final4$pred_bnf <- NPP_grassland_final4$pred_bnpp/46
 #NPP_grassland_final4$pred_anpp_reg <- anpp_gpp * NPP_grassland_final4$weightedgpp_all
 
 #gpp r2 = 0.29
+NPP_grassland_final4
+csvfile <- paste("/Users/yunpeng/data/NPP_Grassland_final/NPP_grass_validation.csv")
+write.csv(NPP_grassland_final4, csvfile, row.names = TRUE)
+
 ggplot(NPP_grassland_final4, aes(x=weightedgpp_all, y=GPP)) +
-  geom_point(aes(color=factor(file)))+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
-  xlab("Predicted GPP")+ylab("Measured GPP")+theme_classic() + My_Theme +ggtitle("Observed GPP vs. Predicted GPP")
+  geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
+  xlab("Predicted GPP")+ylab("Measured GPP")+theme_classic() + My_Theme #+ggtitle("Observed GPP vs. Predicted GPP")
 summary(lm(GPP~weightedgpp_all,data=NPP_grassland_final4))
 
 #####npp r2 = 0.1128
@@ -587,7 +598,56 @@ china$pred_lnf_new <- china$weightedgpp_all*0.228/18
 ggplot(china, aes(x=pred_lnf, y=lnf_obs_final)) +geom_abline(intercept=0,slope=1)+geom_smooth(aes(color=factor(Vegetation_type_stoichiometry)),method = "lm", se = TRUE)+ xlim(c(0,10))+
   xlab("Predicted leaf N flux")+ylab("Measured leaf N flux")+theme_classic() + My_Theme
 
+#do some filtering here
+china %>% group_by(Vegetation_type_stoichiometry)  %>% summarise(number = n())
+china$pft_china[china$Vegetation_type_stoichiometry=="Alpine meadow"|
+                  china$Vegetation_type_stoichiometry=="Alpine scrub"|
+                  china$Vegetation_type_stoichiometry=="Alpine steppe"] <- "Alpine (meadow, scrub, steppe) biome"
+
+china$pft_china[china$Vegetation_type_stoichiometry=="Desert"|
+                  china$Vegetation_type_stoichiometry=="Desert steppe"] <- "Desert biome"
+
+china$pft_china[china$Vegetation_type_stoichiometry=="Meadow steppe"|
+                  china$Vegetation_type_stoichiometry=="Typical steppe"] <- "Typical and meadow steppe"  
+
+china$pft_china[china$Vegetation_type_stoichiometry=="Temperate meadow"|
+                  china$Vegetation_type_stoichiometry=="Temperate scrub"] <- "Temperate (meadow, scrub) biome"  
+
+china %>% group_by(c3_percentage_final)  %>% summarise(number = n())
+
+china$c3_china[china$c3_percentage_final<1] <- "c4"
+china$c3_china[china$c3_percentage_final==1] <- "c3"
+
+
+ggplot(china, aes(x=pred_lnf, y=lnf_obs_final)) +geom_abline(intercept=0,slope=1)+geom_smooth(aes(color=factor(c3_percentage_final)),method = "lm", se = TRUE)+ xlim(c(0,10))+
+  xlab("Predicted leaf N flux")+ylab("Measured leaf N flux")+theme_classic() + My_Theme
+
+#first - c3 and c4
+#using plyr to produce means for each type
+library(plyr)
+ggplot(china, aes(x = lnf_obs_final, fill = c3_china)) +labs(x = "Leaf N uptake (gN/m2/yr)")+
+  geom_density(alpha = .3) + #alpha used for filling the density
+  geom_vline(data =  ddply(china, "c3_china", summarise, rating.mean = mean(lnf_obs_final,na.rm=TRUE)),
+             aes(xintercept = rating.mean, colour = c3_china),
+             linetype = "longdash", size=1)+ theme_classic()+ My_Theme+ theme(legend.title = element_text(size = 20),legend.text = element_text(size = 15))
+
+ggplot(china, aes(x = lnf_obs_final, fill = pft_china)) +labs(x = "Leaf N uptake (gN/m2/yr)")+
+  geom_density(alpha = .3) + #alpha used for filling the density
+  geom_vline(data = ddply(china, "pft_china", summarise, rating.mean = mean(lnf_obs_final,na.rm=TRUE)), 
+             aes(xintercept = rating.mean, colour = pft_china),
+             linetype = "longdash", size=1)+ theme_classic()+ My_Theme+ theme(legend.title = element_text(size = 20),legend.text = element_text(size = 15))
+
+china$legume[china$legume=="N"] <- "Non-legume species"
+china$legume[is.na(china$legume)==TRUE] <- "Legume species"
+
+ggplot(china, aes(x = lnf_obs_final, fill = legume)) +labs(x = "Leaf N uptake (gN/m2/yr)")+
+  geom_density(alpha = .3) + #alpha used for filling the density
+  geom_vline(data = ddply(china, "legume", summarise, rating.mean = mean(lnf_obs_final,na.rm=TRUE)), 
+             aes(xintercept = rating.mean, colour = legume),
+             linetype = "longdash", size=1)+ theme_classic()+ My_Theme+ theme(legend.title = element_text(size = 20),legend.text = element_text(size = 15))
+
 #bnpp
+
 ggplot(NPP_grassland_final4, aes(x=pred_bnpp, y=BNPP_1)) +
   geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+ 
   xlab("Predicted BNPP")+ylab("Measured BNPP")+theme_classic() + My_Theme

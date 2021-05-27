@@ -148,6 +148,8 @@ site_a <- NPP_statistical$site
 mod_tnpp <- lmer( tnpp_gpp_a ~ soilCN_a + age_a + observedfAPAR_a  + (1|site_a))
 summary(mod_tnpp)
 r.squaredGLMM(mod_tnpp)
+save(mod_tnpp, file = "/Users/yunpeng/data/NPP_final/statistical_model/mod_tnpp.RData")
+
 library(visreg)
 visreg(mod_tnpp,"soilCN_a",type="contrast",line=list(col="black",lwd=2), points=list(cex=0.5, pch=16,col="black"),
        ylab=" ",xlab=" ")
@@ -161,6 +163,8 @@ anpp_gpp_b <- log((NPP_statistical$ANPP_2/NPP_statistical$GPP)/(1-(NPP_statistic
 mod_anpp <- lmer(anpp_gpp_b ~ soilCN_a + age_a + observedfAPAR_a  + (1|site_a))
 summary(mod_anpp)
 r.squaredGLMM(mod_anpp)
+save(mod_anpp, file = "/Users/yunpeng/data/NPP_final/statistical_model/mod_anpp.RData")
+
 visreg(mod_anpp,"soilCN_a",type="contrast",line=list(col="black",lwd=2), points=list(cex=0.5, pch=16,col="black"),
        ylab=" ",xlab=" ")
 visreg(mod_anpp,"age_a",type="contrast",line=list(col="black",lwd=2), points=list(cex=0.5, pch=16,col="black"),
@@ -179,6 +183,7 @@ site_c <- lnpp_data$site
 mod_lnpp <- lmer(lnpp_anpp_c ~ PPFD_c + Tg_c + vpd_c + (1|site_c))
 summary(mod_lnpp)
 r.squaredGLMM(mod_lnpp)
+save(mod_lnpp, file = "/Users/yunpeng/data/NPP_final/statistical_model/mod_lnpp.RData")
 
 visreg(mod_lnpp,"PPFD_c",type="contrast",line=list(col="black",lwd=2), points=list(cex=0.5, pch=16,col="black"),
        ylab=" ",xlab=" ")
@@ -189,7 +194,7 @@ visreg(mod_lnpp,"vpd_c",type="contrast",line=list(col="black",lwd=2), points=lis
 
 ```
 
-4. Leaf Nmass ~ Vcmax25/LMA (site-species mean), using mixed-effects model. it considered (1|site) and (1|species) as the only random factor. 
+4. Leaf Nmass ~ Vcmax25/LMA (site-species mean), using mixed-effects model based on large dataset from Peng et al. 2021 Communications Biology. it considered (1|site) and (1|species) as the only random factor. 
 ```{r}
 library(lme4)
 library(nlme)
@@ -198,7 +203,10 @@ library("PerformanceAnalytics")
 library(MuMIn)
 library(tidyverse)
 
-SP_input <- read.csv(file="/Users/yunpeng/data/leaf_traits/combined_leaf_traits.csv") #new one 
+SP_input <- read.csv(file="/Users/yunpeng/data/leaf_traits/combined_leaf_traits_updated.csv") #new one sss
+
+#remove bahar, as repeated to atkin
+SP_input <- subset(SP_input,source!="Bahar et al 2017 New Phytologist")
 
 SP_input$Vcmax.25 <- SP_input$Vcmax25
 SP_input$Elevation <- SP_input$z
@@ -237,11 +245,10 @@ hist(sitespecies_final$Vcmax.25) # umol/m2/s
 library(lme4)
 
 #3. Fit (Nmass) ~ Ns + Nr * (Vcmax25/LMA) - for site-species data
-
-
 n1 <- lmer(nmass_a~vcmax25_lma_a + (1|sitename_a)+(1|species_a))
 summary(n1)
 r.squaredGLMM(n1)
+save(n1, file = "/Users/yunpeng/data/NPP_final/statistical_model/nmass.RData")
 
 visreg(n1,"vcmax25_lma_a",type="contrast",line=list(col="black",lwd=2), points=list(cex=0.5, pch=16,col="black"),
        ylab=" ",xlab=" ")
@@ -466,6 +473,8 @@ Tg_a <- NRE_climate$Tg
 vpd_a <- log(NRE_climate$vpd)
 
 nre_model <- lm(nre_a~Tg_a+vpd_a)
+save(nre_model, file = "/Users/yunpeng/data/NPP_final/statistical_model/nre_model.RData")
+
 summary(nre_model)
 visreg(nre_model,"Tg_a",type="contrast",line=list(col="black",lwd=2), points=list(cex=0.5, pch=16,col="black"),
        ylab=" ",xlab=" ")

@@ -69,6 +69,43 @@ monthly_radi <- monthly_WFDEI("SWdown",1980,2016,"/Volumes/My Passport/data/watc
 
 save.image(file = "/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/climates_30yrs_monthly/WFDEI_CRU_1980_2016.Rdata")
 
+#also, qair
+all_list <- list.files("/Volumes/My Passport/data/watch_wfdei/Qair_daily/",full.names = T)
+all_list[1] #197901
+all_list[480] #201812
+
+monthly_WFDEI <- function(variable,start_yr,end_yr,location){
+  all_list <- list.files(location,full.names = T)
+  first_one <- (start_yr-1978)*12-11
+  end_one <- (end_yr-1978)*12
+  years_list <- all_list[first_one:end_one]
+  output_allyears <- data.frame(matrix(NA))
+  #calculate average of each monthly data, within the selected years
+  
+  for (x in 1:length(years_list)){
+    ncin <- nc_open(years_list[x])
+    tstep<-ncvar_get(ncin,"timestp")
+    n_days <- length(tstep)
+    var_all <-ncvar_get(ncin,variable)
+    nc_close(ncin)
+    var_all2 <- as.vector(var_all)
+    var_all3 <- matrix(var_all2, nrow = 720 * 360, ncol = n_days)
+    var_all4 <- rowMeans(var_all3,na.rm = TRUE)
+    output_allyears[1:259200,x] <- var_all4
+  }
+  #get coordinates info, and combine with final monthly average within selected years
+  ncin <- nc_open(years_list[1])
+  lon <- ncvar_get(ncin,"lon")
+  lat<-ncvar_get(ncin,"lat")
+  nc_close(ncin)
+  
+  lonlat <- expand.grid(lon, lat)
+  output_WFDEI <- cbind(lonlat,output_allyears)
+}
+
+monthly_qair <- monthly_WFDEI("Qair",1980,2016,"/Volumes/My Passport/data/watch_wfdei/Qair_daily/")
+rm(elev)
+save.image(file = "/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/climates_30yrs_monthly/WFDEI_qair.Rdata")
 
 
 #below is what we copied to prediction.Rmd, to output climate prediction fields 
