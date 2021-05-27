@@ -497,55 +497,65 @@ plot(newmap, xlim = c(-180, 180), ylim = c(-75, 75), asp = 1)
 points(subset(NPP_Forest,is.na(LMA)==TRUE)$lon,subset(NPP_Forest,is.na(LMA)==TRUE)$lat, col="red", pch=16,cex=1)
 #these sites have no data for LMA, CNrt age and fAPAR.
 
-#now, using several statistical models to predict npp, anpp, npp.leaf....
-NPP_Forest$pred_npp <- NPP_Forest$pred_gpp_c3 * (1/(1 + exp(-(-0.36075 * log(NPP_Forest$CNrt) +
-                                                                -0.16213 * log(NPP_Forest$age) + 
-                                                                0.72793 * NPP_Forest$fAPAR+ 0.57014))))
+#load statistical model coefficients
+load("/Users/yunpeng/data/NPP_final/statistical_model/mod_tnpp.RData")
+summary(mod_tnpp)
+load("/Users/yunpeng/data/NPP_final/statistical_model/mod_anpp.RData")
+summary(mod_anpp)
+load("/Users/yunpeng/data/NPP_final/statistical_model/mod_lnpp.RData")
+summary(mod_lnpp)
+load("/Users/yunpeng/data/NPP_final/statistical_model/nmass.RData")
+summary(n1)
+load("/Users/yunpeng/data/NPP_final/statistical_model/nre_model.RData")
+summary(nre_model)
 
-NPP_Forest$pred_anpp <- NPP_Forest$pred_gpp_c3 * (1/(1 + exp(-(-0.55151 * log(NPP_Forest$CNrt) +
-                                                              -0.20050 * log(NPP_Forest$age) + 
-                                                              1.06611 * NPP_Forest$fAPAR+ 0.35817))))
+#now, using several statistical models to predict npp, anpp, npp.leaf....
+NPP_Forest$pred_npp <- NPP_Forest$pred_gpp_c3 * (1/(1 + exp(-(summary(mod_tnpp)$coefficients[1,1] + 
+                                                                summary(mod_tnpp)$coefficients[2,1] * log(NPP_Forest$CNrt) +
+                                                                summary(mod_tnpp)$coefficients[3,1] * log(NPP_Forest$age) + 
+                                                                summary(mod_tnpp)$coefficients[4,1] * NPP_Forest$fAPAR))))
+
+NPP_Forest$pred_anpp <- NPP_Forest$pred_gpp_c3 * (1/(1 + exp(-(summary(mod_anpp)$coefficients[1,1]+
+                                                                 summary(mod_anpp)$coefficients[2,1] * log(NPP_Forest$CNrt) +
+                                                                 summary(mod_anpp)$coefficients[3,1] * log(NPP_Forest$age) + 
+                                                                 summary(mod_anpp)$coefficients[4,1] * NPP_Forest$fAPAR))))
 
 NPP_Forest$pred_bnpp <- NPP_Forest$pred_npp - NPP_Forest$pred_anpp
 
-NPP_Forest$pred_lnpp <- NPP_Forest$pred_anpp * (1/(1 + exp(-(0.97093* log(NPP_Forest$PPFD) +
-                                                               0.06453 * (NPP_Forest$Tg) + 
-                                                               -0.80397 * log(NPP_Forest$vpd) + -7.47165))))
+NPP_Forest$pred_lnpp <- NPP_Forest$pred_anpp * (1/(1 + exp(-(summary(mod_lnpp)$coefficients[1,1]+
+                                                               summary(mod_lnpp)$coefficients[2,1]* log(NPP_Forest$PPFD) +
+                                                               summary(mod_lnpp)$coefficients[3,1] * (NPP_Forest$Tg) + 
+                                                               summary(mod_lnpp)$coefficients[4,1] * log(NPP_Forest$vpd)))))
 
 NPP_Forest$pred_wnpp <- NPP_Forest$pred_anpp - NPP_Forest$pred_lnpp
 
 #use rsofun - site-species
-#NPP_Forest$pred_leafnc <- (0.0162/0.5) + (0.0039/0.5) * NPP_Forest$max_vcmax25/NPP_Forest$LMA
-NPP_Forest$pred_leafnc <- (0.01599/0.46) + (0.005992/0.46) * NPP_Forest$max_vcmax25/NPP_Forest$LMA
-
-NPP_Forest$pred_lnf <- NPP_Forest$pred_lnpp*NPP_Forest$pred_leafnc
-
-#summary(NPP_Forest$CN_wood_final)
-NPP_Forest$pred_wnf <- NPP_Forest$pred_wnpp/100
-
-hist(NPP_Forest$CN_root_final)
-summary(NPP_Forest$CN_root_final)
-
-NPP_Forest$pred_bnf <- NPP_Forest$pred_bnpp/122
-
+#the difference between cn_leaf_org and cn_leaf_final is that the previous one has not include "repeated merge" (with 36 less sites)
 NPP_Forest$CN_leaf_final[NPP_Forest$CN_leaf_final>100] <- NA
 NPP_Forest$CN_leaf_org[NPP_Forest$CN_leaf_org>100] <- NA
 
-#the difference between cn_leaf_org and cn_leaf_final is that the previous one has not include "repeated merge" (with 36 less sites)
+#NPP_Forest$pred_leafnc <- (0.0162/0.5) + (0.0039/0.5) * NPP_Forest$max_vcmax25/NPP_Forest$LMA
+NPP_Forest$pred_leafnc <- (summary(n1)$coefficients[1,1]/0.46) + (summary(n1)$coefficients[2,1]/0.46) * NPP_Forest$max_vcmax25/NPP_Forest$LMA
 
-#correct new dataset's rep_info
-NPP_Forest$rep_info[is.na(NPP_Forest$rep_info)==TRUE] <- ""
+NPP_Forest$pred_lnf <- NPP_Forest$pred_lnpp*NPP_Forest$pred_leafnc
+
 
 #median of wood cn and root cn
+# see below
+summary(read.csv("/Users/yunpeng/data/CN_wood/wood_cn.csv")$OrigValueStr) #from TRY database
+summary(NPP_Forest2$CN_root_final)
 #using median of root = 94
 #using median of wood =100
-# see below
-summary(read.csv("/Users/yunpeng/data/CN_wood/wood_cn.csv")$OrigValueStr)
-#summary(NPP_Forest2$CN_root_final)
+NPP_Forest$pred_wnf <- NPP_Forest$pred_wnpp/100
+
+NPP_Forest$pred_bnf <- NPP_Forest$pred_bnpp/94
+
+
+#correct new dataset's rep_info
 #Remove rep and rep2 (rep1 and rep2 are paired repetation so we can safely remover rep2 since it is ForC, while rep1 is from Sara Vicca)
-NPP_Forest2 <- subset(NPP_Forest,rep_info!="rep" & rep_info!="rep2" &file!="NPP_Schulze")
 #Remove Schulze - their c/n unit is kg/ha - which is quite strange - we don't know how many species they considered for leaf C/N! See hist of their lnf_obs_org. Also, the reference is too old, which is not reliable when just citing them in a book
-summary(NPP_Forest2$CN_root_final)
+NPP_Forest$rep_info[is.na(NPP_Forest$rep_info)==TRUE] <- ""
+NPP_Forest2 <- subset(NPP_Forest,rep_info!="rep" & rep_info!="rep2" &file!="NPP_Schulze")
 
 NPP_Forest2_sitemean <- aggregate(NPP_Forest2,by=list(NPP_Forest2$lon,NPP_Forest2$lat,NPP_Forest2$z), FUN=mean, na.rm=TRUE) #site-mean
 
@@ -556,7 +566,10 @@ My_Theme = theme(
   axis.text.y = element_text(size = 20))
 
 #check
-#analyse_modobs2(forest_site2,"pred_gpp", "GPP",type = "points")
+
+csvfile <- paste("/Users/yunpeng/data/NPP_final/NPP_validation.csv")
+write.csv(NPP_Forest2, csvfile, row.names = TRUE)
+
 ggplot(data=NPP_Forest2, aes(x=pred_gpp_c3, y=GPP)) +
   geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
   xlab("Prediction")+ylab("Observation")+theme_classic()+My_Theme
@@ -624,11 +637,13 @@ NPP_Forest2 %>% group_by(file) %>% summarise(number = n())
 #(9) leafcn
 #check leaf c/n
 SP_input <- read.csv(file="/Users/yunpeng/data/leaf_traits/combined_leaf_traits.csv") #new one 
+SP_input <- subset(SP_input,source!="Bahar et al 2017 New Phytologist")
+
 SP_input2 <- SP_input[,c("lat","lon","z","Vcmax25","narea","lma")]
 sitemean <- aggregate(SP_input2,by=list(SP_input2$lon,SP_input2$lat), FUN=mean, na.rm=TRUE) 
 dim(sitemean)
 
-sitemean$pred_leafn <- (0.01599) + (0.005992)* sitemean$Vcmax25/sitemean$lma
+sitemean$pred_leafn <- (summary(n1)$coefficients[1,1]) + (summary(n1)$coefficients[2,1])* sitemean$Vcmax25/sitemean$lma
 sitemean$obs_leafn <- sitemean$narea/sitemean$lma
 
 ggplot(data=sitemean, aes(x=pred_leafn, y=obs_leafn)) +
@@ -734,7 +749,7 @@ for (i in 1:nrow(NRE_df)) {
 
 NRE_df$pred_nre <- NA
 NRE_df$vpd[NRE_df$vpd<0] <- NA
-NRE_df$pred_nre <- (1/(1+exp(-(-0.064460 *NRE_df$Tg + 0.402850 * log(NRE_df$vpd) + 1.368935))))
+NRE_df$pred_nre <- (1/(1+exp(-(summary(nre_model)$coefficients[1,1] + summary(nre_model)$coefficients[2,1] *NRE_df$Tg + summary(nre_model)$coefficients[3,1] * log(NRE_df$vpd)))))
 
 NRE_df$NRE <- NRE_df$NRE/100
 
@@ -743,8 +758,10 @@ ggplot(data=NRE_df, aes(x=pred_nre, y=NRE)) + xlim(c(0.25,1))+ylim(c(0.25,1))+
   xlab("Prediction")+ylab("Observation")+theme_classic()+My_Theme
 
 summary(lm(NRE~pred_nre,NRE_df))
+csvfile <- paste("/Users/yunpeng/data/NPP_final/NRE_validation.csv")
+write.csv(NRE_df, csvfile, row.names = TRUE)
 
-#now, newly adding fluxnet gpp sites
+#now, newly adding fluxnet gpp sites # not imporved...deleted here....
 fluxnet_site <- ingestr::siteinfo_fluxnet2015
 fluxnet_site$lat <- as.numeric(format(round(fluxnet_site$lat, 2), nsmall = 2))
 fluxnet_site$lon <- as.numeric(format(round(fluxnet_site$lon, 2), nsmall = 2))
