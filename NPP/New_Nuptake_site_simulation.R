@@ -599,8 +599,8 @@ write.csv(Nmin_all, csvfile, row.names = TRUE)
 subset(Nmin_all,is.na(pred_nuptake)==TRUE) %>% group_by(sitename) %>% 
   summarise (number=n())
 #10 sites were missing - due to missing fapar (even when n_focal =2) or missing age (when becoming negative)
+#site-mean
 Nmin_all_sm <- aggregate(Nmin_all,by=list(Nmin_all$lon,Nmin_all$lat), mean,na.rm=TRUE)
-
 ggplot(data=Nmin_all_sm, aes(x=pred_nuptake, y=obs_nuptake)) +
   geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
   xlab("Prediction")+ylab("Observation")+theme_classic()+My_Theme
@@ -609,71 +609,3 @@ csvfile <- paste("~/data/NPP_Yunke/Nuptake_gcme/All_Nuptake.csv",sep = "")
 write.csv(NPP_Forest, csvfile, row.names = TRUE)
 
 save.image(file = "~/yunkepeng/nimpl_sofun_inputs/forest/New_Nuptake_site_simulation.Rdata")
-
-#load Nuptake map
-library(rbeni)
-inputnc <- function(name,start_year,end_year){
-  #-----------------------------------------------------------------------
-  # Input: 
-  # name: gpp, npp, anpp, vcmax25, leafcn, nuptake...
-  # start_year: e.g. 1981
-  # end_year: e.g. 2016
-  # location: e.g "D:/PhD/nimpl_sofun_inputs/Data/output/" or in Euler: "~/yunkebranch_units/outputnc/"
-  #-----------------------------------------------------------------------
-  output_allyears <- data.frame(matrix(NA))
-  # first, include all years annual data into a daframe
-  for (i in firstyr_data:endyr_data){
-    if (name == "npp"){
-      nc <- read_nc_onefile(alloutput_list[grepl("a.npp.nc", list.files(location,full.names = T))][i-firstyr_data+1]) #we only rely this to filter npp.nc file...
-    } else {
-      nc <- read_nc_onefile(alloutput_list[grepl(name, list.files(location,full.names = T))][i-firstyr_data+1]) #Input nc
-    }
-    output_year <- nc_to_df(nc, varnam = name)[,3] #Yearly output
-    output_allyears[1:259200,i-firstyr_data+1] <- output_year #here first column represents first year of data file 's output
-  }
-  names(output_allyears) <- paste(name,firstyr_data:endyr_data,sep="")
-  #this variable above (output_allyears), could be end of the function, which is variable at multiple years. But for our purporses, we need mean of select years
-  #then, only calculate means of selected years
-  output_selected_yrs <- rowMeans(output_allyears[,(start_year-firstyr_data+1):(end_year-firstyr_data+1)],na.rm = TRUE) # only calculated means based on selected start and end year (see function)
-  coord <- nc_to_df(nc, varnam = name)[,1:2] # obtain lon and lat
-  final_output <- cbind(coord,elev[,3],output_selected_yrs) # combine lon, lat,z with rowmeans variable
-  names(final_output) <- c("lon","lat","z",name)
-  return(final_output)
-  #-----------------------------------------------------------------------
-  # Output: output_final: the output data (259200 * 3) including lon, lat and value
-  #-----------------------------------------------------------------------
-}
-firstyr_data <- 1982 # In data file, which is the first year
-endyr_data <- 2011 # In data file, which is the last year
-location <- "/Users/yunpeng/data/output/latest_forest/"
-alloutput_list <- list.files(location,full.names = T)
-
-#input elevation nc file, which will be cbind with global df directly
-elev_nc <- read_nc_onefile("~/data/watch_wfdei/WFDEI-elevation.nc")
-#elev_nc <- read_nc_onefile("D:/PhD/nimpl_sofun_inputs/Data/Elevation/WFDEI-elevation.nc")
-elev <- as.data.frame(nc_to_df(elev_nc, varnam = "elevation"))
-head(elev) # this is consistent with df coord below
-
-gg <- plot_map3(nuptake_df2[,c(1,2,4)], 
-                varnam = "nuptake",plot_title = " Total N uptake in ecosystem (gN/m2/yr)",
-                latmin = -65, latmax = 85, combine = FALSE)
-gg$ggmap + geom_point(data=subset(Nmin_all,pred_nuptake>0),aes(lon,lat),size=3,col="red")
-gg$gglegend
-
-#calculate uncertainty
-all_predictors
-
-all_predictors$b <- (-0.3677 * log(all_predictors$CNrt) +
-    -0.1552 * log(all_predictors$age) + 
-    0.5791 * all_predictors$fAPAR+
-    1.9144 *all_predictors$alpha + -1.1052)
-
-
-all_predictors$npp_gpp_uncertainty <- 1.87 * exp(-all_predictors$b) / ((1+exp(-all_predictors$b))^2)
-
-bbb <- all_predictors[,c("lon","lat","npp_gpp_uncertainty")]
-
-gg <- plot_map3(bbb, 
-                varnam = "npp_gpp_uncertainty",plot_title = " b ",
-                latmin = -65, latmax = 85, combine = TRUE)
-gg
