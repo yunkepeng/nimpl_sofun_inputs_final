@@ -1,4 +1,7 @@
 rm(list=ls())
+
+load(file = "/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/output/output.Rdata")
+
 library(tidyverse)  # depends
 library(ncmeta)
 library(viridis)
@@ -493,7 +496,7 @@ for (i in 1:nrow(nuptake_all)){
 
 apparent_point <- as.data.frame(cbind(gpp_df[,c("lon","lat")],nuptake_all[,c("most_factor","most_factor_value")]))
 apparent_point_available <- subset(apparent_point,is.na(most_factor_value)==FALSE) 
-dim(apparent_point_available)
+
 apparent_point_available$most_factor_value <- as.numeric(apparent_point_available$most_factor_value)
 
 apparent_point_available %>% group_by(most_factor) %>% summarise(number=n())
@@ -504,45 +507,172 @@ gg <- plot_map3(all_maps[,c("lon","lat","nuptake_pft")],
                 varnam = "nuptake_pft",plot_title = paste("N uptake Constrained by most important factor"),
                 latmin = -65, latmax = 85,combine=FALSE)
 
-apparent_point_available2$color[apparent_point_available2$most_factor=="nuptake_Tg"] <- "red"
-apparent_point_available2$color[apparent_point_available2$most_factor=="nuptake_PPFD"] <- "orange"
-apparent_point_available2$color[apparent_point_available2$most_factor=="nuptake_vpd"] <- "purple"
-apparent_point_available2$color[apparent_point_available2$most_factor=="nuptake_fAPAR"] <- "cyan"
-apparent_point_available2$color[apparent_point_available2$most_factor=="nuptake_age"] <- "green"
-apparent_point_available2$color[apparent_point_available2$most_factor=="nuptake_CNrt"] <- "yellow"
-apparent_point_available2$color[apparent_point_available2$most_factor=="nuptake_LMA"] <- "black"
-apparent_point_available2$color[apparent_point_available2$most_factor=="nuptake_Vcmax25"] <- "grey"
-
-
-gg$ggmap + geom_point(data=apparent_point_available2,aes(lon,lat),color=apparent_point_available2$color)
-
 colors <-  c("red","red","red","red","red","red","red","red",  "brown","yellow","cyan","black","orange","red","green","purple")
-gg$ggmap + geom_point(data=apparent_point_available2,aes(lon,lat,color=most_factor),size=0.5)+
+gg$ggmap + geom_point(data=apparent_point_available,aes(lon,lat,color=most_factor),size=0.5)+
   scale_color_manual(values = colors)+ theme(
     legend.text = element_text(size = 20))+
     guides(colour = guide_legend(override.aes = list(size = 5)))
 
+#quantify each component
+#create a function to control each factor --> output ratio of nuptake_factor / nuptake_standard
+
+model1_npp_gpp <- available_grid2*(1/(1 + exp(-(summary(mod_tnpp)$coef[1,1]+
+                                                  summary(mod_tnpp)$coef[2,1]* log(CNrt$myvar)+
+                                                  summary(mod_tnpp)$coef[3,1] * log(age$myvar) + 
+                                                  summary(mod_tnpp)$coef[4,1]* fAPAR$myvar))))
+
+model2_anpp_gpp <- available_grid2*(1/(1 + exp(-(summary(mod_anpp)$coef[1,1]+
+                                                   summary(mod_anpp)$coef[2,1] * log(CNrt$myvar)+ 
+                                                   summary(mod_anpp)$coef[3,1] * log(age$myvar) + 
+                                                   summary(mod_anpp)$coef[4,1] * fAPAR$myvar))))
+
+model3_lnpp_anpp <- available_grid2*(1/(1 + exp(-(summary(mod_lnpp)$coef[1,1]+
+                                                    summary(mod_lnpp)$coef[2,1]* log(PPFD$myvar) +
+                                                    summary(mod_lnpp)$coef[3,1] * (Tg$myvar) +
+                                                    summary(mod_lnpp)$coef[4,1] * log(vpd$myvar)))))
+
+model4_leafnc <- available_grid2*(summary(n1)$coef[1,1]/0.46) + 
+  (summary(n1)$coef[2,1]/0.46) *vcmax25_df$vcmax25/LMA$myvar
+
+model5_nre <- available_grid2*(1/(1+exp(-(summary(nre_model)$coef[1,1]+
+                                            summary(nre_model)$coef[2,1] *Tg$myvar + 
+                                            summary(nre_model)$coef[3,1] * log(vpd$myvar)))))
+
+cal_nuptake_model <- function(gpp,model1_npp_gpp,model2_anpp_gpp,model3_lnpp_anpp,model4_leafnc,model5_nre){
+  npp_f <- gpp* model1_npp_gpp
+  
+  anpp_f <- gpp * model2_anpp_gpp
+  bnpp_f <- npp_f-anpp_f
+  
+  lnpp_f <- anpp_f * model3_lnpp_anpp  
+  wnpp_f <- anpp_f - lnpp_f
+  
+  leafcn_f <- model4_leafnc
+  
+  nre_f <- model5_nre 
+  lnf_f <- (1-nre_f)* leafcn_f * lnpp_f
+  
+  wnf_f <- wnpp_f/100
+  
+  bnf_f <- bnpp_f/94
+  
+  nuptake_f <- lnf_f + wnf_f + bnf_f
+  
+  #grass
+  npp_g <- gpp* summary(tnpp_grass)$coef[1,1]
+  anpp_g <- gpp * summary(anpp_grass)$coef[1,1]
+  bnpp_g <- npp_g-anpp_g
+  lnf_g <- anpp_g *(1/18)*(1-nre_f)
+  bnf_g <- bnpp_g *(1/41)
+  nuptake_g <- lnf_g + bnf_g
+  
+  #pft
+  npp_pft <- available_grid2* (npp_f*forest_percent +npp_g*grass_percent)
+  npp_forest <- available_grid2* (npp_f*forest_percent)
+  npp_grass <- available_grid2* (npp_g*grass_percent)
+  
+  anpp_pft <- available_grid2*(anpp_f*forest_percent +anpp_g*grass_percent)
+  anpp_forest <- available_grid2* (anpp_f*forest_percent)
+  aanpp_grass <- available_grid2* (anpp_g*grass_percent)
+  
+  lnpp_forest <- available_grid2*lnpp_f*forest_percent
+  
+  wnpp_forest <- available_grid2*wnpp_f*forest_percent
+  
+  bnpp_pft <- available_grid2*(bnpp_f*forest_percent +bnpp_g*grass_percent)
+  bnpp_forest <- available_grid2* (bnpp_f*forest_percent)
+  bnpp_grass <- available_grid2* (bnpp_g*grass_percent)
+  
+  leafcn_forest <- available_grid2*leafcn_f*forest_percent
+  
+  nre_pft <- available_grid2*nre_f * (forest_percent+grass_percent)
+  
+  lnf_pft <- available_grid2*(lnf_f*forest_percent +lnf_g*grass_percent)
+  lnf_forest <- available_grid2* (lnf_f*forest_percent)
+  lnf_grass <- available_grid2* (lnf_g*grass_percent)
+  
+  wnf_forest <- available_grid2*wnf_f*forest_percent
+  
+  bnf_pft <- available_grid2*(bnf_f*forest_percent +bnf_g*grass_percent)
+  bnf_forest <- available_grid2* (bnf_f*forest_percent)
+  bnf_grass <- available_grid2* (bnf_g*grass_percent)
+  
+  nuptake_pft <- available_grid2*(nuptake_f*forest_percent +nuptake_g*grass_percent)
+  nuptake_forest <- available_grid2* (nuptake_f*forest_percent)
+  nuptake_grass <- available_grid2* (nuptake_g*grass_percent)
+  nuptake_pft_ratio <- nuptake_pft/nuptake_pft_final
+  return(nuptake_pft_ratio)
+}
+
+nuptake_standard <- cal_nuptake_model(gpp_df$gpp,model1_npp_gpp,model2_anpp_gpp,model3_lnpp_anpp,model4_leafnc,model5_nre)
+summary(nuptake_standard)
+
+mean_gpp <- mean(gpp_df$gpp[is.na(all_predictors$available_grid)==FALSE])
+mean_npp_gpp <- mean(model1_npp_gpp[is.na(all_predictors$available_grid)==FALSE])
+mean_anpp_gpp <- mean(model2_anpp_gpp[is.na(all_predictors$available_grid)==FALSE])
+mean_lnpp_anpp <- mean(model3_lnpp_anpp[is.na(all_predictors$available_grid)==FALSE])
+mean_leafnc <- mean(model4_leafnc[is.na(all_predictors$available_grid)==FALSE])
+mean_nre <- mean(model5_nre[is.na(all_predictors$available_grid)==FALSE])
+
+gpp_model <- cal_nuptake_model(rep(mean_gpp,259200),model1_npp_gpp,model2_anpp_gpp,model3_lnpp_anpp,model4_leafnc,model5_nre)
+npp_gpp_model <- cal_nuptake_model(gpp_df$gpp,rep(mean_npp_gpp,259200),model2_anpp_gpp,model3_lnpp_anpp,model4_leafnc,model5_nre)
+anpp_gpp_model <- cal_nuptake_model(gpp_df$gpp,model1_npp_gpp,rep(mean_anpp_gpp,259200),model3_lnpp_anpp,model4_leafnc,model5_nre)
+lnpp_anpp_model <- cal_nuptake_model(gpp_df$gpp,model1_npp_gpp,model2_anpp_gpp,rep(mean_lnpp_anpp,259200),model4_leafnc,model5_nre)
+leafnc_model <- cal_nuptake_model(gpp_df$gpp,model1_npp_gpp,model2_anpp_gpp,model3_lnpp_anpp,rep(mean_leafnc,259200),model5_nre)
+nre_model <- cal_nuptake_model(gpp_df$gpp,model1_npp_gpp,model2_anpp_gpp,model3_lnpp_anpp,model4_leafnc,rep(mean_nre,259200))
+
+nuptake_all2 <- as.data.frame(cbind(gpp_model,npp_gpp_model,anpp_gpp_model,
+                                    lnpp_anpp_model,leafnc_model,nre_model))
+
+
+for (i in 1:nrow(nuptake_all2)){
+  if (is.na(nuptake_all2[i,1])==TRUE){
+    nuptake_all2$most_factor[i] <- NA
+    nuptake_all2$most_factor_value[i] <- NA
+  } else {
+    nuptake_all2$most_factor[i] <- names((which.max(nuptake_all2[i,1:6])))
+    nuptake_all2$most_factor_value[i] <- max(nuptake_all2[i,1:6])
+  }
+}
+
+apparent_point2 <- as.data.frame(cbind(gpp_df[,c("lon","lat")],nuptake_all2[,c("most_factor","most_factor_value")]))
+apparent_point_available2 <- subset(apparent_point2,is.na(most_factor_value)==FALSE) 
+dim(apparent_point_available)
+
+apparent_point_available2 %>% group_by(most_factor) %>% summarise(number=n())
+
+# count the needed levels of a factor
+gg <- plot_map3(all_maps[,c("lon","lat","nuptake_pft")],
+                varnam = "nuptake_pft",plot_title = paste("N uptake Constrained by most important factor"),
+                latmin = -65, latmax = 85,combine=FALSE)
+
+colors <-  c("red","red","red","red","red","red","red","red", "brown","yellow","cyan","black","orange","red","green","purple")
 gg$ggmap + geom_point(data=apparent_point_available2,aes(lon,lat,color=most_factor),size=0.5)+
   scale_color_manual(values = colors)+ theme(
     legend.text = element_text(size = 20))+
   guides(colour = guide_legend(override.aes = list(size = 5)))
 
-gg$ggmap +
-  geom_point(data=apparent_point_available %>% filter(most_factor=="nuptake_Tg"),aes(lon,lat),color="red")+
-  geom_point(data=apparent_point_available %>% filter(most_factor=="nuptake_PPFD"),aes(lon,lat),color="orange")+
-  geom_point(data=apparent_point_available %>% filter(most_factor=="nuptake_vpd"),aes(lon,lat),color="purple")+
-  geom_point(data=apparent_point_available %>% filter(most_factor=="nuptake_fAPAR"),aes(lon,lat),color="cyan")+
-  geom_point(data=apparent_point_available %>% filter(most_factor=="nuptake_age"),aes(lon,lat),color="green")+
-  geom_point(data=apparent_point_available %>% filter(most_factor=="nuptake_CNrt"),aes(lon,lat),color="yellow")+
-  geom_point(data=apparent_point_available %>% filter(most_factor=="nuptake_LMA"),aes(lon,lat),color="black")+
-  geom_point(data=apparent_point_available %>% filter(most_factor=="nuptake_Vcmax25"),aes(lon,lat),color="grey")+
-  legend(1, 95, legend=c("Line 1", "Line 2"),
-         col=c("red", "blue"), lty=1:2, cex=0.8)
-
-
 save.image(file = "/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/output/output.Rdata")
 
 #now, deal with uncertainty
+#firstly, load all forest models
+load("/Users/yunpeng/data/NPP_final/statistical_model/mod_tnpp.RData")
+summary(mod_tnpp)
+load("/Users/yunpeng/data/NPP_final/statistical_model/mod_anpp.RData")
+summary(mod_anpp)
+load("/Users/yunpeng/data/NPP_final/statistical_model/mod_lnpp.RData")
+summary(mod_lnpp)
+load("/Users/yunpeng/data/NPP_final/statistical_model/nmass.RData")
+summary(n1)
+load("/Users/yunpeng/data/NPP_final/statistical_model/nre_model.RData")
+summary(nre_model)
+
+#now, do the same for grassland
+load(file = "/Users/yunpeng/data/NPP_grassland_final/statistical_model/tnpp_grass.RData")
+summary(tnpp_grass)
+load(file = "/Users/yunpeng/data/NPP_grassland_final/statistical_model/anpp_grass.RData")
+summary(anpp_grass)
+
 ## Uncertainty of TNPP/GPP
 #using standard error method to calculate uncertainty of whole regression
 # for all logit function model (mod_tnpp, mod_anpp, mod_lnpp, nre_model): a = 1/(1+exp(-b)), where a is the ratio (e.g. npp/gpp) and b is the regression (e.g. mod =tnpp)
