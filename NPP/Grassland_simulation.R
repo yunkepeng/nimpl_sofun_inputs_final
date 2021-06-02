@@ -510,7 +510,7 @@ save(anpp_grass, file = "/Users/yunpeng/data/NPP_grassland_final/statistical_mod
 #leaf c/n model. median = 18
 summary(NPP_grassland_final5_gpp_npp_anpp$CN_leaf_final)
 
-#root c/n model median = 46
+#root c/n model median = 41
 summary(NPP_grassland_final5_gpp_npp_anpp$CN_root_final)
 
 #constant only

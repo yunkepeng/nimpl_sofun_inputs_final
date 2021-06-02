@@ -114,7 +114,7 @@ load("/Users/yunpeng/data/NPP_final/statistical_model/mod_lnpp.RData")
 summary(mod_lnpp)
 load("/Users/yunpeng/data/NPP_final/statistical_model/nmass.RData")
 summary(n1)
-load("/Users/yunpeng/data/NPP_final/statistical_model/nre_model.RData")
+load("/Users/yunpeng/data/NPP_final/statistical_model/nre_model_forest.RData")
 summary(nre_model)
 
 #now, do the same for grassland
@@ -726,7 +726,7 @@ load("/Users/yunpeng/data/NPP_final/statistical_model/mod_lnpp.RData")
 summary(mod_lnpp)
 load("/Users/yunpeng/data/NPP_final/statistical_model/nmass.RData")
 summary(n1)
-load("/Users/yunpeng/data/NPP_final/statistical_model/nre_model.RData")
+load("/Users/yunpeng/data/NPP_final/statistical_model/nre_model_forest.RData")
 summary(nre_model)
 
 #now, do the same for grassland

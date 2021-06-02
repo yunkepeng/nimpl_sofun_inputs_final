@@ -544,8 +544,9 @@ NPP_Forest$pred_lnf <- NPP_Forest$pred_lnpp*NPP_Forest$pred_leafnc
 # see below
 summary(read.csv("/Users/yunpeng/data/CN_wood/wood_cn.csv")$OrigValueStr) #from TRY database
 summary(NPP_Forest2$CN_root_final)
-#using median of root = 94
 #using median of wood =100
+#using median of root = 94
+
 NPP_Forest$pred_wnf <- NPP_Forest$pred_wnpp/100
 
 NPP_Forest$pred_bnf <- NPP_Forest$pred_bnpp/94
