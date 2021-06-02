@@ -21,7 +21,7 @@ library(rworldmap)
 library(cowplot)
 devtools::load_all("/Users/yunpeng/yunkepeng/Grassland_new_ingestr_rsofun_20210326/rsofun/")
 
-#load(file = "~/yunkepeng/nimpl_sofun_inputs/forest/New_Nuptake_site_simulation.Rdata")
+load(file = "~/yunkepeng/nimpl_sofun_inputs/forest/New_Nuptake_site_simulation.Rdata")
 
 #### Input N uptake
 #(1) newly added Nmin rate data from Finzi

@@ -1,5 +1,5 @@
 rm(list=ls())
-#load(file = "/Users/yunpeng/data/NPP_final/Forest_site_simulation.Rdata")
+load(file = "/Users/yunpeng/data/NPP_final/Forest_site_simulation.Rdata")
 
 devtools::load_all("/Users/yunpeng/yunkepeng/Grassland_new_ingestr_rsofun_20210326/rsofun/")
 library(dplyr)
@@ -638,6 +638,7 @@ NPP_Forest2 %>% group_by(file) %>% summarise(number = n())
 #check leaf c/n
 SP_input <- read.csv(file="/Users/yunpeng/data/leaf_traits/combined_leaf_traits_updated.csv") #new one 
 SP_input <- subset(SP_input,source!="Bahar et al 2017 New Phytologist")
+SP_input <- subset(SP_input,Vcmax25>0)
 
 SP_input2 <- SP_input[,c("lat","lon","z","Vcmax25","narea","lma")]
 sitemean <- aggregate(SP_input2,by=list(SP_input2$lon,SP_input2$lat), FUN=mean, na.rm=TRUE) 

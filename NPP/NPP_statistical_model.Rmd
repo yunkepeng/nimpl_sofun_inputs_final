@@ -205,9 +205,9 @@ library(tidyverse)
 
 SP_input <- read.csv(file="/Users/yunpeng/data/leaf_traits/combined_leaf_traits_updated.csv") #new one sss
 
-#remove bahar, as repeated to atkin
+#remove bahar, as repeated to atkin - and filter a few points with vcmax25<0
 SP_input <- subset(SP_input,source!="Bahar et al 2017 New Phytologist")
-
+SP_input <- subset(SP_input,Vcmax25>0)
 SP_input$Vcmax.25 <- SP_input$Vcmax25
 SP_input$Elevation <- SP_input$z
 

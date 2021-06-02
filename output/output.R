@@ -20,6 +20,8 @@ library(maps)
 library(rworldmap)
 library(cowplot)
 library(ncdf4)
+library(scales)
+
 firstyr_data <- 1982 # In data file, which is the first year
 endyr_data <- 2011 # In data file, which is the last year
 location <- "/Users/yunpeng/data/output/latest_forest/"
@@ -279,13 +281,16 @@ My_Theme = theme(
   axis.text.y = element_text(size = 20))
 
 simulations <- all_maps
-simulations$nue <- simulations$nuptake_pft/simulations$npp_pft
+#simulations$nue <- simulations$nuptake_pft/simulations$npp_pft
 simulations$nue_gpp <- simulations$nuptake_pft/simulations$gpp
 simulations_predictors <- as.data.frame(cbind(all_predictors[,-c(9,10,11)],simulations))
 
 #####nue
-plot_map3(simulations[,c("lon","lat","nue")],
-          varnam = "nue",
+plot_map3(simulations[,c("lon","lat","nue_gpp")],
+          varnam = "nue_gpp",
+          latmin = -65, latmax = 85)
+plot_map3(simulations[,c("lon","lat","nuptake_pft")],
+          varnam = "nuptake_pft",
           latmin = -65, latmax = 85)
 
 a1 <- (lm(nue~Tg+PPFD+vpd+fAPAR+CNrt+age+LMA+vcmax25,data=simulations_predictors))
@@ -464,7 +469,7 @@ cal_nuptake <- function(Tg_pred,PPFD_pred,vpd_pred,fAPAR_pred,age_pred,CNrt_pred
   nuptake_pft <- available_grid2*(nuptake_f*forest_percent +nuptake_g*grass_percent)
   nuptake_forest <- available_grid2* (nuptake_f*forest_percent)
   nuptake_grass <- available_grid2* (nuptake_g*grass_percent)
-  nuptake_pft_ratio <- nuptake_pft/nuptake_pft_final
+  nuptake_pft_ratio <- nuptake_pft_final/nuptake_pft
   return(nuptake_pft_ratio)
 }
 
@@ -489,8 +494,8 @@ for (i in 1:nrow(nuptake_all)){
     nuptake_all$most_factor[i] <- NA
     nuptake_all$most_factor_value[i] <- NA
   } else {
-    nuptake_all$most_factor[i] <- names((which.max(nuptake_all[i,1:8])))
-    nuptake_all$most_factor_value[i] <- max(nuptake_all[i,1:8])
+    nuptake_all$most_factor[i] <- names((which.max(abs(log(nuptake_all[i,1:8])))))
+    nuptake_all$most_factor_value[i] <- max(abs(log(nuptake_all[i,1:8])))
   }
 }
 
@@ -501,18 +506,51 @@ apparent_point_available$most_factor_value <- as.numeric(apparent_point_availabl
 
 apparent_point_available %>% group_by(most_factor) %>% summarise(number=n())
 
-# count the needed levels of a factor
+area_final <- as.data.frame(cbind(gpp_df[,c("lon","lat")],nuptake_all[,c("most_factor","most_factor_value")]))
+area_final$ratio <- conversion/sum(conversion,na.rm = TRUE)
 
+area_final %>% group_by(most_factor) %>% summarise(sum = sum(ratio), n = n())
+
+
+# count the needed levels of a factor
 gg <- plot_map3(all_maps[,c("lon","lat","nuptake_pft")],
                 varnam = "nuptake_pft",plot_title = paste("N uptake Constrained by most important factor"),
                 latmin = -65, latmax = 85,combine=FALSE)
 
-colors <-  c("red","red","red","red","red","red","red","red",  "brown","yellow","cyan","black","orange","red","green","purple")
+colors <-  c("red","red","red","red","red","red","red","red", "cyan","yellow","blue","black","red","orange","green","purple")
 gg$ggmap + geom_point(data=apparent_point_available,aes(lon,lat,color=most_factor),size=0.5)+
   scale_color_manual(values = colors)+ theme(
     legend.text = element_text(size = 20))+
     guides(colour = guide_legend(override.aes = list(size = 5)))
+ggsave(paste("/Users/yunpeng/data/output/output_onefactor/allfactor.jpg",sep=""))
 
+#now, output each factor's effect
+#devtools::load_all("/Users/yunpeng/yunkepeng/Grassland_new_ingestr_rsofun_20210326/rbeni/")
+
+nuptake_all_coord <- as.data.frame(cbind(gpp_df[,c("lon","lat")],nuptake_all))
+summary(nuptake_all_coord)
+nuptake_all_coord[,3:10] <- log(nuptake_all_coord[,3:10])
+summary(nuptake_all_coord[,3:10])
+
+total_sum <- sum(abs((nuptake_all_coord[,3:10])*conversion),na.rm=TRUE)
+total_sum
+
+for (i in 3:10){
+  varname <- names(nuptake_all_coord)[i]
+  relative_value <- round(sum(abs((nuptake_all_coord[,i])*conversion),na.rm=TRUE)/total_sum,2)
+  percentage_value <- label_percent()(relative_value)
+  plot_map3(nuptake_all_coord[,c("lon","lat",varname)],
+            varnam = varname,plot_title = paste(varname, percentage_value, sep=": " ),
+            latmin = -65, latmax = 85,breaks=c(seq(-0.4, 0.8, by = 0.1)))
+  ggsave(paste("/Users/yunpeng/data/output/output_onefactor/",varname,".jpg",sep=""))
+}
+#colorscale = c("blue", "white", "red")
+
+plot_map3(nuptake_all_coord[,c("lon","lat",varname)],
+          varnam = varname,plot_title = paste(varname, percentage_value, sep=": " ),
+          latmin = -65, latmax = 85, colorscale = c("blue", "white", "red"), breaks = c(-0.4, -0.2, -0.01, 0.01, 0.2, 0.4))
+
+######
 #quantify each component
 #create a function to control each factor --> output ratio of nuptake_factor / nuptake_standard
 
@@ -600,7 +638,7 @@ cal_nuptake_model <- function(gpp,model1_npp_gpp,model2_anpp_gpp,model3_lnpp_anp
   nuptake_pft <- available_grid2*(nuptake_f*forest_percent +nuptake_g*grass_percent)
   nuptake_forest <- available_grid2* (nuptake_f*forest_percent)
   nuptake_grass <- available_grid2* (nuptake_g*grass_percent)
-  nuptake_pft_ratio <- nuptake_pft/nuptake_pft_final
+  nuptake_pft_ratio <- nuptake_pft_final/nuptake_pft
   return(nuptake_pft_ratio)
 }
 
@@ -624,14 +662,13 @@ nre_model <- cal_nuptake_model(gpp_df$gpp,model1_npp_gpp,model2_anpp_gpp,model3_
 nuptake_all2 <- as.data.frame(cbind(gpp_model,npp_gpp_model,anpp_gpp_model,
                                     lnpp_anpp_model,leafnc_model,nre_model))
 
-
 for (i in 1:nrow(nuptake_all2)){
   if (is.na(nuptake_all2[i,1])==TRUE){
     nuptake_all2$most_factor[i] <- NA
     nuptake_all2$most_factor_value[i] <- NA
-  } else {
-    nuptake_all2$most_factor[i] <- names((which.max(nuptake_all2[i,1:6])))
-    nuptake_all2$most_factor_value[i] <- max(nuptake_all2[i,1:6])
+  } else { 
+    nuptake_all2$most_factor[i] <- names((which.max(abs(log(nuptake_all2[i,1:6])))))
+    nuptake_all2$most_factor_value[i] <- max(abs(log(nuptake_all2[i,1:6])))
   }
 }
 
@@ -640,6 +677,11 @@ apparent_point_available2 <- subset(apparent_point2,is.na(most_factor_value)==FA
 dim(apparent_point_available)
 
 apparent_point_available2 %>% group_by(most_factor) %>% summarise(number=n())
+
+area_final2 <- as.data.frame(cbind(gpp_df[,c("lon","lat")],nuptake_all2[,c("most_factor","most_factor_value")]))
+area_final2$ratio <- conversion/sum(conversion,na.rm = TRUE)
+
+area_final2 %>% group_by(most_factor) %>% summarise(sum = sum(ratio), n = n())
 
 # count the needed levels of a factor
 gg <- plot_map3(all_maps[,c("lon","lat","nuptake_pft")],
@@ -651,6 +693,26 @@ gg$ggmap + geom_point(data=apparent_point_available2,aes(lon,lat,color=most_fact
   scale_color_manual(values = colors)+ theme(
     legend.text = element_text(size = 20))+
   guides(colour = guide_legend(override.aes = list(size = 5)))
+ggsave(paste("/Users/yunpeng/data/output/output_onefactor/allfactor_model.jpg",sep=""))
+
+nuptake_all_coord2 <- as.data.frame(cbind(gpp_df[,c("lon","lat")],nuptake_all2))
+summary(nuptake_all_coord2)
+nuptake_all_coord2[,3:8] <- log(nuptake_all_coord2[,3:8])
+summary(nuptake_all_coord2[,3:8])
+
+#now, output each factor
+total_sum2 <- sum(abs((nuptake_all_coord2[,3:8])*conversion),na.rm=TRUE)
+total_sum2
+
+for (i in 3:8){
+  varname <- names(nuptake_all_coord2)[i]
+  relative_value <- round(sum(abs((nuptake_all_coord2[,i])*conversion),na.rm=TRUE)/total_sum2,2)
+  percentage_value <- label_percent()(relative_value)
+  plot_map3(nuptake_all_coord2[,c("lon","lat",varname)],
+            varnam = varname,plot_title = paste(varname, percentage_value, sep=": " ),
+            latmin = -65, latmax = 85,breaks=c(seq(-4, 2, by = 0.1)))
+  ggsave(paste("/Users/yunpeng/data/output/output_onefactor/",varname,".jpg",sep=""))
+}
 
 save.image(file = "/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/output/output.Rdata")
 
