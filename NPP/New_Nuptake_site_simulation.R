@@ -30,19 +30,6 @@ names(Finzi)[names(Finzi) == "Lat"] <- "lat"
 names(Finzi)[names(Finzi) == "Long"] <- "lon"
 devtools::load_all("/Users/yunpeng/yunkepeng/Grassland_new_ingestr_rsofun_20210326/ingestr/")
 
-#See Gill and Finzi Fig3 for pft info 
-#Grassland
-#Finzi_Grassland <- subset(Finzi, Biome=="temp grass")
-#Finzi_Grassland_sitemean <- aggregate(Finzi_Grassland,by=list(Finzi_Grassland$lon,Finzi_Grassland$lat), FUN=mean, na.rm=TRUE) #site-mean
-#dim(Finzi_Grassland_sitemean)
-#for (i in 1:nrow(Finzi_Grassland_sitemean)){
-#  Finzi_Grassland_sitemean$sitename[i] <- paste("Finzi_Grass",i,sep = "") # this is also sitename for fpar
-#  Finzi_Grassland_sitemean$sitename_climate[i] <- paste("Finzi_Grass_climate",i,sep = "")
-#}
-#df_etopo <- ingest(Finzi_Grassland_sitemean,source = "etopo1",dir = "~/data/etopo/" )
-#Finzi_Grassland_sitemean$elv <- as.numeric(as.data.frame(df_etopo$data))
-#Finzi_Grassland_sitemean
-
 #Forest - only merging forest this time
 Finzi_Forest <- subset(Finzi, Biome!="temp grass")
 Finzi_Forest_sitemean <- aggregate(Finzi_Forest,by=list(Finzi_Forest$lon,Finzi_Forest$lat), FUN=mean, na.rm=TRUE) #site-mean
@@ -68,61 +55,7 @@ summary(Finzi_all_forest)
 Finzi_all_forest$year_start <- 1984
 Finzi_all_forest$year_end <- 2013
 
-#(2) Nuptake from gcme
-gcme_nuptake <- read.csv("/Users/yunpeng/data/NPP_Yunke/Nuptake_gcme/gcme_nuptake_coord_interpolated.csv")
-for (i in 1:nrow(gcme_nuptake)){
-  gcme_nuptake$sitename[i] <- paste("gcme",i,sep = "") # this is also sitename for fpar
-  gcme_nuptake$sitename_climate[i] <- paste("gcme_climate",i,sep = "")
-}
-
-#elv
-df_etopo <- ingest(gcme_nuptake,source = "etopo1",dir = "~/data/etopo/" )
-gcme_nuptake$elv <- as.numeric(as.data.frame(df_etopo$data))
-gcme_nuptake$elv[gcme_nuptake$elv<0] <- 0
-
-siteinfo_gcme <- data.frame(
-  sitename = gcme_nuptake$sitename,
-  sitename_climate = gcme_nuptake$sitename_climate,
-  lon = gcme_nuptake$lon,
-  lat = gcme_nuptake$lat,
-  elv = gcme_nuptake$elv,
-  year_start = gcme_nuptake$start_yr,
-  year_end = gcme_nuptake$start_yr + gcme_nuptake$Year_long -1
-)
-
-siteinfo_gcme$exp_nam <- gcme_nuptake$exp_nam
-
-gcme_data <- read.csv("/Users/yunpeng/data/NPP_Yunke/Nuptake_gcme/gcme_nuptake_data.csv")
-gcme_data <- gcme_data[,c("exp_nam","ambient","Unit")]
-#all converting to gN/m2/yr
-gcme_data$ambient[gcme_data$Unit=="Kg_N_ha-1"] <- gcme_data$ambient[gcme_data$Unit=="Kg_N_ha-1"]/10
-gcme_data$ambient[gcme_data$Unit=="kg_N/ha"] <- gcme_data$ambient[gcme_data$Unit=="kg_N/ha"]/10
-gcme_data$ambient[gcme_data$Unit=="mg_N/kg*day_"] <- NA #quite weired about the unit, for one site. Disregard them first
-hist(gcme_data$ambient)
-#why some values are too low?
-gcme_data <- subset(gcme_data,ambient>0)
-subset(gcme_data,ambient<1) %>% group_by(exp_nam) %>% summarise(number = n())
-#after look, "RiceFACE_Japan_A_1998_39,40_141" looks fine, as most of them were still in good range. But remove the other 5 sites (they may be wrong due to measurement mistakes or unit errors, we don't know)
-gcme_data_final <- subset(gcme_data,exp_nam!="Michigan_UNDERC_bog" & exp_nam!="Michigan_UNDERC_intermFen" & exp_nam!="Michigan_UNDERC_richFen"&
-                            exp_nam!="RiceFACE_China_32N_120E_Or_Tr_7"& exp_nam!="TL_7")
-hist(gcme_data_final$ambient)
-
-#finally, mergeing them to obtain siteinfo
-
-gcme_data_final_forest <-Reduce(function(x,y) merge(x = x, y = y, by = c("exp_nam"),all.x=TRUE),list(gcme_data_final,siteinfo_gcme))
-
-#rbind them to get final Nmin. data
-
-Finzi_all_forest <- Finzi_all_forest[,c("lon","lat","elv","sitename","sitename_climate","year_start","year_end","Nmin")]
-Finzi_all_forest <- rename(Finzi_all_forest, obs_nuptake = Nmin)
-Finzi_all_forest$method <- "Net minerlization (Finzi paper)"
-gcme_data_final_forest <- gcme_data_final_forest[,c("lon","lat","elv","sitename","sitename_climate","year_start","year_end","ambient")]
-gcme_data_final_forest <- rename(gcme_data_final_forest, obs_nuptake = ambient)
-gcme_data_final_forest$method <- "Total Nuptake reported in GCME, at ambient condition"
-
-Nmin_final <- dplyr::bind_rows(Finzi_all_forest,gcme_data_final_forest)
-Nmin_final
-
+Nmin_final <- Finzi_all_forest
 
 #input Filzi's climates
 forcing_df <- list.files("~/data/NPP_Yunke/Nmin_Finzi/reprocessing_Nmin/climates/",full.names = T) # 2 points were missing, as expected
@@ -152,33 +85,33 @@ for (i in 1:(length(forcing_df)-18)){ # remove the later 18 sites where is grass
   
   sitename_climate <- subset(Nmin_final,Nmin_final$sitename_climate == df1$sitename[1])$sitename_climate
   sitename_fapar <- subset(Nmin_final,Nmin_final$sitename_climate == df1$sitename[1])$sitename
-    
+  
   fapar <- (eval(parse(text=sitename_fapar)))
   fapar$Year <- year(fapar$date)
   
   yr_start <- 1984
   yr_end <- 2013
-    
-    if (yr_start<=2002) { # if measurement year before 2002 for a certain site --> calculating 2003-2012 average of MCD15A3H (since this product only available after the 2003, as entire year)
-      df1a <- fapar[fapar$date >= "2003-01-01" & fapar$date <= "2012-12-31",c("date","modisvar_filled")]
-      df1b <- df1a %>% mutate(ymonth = month(date),
-                              yday = day(date)) %>% 
-        group_by(ymonth, yday) %>% 
-        summarise(fpar = mean(modisvar_filled, na.rm = TRUE))
-      df1b <- as.data.frame(df1b)[,3] # averaged fapar from 2003 - 2012 (365 length of data)
-      df2 <- rep(df1b,(yr_end- yr_start+1)) # repeated it to multiple years, the number of years is consitent to what we collect climate forcing
-    } else { # if measurement year bewteen 2003 and 2015 --> use such years directly where consistent with climate forcing
-      df1a <- subset(fapar,Year>=yr_start & Year<=yr_end)
-      df2 <- df1a$modisvar_filled }
-    
-    fpar <- df2
-    
-    df3 <- cbind(df1,fpar)
-    df3 <- df3[,c("date","temp","prec","rain","snow","vpd","ppfd","patm","ccov_int","ccov","fpar","co2")]
-    names(df3)[names(df3) == 'rain'] <- 'rainf'
-    names(df3)[names(df3) == 'snow'] <- 'snowf'
-    names(df3)[names(df3) == 'fpar'] <- 'fapar'
-    assign(paste("final",df1$sitename[1],sep="_"), as_tibble(df3))
+  
+  if (yr_start<=2002) { # if measurement year before 2002 for a certain site --> calculating 2003-2012 average of MCD15A3H (since this product only available after the 2003, as entire year)
+    df1a <- fapar[fapar$date >= "2003-01-01" & fapar$date <= "2012-12-31",c("date","modisvar_filled")]
+    df1b <- df1a %>% mutate(ymonth = month(date),
+                            yday = day(date)) %>% 
+      group_by(ymonth, yday) %>% 
+      summarise(fpar = mean(modisvar_filled, na.rm = TRUE))
+    df1b <- as.data.frame(df1b)[,3] # averaged fapar from 2003 - 2012 (365 length of data)
+    df2 <- rep(df1b,(yr_end- yr_start+1)) # repeated it to multiple years, the number of years is consitent to what we collect climate forcing
+  } else { # if measurement year bewteen 2003 and 2015 --> use such years directly where consistent with climate forcing
+    df1a <- subset(fapar,Year>=yr_start & Year<=yr_end)
+    df2 <- df1a$modisvar_filled }
+  
+  fpar <- df2
+  
+  df3 <- cbind(df1,fpar)
+  df3 <- df3[,c("date","temp","prec","rain","snow","vpd","ppfd","patm","ccov_int","ccov","fpar","co2")]
+  names(df3)[names(df3) == 'rain'] <- 'rainf'
+  names(df3)[names(df3) == 'snow'] <- 'snowf'
+  names(df3)[names(df3) == 'fpar'] <- 'fapar'
+  assign(paste("final",df1$sitename[1],sep="_"), as_tibble(df3))
 }
 
 #3. rsofun to predict gpp
@@ -237,115 +170,6 @@ for (i in 1:nrow(Nmin_final)) {
     Nmin_final[i,c("max_vcmax25_c3")] <- max_vcmax25
   }, error=function(e){})} 
 #for fapar - if not available for n_focal = 0, then changing to 1, then 2...
-
-
-#input gcme climates
-forcing_df <- list.files("~/data/NPP_Yunke/Nuptake_gcme/climates/",full.names = T) # 2 points were missing, as expected due to 
-length(forcing_df)
-
-fapar_df <- list.files("~/data/NPP_Yunke/Nuptake_gcme/fapar/",full.names = T)
-length(fapar_df)-1
-
-#1. fapar - input
-
-#1. fpar - check missing data - and also, input all years fapar (2001-2015), which will be selected in measurement year only later on 
-for (i in 1:(length(fapar_df)-1)){
-  df1 <- read.csv(fapar_df[i])
-  df1$date <- as.Date(df1$date)
-  df1 <- df1[!(format(df1$date,"%m") == "02" & format(df1$date, "%d") == "29"), , drop = FALSE]
-  df2 <- df1[,c("date","modisvar_filled")]
-  assign(substr(sub('.*daily_', '', fapar_df[i]),1,nchar(sub('.*daily_', '', fapar_df[i]))-4), df2) 
-}
-
-#2. forcing - combing fapar and climates into a df.
-for (i in 1:(length(forcing_df))) {
-  tryCatch({
-    df1 <- read.csv(forcing_df[i])
-    df1$date <- as.Date(df1$date)
-    
-    sitename_climate <- subset(Nmin_final,Nmin_final$sitename_climate == df1$sitename[1])$sitename_climate[1]
-    sitename_fapar <- subset(Nmin_final,Nmin_final$sitename_climate == df1$sitename[1])$sitename[1]
-    
-    fapar <- (eval(parse(text=sitename_fapar)))
-    fapar$Year <- year(fapar$date)
-    
-    yr_start <- subset(Nmin_final,Nmin_final$sitename_climate == df1$sitename[1])$year_start[1]
-    yr_end <- subset(Nmin_final,Nmin_final$sitename_climate == df1$sitename[1])$year_end[1]
-    
-    if (yr_start<=2002) { # if measurement year before 2002 for a certain site --> calculating 2003-2012 average of MCD15A3H (since this product only available after the 2003, as entire year)
-      df1a <- fapar[fapar$date >= "2003-01-01" & fapar$date <= "2012-12-31",c("date","modisvar_filled")]
-      df1b <- df1a %>% mutate(ymonth = month(date),
-                              yday = day(date)) %>% 
-        group_by(ymonth, yday) %>% 
-        summarise(fpar = mean(modisvar_filled, na.rm = TRUE))
-      df1b <- as.data.frame(df1b)[,3] # averaged fapar from 2003 - 2012 (365 length of data)
-      df2 <- rep(df1b,(yr_end- yr_start+1)) # repeated it to multiple years, the number of years is consitent to what we collect climate forcing
-    } else { # if measurement year bewteen 2003 and 2015 --> use such years directly where consistent with climate forcing
-      df1a <- subset(fapar,Year>=yr_start & Year<=yr_end)
-      df2 <- df1a$modisvar_filled }
-    
-    fpar <- df2
-    
-    df3 <- cbind(df1,fpar)
-    df3 <- df3[,c("date","temp","prec","rain","snow","vpd","ppfd","patm","ccov_int","ccov","fpar","co2")]
-    names(df3)[names(df3) == 'rain'] <- 'rainf'
-    names(df3)[names(df3) == 'snow'] <- 'snowf'
-    names(df3)[names(df3) == 'fpar'] <- 'fapar'
-    assign(paste("final",df1$sitename[1],sep="_"), as_tibble(df3))
-  }, error=function(e){})} 
-
-
-#3. rsofun to predict gpp
-df_soiltexture <- bind_rows(
-  top    = tibble(layer = "top",    fsand = 0.4, fclay = 0.3, forg = 0.1, fgravel = 0.1),
-  bottom = tibble(layer = "bottom", fsand = 0.4, fclay = 0.3, forg = 0.1, fgravel = 0.1))
-params_modl <- list(
-  kphio           = 0.09423773,
-  soilm_par_a     = 0.33349283,
-  soilm_par_b     = 1.45602286)
-
-Nmin_final$whc = 170
-
-#using rsofun for gcme sites only
-for (i in 240:328) {
-  tryCatch({
-    #c3
-    forcing <- (eval(parse(text=(paste("final",Nmin_final$sitename_climate[i],sep="_")))))
-    modlist <- run_pmodel_f_bysite( 
-      Nmin_final$sitename_climate[i], 
-      params_siml <- list(
-        spinup             = TRUE,
-        spinupyears        = 10,
-        recycle            = 1,
-        soilmstress        = TRUE,
-        tempstress         = TRUE,
-        calc_aet_fapar_vpd = FALSE,
-        in_ppfd            = TRUE,
-        in_netrad          = FALSE,
-        outdt              = 1,
-        ltre               = FALSE,
-        ltne               = FALSE,
-        ltrd               = FALSE,
-        ltnd               = FALSE,
-        lgr3               = TRUE,
-        lgn3               = FALSE,
-        lgr4               = FALSE,
-        firstyeartrend = Nmin_final$year_start[i],
-        nyeartrend = Nmin_final$year_end[i]-Nmin_final$year_start[i]+1), 
-      siteinfo = Nmin_final[i,], 
-      forcing, 
-      df_soiltexture, 
-      params_modl = params_modl, 
-      makecheck = TRUE)
-    
-    pred_gpp_list <- modlist %>% mutate(ymonth = month(date),yday = day(date)) %>% group_by(ymonth, yday) %>% summarise(gpp = mean(gpp, na.rm = TRUE))
-    max_vcmax25 <- max(modlist$vcmax25)*1000000
-    
-    Nmin_final[i,c("pred_gpp_c3")] <- sum(pred_gpp_list$gpp)
-    Nmin_final[i,c("max_vcmax25_c3")] <- max_vcmax25
-  }, error=function(e){})} 
-
-Nmin_final
 
 NPP_Forest <- Nmin_final
 #already checked here -all NA in pred_gpp_c3 is due to NA of fAPAR in orig/, either in nfocal = 0, 1 and 2.
@@ -532,7 +356,7 @@ load("/Users/yunpeng/data/NPP_final/statistical_model/mod_lnpp.RData")
 summary(mod_lnpp)
 load("/Users/yunpeng/data/NPP_final/statistical_model/nmass.RData")
 summary(n1)
-load("/Users/yunpeng/data/NPP_final/statistical_model/nre_model.RData")
+load("/Users/yunpeng/data/NPP_final/statistical_model/nre_model_forest.RData")
 summary(nre_model)
 
 #now, using several statistical models to predict npp, anpp, npp.leaf....
@@ -581,31 +405,197 @@ My_Theme = theme(
   axis.text.y = element_text(size = 20))
 
 #check
-#analyse_modobs2(forest_site2,"pred_gpp", "GPP",type = "points")
-ggplot(data=NPP_Forest, aes(x=pred_nuptake, y=obs_nuptake)) +
-  geom_point(aes(x=pred_nuptake, y=obs_nuptake,color=factor(method)))+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
-  xlab("Prediction")+ylab("Observation")+theme_classic()+My_Theme
 
-Nmin_all <- subset(NPP_Forest,method=="Net minerlization (Finzi paper)")
-
-ggplot(data=Nmin_all, aes(x=pred_nuptake, y=obs_nuptake)) +
+ggplot(data=NPP_Forest, aes(x=pred_nuptake, y=Nmin)) +
   geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+xlim(0,25)+ylim(0,25)+
   xlab("Prediction")+ylab("Observation")+theme_classic()+My_Theme
-summary(lm(obs_nuptake~pred_nuptake,Nmin_all))
+summary(lm(Nmin~pred_nuptake,NPP_Forest))
+
+ggplot(data=subset(NPP_Forest,Biome!="med"), aes(x=pred_nuptake, y=Nmin)) +
+  geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+xlim(0,25)+ylim(0,25)+
+  xlab("Prediction")+ylab("Observation")+theme_classic()+My_Theme
+summary(lm(Nmin~pred_nuptake,subset(NPP_Forest,Biome!="med")))
+
+Nmin_all <- subset(NPP_Forest,Biome!="med")
+Nmin_all$obs_nuptake <- Nmin_all$Nmin
+
 csvfile <- paste("/Users/yunpeng/data/NPP_final/Nmin_validation.csv")
 write.csv(Nmin_all, csvfile, row.names = TRUE)
 
-
-subset(Nmin_all,is.na(pred_nuptake)==TRUE) %>% group_by(sitename) %>% 
-  summarise (number=n())
-#10 sites were missing - due to missing fapar (even when n_focal =2) or missing age (when becoming negative)
-#site-mean
-Nmin_all_sm <- aggregate(Nmin_all,by=list(Nmin_all$lon,Nmin_all$lat), mean,na.rm=TRUE)
-ggplot(data=Nmin_all_sm, aes(x=pred_nuptake, y=obs_nuptake)) +
-  geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
-  xlab("Prediction")+ylab("Observation")+theme_classic()+My_Theme
-
-csvfile <- paste("~/data/NPP_Yunke/Nuptake_gcme/All_Nuptake.csv",sep = "")
-write.csv(NPP_Forest, csvfile, row.names = TRUE)
-
 save.image(file = "~/yunkepeng/nimpl_sofun_inputs/forest/New_Nuptake_site_simulation.Rdata")
+
+
+#now, grassland - but results are bad --> so not including grassland since we don't have model within grassland at all
+#### Input N uptake
+#(1) newly added Nmin rate data from Finzi
+Finzi <- read.csv("/Users/yunpeng/data/NPP_Yunke/Nmin_Finzi/Nmin_Finzi.csv")
+names(Finzi)[names(Finzi) == "Lat"] <- "lat"
+names(Finzi)[names(Finzi) == "Long"] <- "lon"
+
+#See Gill and Finzi Fig3 for pft info 
+#Grassland
+Finzi_Grassland <- subset(Finzi, Biome=="temp grass")
+Finzi_Grassland_sitemean <- aggregate(Finzi_Grassland,by=list(Finzi_Grassland$lon,Finzi_Grassland$lat), FUN=mean, na.rm=TRUE) #site-mean
+dim(Finzi_Grassland_sitemean)
+for (i in 1:nrow(Finzi_Grassland_sitemean)){
+  Finzi_Grassland_sitemean$sitename[i] <- paste("Finzi_Grass",i,sep = "") # this is also sitename for fpar
+  Finzi_Grassland_sitemean$sitename_climate[i] <- paste("Finzi_Grass_climate",i,sep = "")
+}
+df_etopo <- ingest(Finzi_Grassland_sitemean,source = "etopo1",dir = "~/data/etopo/" )
+Finzi_Grassland_sitemean$elv <- as.numeric(as.data.frame(df_etopo$data))
+Finzi_Grassland_sitemean
+
+Finzi_Grassland_sitemean2 <- Finzi_Grassland_sitemean[,c("lon","lat","elv","sitename","sitename_climate")]
+dim(Finzi_Grassland_sitemean2)
+Finzi_all2 <-Reduce(function(x,y) merge(x = x, y = y, by = c("lon","lat"),all.x=TRUE), 
+                    list(Finzi,Finzi_Grassland_sitemean2))
+
+Finzi_all_grass <- subset(Finzi_all2, Biome=="temp grass" & is.na(lon)==FALSE)
+summary(Finzi_all_grass)
+Finzi_all_grass$year_start <- 1984
+Finzi_all_grass$year_end <- 2013
+
+Nmin_final <- Finzi_all_grass
+
+#input Filzi's climates
+forcing_df <- list.files("~/data/NPP_Yunke/Nmin_Finzi/reprocessing_Nmin/climates/",full.names = T) # 2 points were missing, as expected
+length(forcing_df)
+
+fapar_df <- list.files("~/data/NPP_Yunke/Nmin_Finzi/reprocessing_Nmin/fapar/",full.names = T)
+length(fapar_df)-1
+
+fapar_org_df <- list.files("~/data/NPP_Yunke/Nmin_Finzi/reprocessing_Nmin/fapar/raw/",full.names = T)
+length(fapar_org_df)
+
+#1. fapar - input
+
+#1. fpar - check missing data - and also, input all years fapar (2001-2015), which will be selected in measurement year only later on 
+for (i in 1:(length(fapar_df)-1)){
+  df1 <- read.csv(fapar_df[i])
+  df1$date <- as.Date(df1$date)
+  df1 <- df1[!(format(df1$date,"%m") == "02" & format(df1$date, "%d") == "29"), , drop = FALSE]
+  df2 <- df1[,c("date","modisvar_filled")]
+  assign(substr(sub('.*daily_', '', fapar_df[i]),1,nchar(sub('.*daily_', '', fapar_df[i]))-4), df2) 
+}
+
+#2. forcing - combing fapar and climates into a df.
+for (i in (86:103)){ #later 18 sites where is grassland
+  df1 <- read.csv(forcing_df[i])
+  df1$date <- as.Date(df1$date)
+  
+  sitename_climate <- subset(Nmin_final,Nmin_final$sitename_climate == df1$sitename[1])$sitename_climate
+  sitename_fapar <- subset(Nmin_final,Nmin_final$sitename_climate == df1$sitename[1])$sitename
+  
+  fapar <- (eval(parse(text=sitename_fapar)))
+  fapar$Year <- year(fapar$date)
+  
+  yr_start <- 1984
+  yr_end <- 2013
+  
+  if (yr_start<=2002) { # if measurement year before 2002 for a certain site --> calculating 2003-2012 average of MCD15A3H (since this product only available after the 2003, as entire year)
+    df1a <- fapar[fapar$date >= "2003-01-01" & fapar$date <= "2012-12-31",c("date","modisvar_filled")]
+    df1b <- df1a %>% mutate(ymonth = month(date),
+                            yday = day(date)) %>% 
+      group_by(ymonth, yday) %>% 
+      summarise(fpar = mean(modisvar_filled, na.rm = TRUE))
+    df1b <- as.data.frame(df1b)[,3] # averaged fapar from 2003 - 2012 (365 length of data)
+    df2 <- rep(df1b,(yr_end- yr_start+1)) # repeated it to multiple years, the number of years is consitent to what we collect climate forcing
+  } else { # if measurement year bewteen 2003 and 2015 --> use such years directly where consistent with climate forcing
+    df1a <- subset(fapar,Year>=yr_start & Year<=yr_end)
+    df2 <- df1a$modisvar_filled }
+  
+  fpar <- df2
+  
+  df3 <- cbind(df1,fpar)
+  df3 <- df3[,c("date","temp","prec","rain","snow","vpd","ppfd","patm","ccov_int","ccov","fpar","co2")]
+  names(df3)[names(df3) == 'rain'] <- 'rainf'
+  names(df3)[names(df3) == 'snow'] <- 'snowf'
+  names(df3)[names(df3) == 'fpar'] <- 'fapar'
+  assign(paste("final",df1$sitename[1],sep="_"), as_tibble(df3))
+}
+
+#3. rsofun to predict gpp
+df_soiltexture <- bind_rows(
+  top    = tibble(layer = "top",    fsand = 0.4, fclay = 0.3, forg = 0.1, fgravel = 0.1),
+  bottom = tibble(layer = "bottom", fsand = 0.4, fclay = 0.3, forg = 0.1, fgravel = 0.1))
+params_modl <- list(
+  kphio           = 0.09423773,
+  soilm_par_a     = 0.33349283,
+  soilm_par_b     = 1.45602286)
+
+Nmin_final$whc = 170
+
+Nmin_final$pred_gpp_c3 <- NA
+#NPP_Forest$pred_gpp_c4 <- NA
+Nmin_final$max_vcmax25_c3 <- NA
+#NPP_Forest$max_vcmax25_c4 <- NA
+
+
+#using rsofun
+for (i in 1:nrow(Nmin_final)) {
+  tryCatch({
+    #c3
+    forcing <- (eval(parse(text=(paste("final",Nmin_final$sitename_climate[i],sep="_")))))
+    modlist <- run_pmodel_f_bysite( 
+      Nmin_final$sitename_climate[i], 
+      params_siml <- list(
+        spinup             = TRUE,
+        spinupyears        = 10,
+        recycle            = 1,
+        soilmstress        = TRUE,
+        tempstress         = TRUE,
+        calc_aet_fapar_vpd = FALSE,
+        in_ppfd            = TRUE,
+        in_netrad          = FALSE,
+        outdt              = 1,
+        ltre               = FALSE,
+        ltne               = FALSE,
+        ltrd               = FALSE,
+        ltnd               = FALSE,
+        lgr3               = TRUE,
+        lgn3               = FALSE,
+        lgr4               = FALSE,
+        firstyeartrend = Nmin_final$year_start[i],
+        nyeartrend = Nmin_final$year_end[i]-Nmin_final$year_start[i]+1), 
+      siteinfo = Nmin_final[i,], 
+      forcing, 
+      df_soiltexture, 
+      params_modl = params_modl, 
+      makecheck = TRUE)
+    
+    pred_gpp_list <- modlist %>% mutate(ymonth = month(date),yday = day(date)) %>% group_by(ymonth, yday) %>% summarise(gpp = mean(gpp, na.rm = TRUE))
+    max_vcmax25 <- max(modlist$vcmax25)*1000000
+    
+    Nmin_final[i,c("pred_gpp_c3")] <- sum(pred_gpp_list$gpp)
+    Nmin_final[i,c("max_vcmax25_c3")] <- max_vcmax25
+  }, error=function(e){})} 
+#for fapar - if not available for n_focal = 0, then changing to 1, then 2...
+
+NPP_grassland <- Nmin_final
+summary(NPP_grassland)
+
+load(file = "/Users/yunpeng/data/NPP_grassland_final/statistical_model/tnpp_grass.RData")
+summary(tnpp_grass)
+load(file = "/Users/yunpeng/data/NPP_grassland_final/statistical_model/anpp_grass.RData")
+summary(anpp_grass)
+
+npp_g <- NPP_grassland$pred_gpp_c3 * summary(tnpp_grass)$coef[1,1]
+anpp_g <- NPP_grassland$pred_gpp_c3 * summary(anpp_grass)$coef[1,1]
+bnpp_g <- npp_g-anpp_g
+lnf_g <- anpp_g *(1/18)*(1-0.69)
+bnf_g <- bnpp_g *(1/41)
+NPP_grassland$pred_nuptake <- lnf_g + bnf_g
+NPP_grassland$Biome
+
+ggplot(data=NPP_Forest, aes(x=pred_nuptake, y=Nmin)) +
+  geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+xlim(0,25)+ylim(0,25)+
+  xlab("Prediction")+ylab("Observation")+theme_classic()+My_Theme
+summary(lm(Nmin~pred_nuptake,NPP_Forest))
+
+NPP_final <- rbind(NPP_grassland[,c("pred_nuptake","Nmin","Biome")],
+                   NPP_Forest[,c("pred_nuptake","Nmin","Biome")])
+
+ggplot(data=NPP_final, aes(x=pred_nuptake, y=Nmin)) +
+  geom_point(aes(color=factor(Biome)))+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+xlim(0,25)+ylim(0,25)+
+  xlab("Prediction")+ylab("Observation")+theme_classic()+My_Theme
+summary(lm(Nmin~pred_nuptake,NPP_final))
