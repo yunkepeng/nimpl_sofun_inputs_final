@@ -2,6 +2,8 @@ rm(list=ls())
 
 load(file = "/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/output/output.Rdata")
 
+nre_constant_grass <- 0.69
+
 library(tidyverse)  # depends
 library(ncmeta)
 library(viridis)
@@ -163,7 +165,7 @@ nuptake_f <- lnf_f + wnf_f + bnf_f
 npp_g <- gpp_df$gpp * summary(tnpp_grass)$coef[1,1]
 anpp_g <- gpp_df$gpp * summary(anpp_grass)$coef[1,1]
 bnpp_g <- npp_g-anpp_g
-lnf_g <- anpp_g *(1/18)*(1-nre_f)
+lnf_g <- anpp_g *(1/18)*(1-nre_constant_grass)
 bnf_g <- bnpp_g *(1/41)
 nuptake_g <- lnf_g + bnf_g
 
@@ -286,98 +288,12 @@ simulations$nue_gpp <- simulations$nuptake_pft/simulations$gpp
 simulations_predictors <- as.data.frame(cbind(all_predictors[,-c(9,10,11)],simulations))
 
 #####nue
+plot_map3(simulations[,c("lon","lat","nuptake_pft")],
+          varnam = "nuptake_pft",
+          latmin = -65, latmax = 85)
 plot_map3(simulations[,c("lon","lat","nue_gpp")],
           varnam = "nue_gpp",
           latmin = -65, latmax = 85)
-plot_map3(simulations[,c("lon","lat","nuptake_pft")],
-          varnam = "nuptake_pft",
-          latmin = -65, latmax = 85)
-
-a1 <- (lm(nue~Tg+PPFD+vpd+fAPAR+CNrt+age+LMA+vcmax25,data=simulations_predictors))
-summary(a1)$coef[,1] #only intercept, Tg and vcmax25 are positive
-
-anova(a1)
-af <- anova(a1)
-afss <- af$"Sum Sq"
-
-#now, cbind and change sign
-final <- (cbind(af,PctExp=afss/sum(afss)*100))
-final$variations <- -final$PctExp
-final$variations[rownames(final)=="Tg"|rownames(final)=="vcmax25"|rownames(final)=="Residuals"] <- -final$variations[rownames(final)=="Tg"|rownames(final)=="vcmax25"|rownames(final)=="Residuals"]
-
-#make plot
-mp <- barplot(final$variations, col="#3F97D0", xaxt='n', main=" ")
-text(mp, par("usr")[3], labels = rownames(final), srt = 45,adj = c(1.1,1.1), xpd = TRUE, cex=1.5)
-
-####nue_gpp
-plot_map3(simulations[,c("lon","lat","nue_gpp")],
-          varnam = "nue",
-          latmin = -65, latmax = 85)
-
-a1 <- (lm(nue_gpp~Tg+PPFD+vpd+fAPAR+CNrt+age+LMA+vcmax25,data=simulations_predictors))
-summary(a1)$coef[,1] #only intercept, Tg and vcmax25 are positive
-
-anova(a1)
-af <- anova(a1)
-afss <- af$"Sum Sq"
-
-#now, cbind and change sign
-final <- (cbind(af,PctExp=afss/sum(afss)*100))
-final$variations <- -final$PctExp
-#only this three is positive
-final$variations[rownames(final)=="Tg"|rownames(final)=="vcmax25"|rownames(final)=="Residuals"] <- -final$variations[rownames(final)=="Tg"|rownames(final)=="vcmax25"|rownames(final)=="Residuals"]
-final$variations
-
-#make plot
-mp <- barplot(final$variations, col="#3F97D0", xaxt='n', main=" ")
-text(mp, par("usr")[3], labels = rownames(final), srt = 45,adj = c(1.1,1.1), xpd = TRUE, cex=1.5)
-
-####nuptake
-plot_map3(simulations[,c("lon","lat","nuptake_pft")],
-          varnam = "nuptake_pft",
-          latmin = -65, latmax = 85)
-
-#nuptake
-a2 <- (lm(nuptake_pft~Tg+PPFD+vpd+fAPAR+CNrt+age+LMA+vcmax25,data=simulations_predictors))
-library(visreg)
-summary(a2)#only Tg, PPFD and vpd are positive
-#visreg(a1)
-
-anova(a2)
-af <- anova(a2)
-afss <- af$"Sum Sq"
-final <- (cbind(af,PctExp=afss/sum(afss)*100))
-final$variations <- -final$PctExp
-final$variations[rownames(final)=="Tg"|rownames(final)=="PPFD"|rownames(final)=="fAPAR"] <- -final$variations[rownames(final)=="Tg"|rownames(final)=="PPFD"|rownames(final)=="fAPAR"]
-final$variations
-mp <- barplot(final$variations, col="#3F97D0", xaxt='n', main=" ")
-text(mp, par("usr")[3], labels = rownames(final), srt = 45,adj = c(1.1,1.1), xpd = TRUE, cex=1.5)
-
-####nuptake~gpp + anpp/gpp + leaf npp /anpp + leaf n/c + nre
-simulations_predictors$anpp_gpp <- simulations_predictors$anpp_pft/simulations_predictors$gpp
-simulations_predictors$lnpp_anpp <- simulations_predictors$lnpp_forest/simulations_predictors$anpp_forest
-
-a4 <- (lm(nuptake_pft~gpp+anpp_gpp+lnpp_anpp+leafcn_forest+nre_pft,data=simulations_predictors))
-#visreg(a4)
-summary(a4)
-anova(a4)
-af <- anova(a4)
-afss <- af$"Sum Sq"
-final <- (cbind(af,PctExp=afss/sum(afss)*100))
-final$variations <- -final$PctExp
-final$variations[rownames(final)=="gpp"|rownames(final)=="anpp_gpp"|rownames(final)=="lnpp_anpp"|rownames(final)=="nre_pft"] <- -final$variations[rownames(final)=="gpp"|rownames(final)=="anpp_gpp"|rownames(final)=="lnpp_anpp"|rownames(final)=="nre_pft"]
-final$variations
-mp <- barplot(final$variations, col="#3F97D0", xaxt='n', main=" ")
-text(mp, par("usr")[3], labels = rownames(final), srt = 45,adj = c(1.1,1.1), xpd = TRUE, cex=1.5)
-
-#using ggplot to show nuptake/gpp directly
-test1 <- simulations_predictors
-test1$nuptake_gpp <- test1$nuptake_pft/test1$gpp
-ggplot(data=test1) +xlab(" ")+ylab(" ")+theme_classic()+My_Theme+
-  geom_smooth(aes(x=anpp_gpp,y=nuptake_gpp),method = "lm", se = TRUE)+
-  geom_smooth(aes(x=lnpp_anpp,y=nuptake_gpp),method = "lm", se = TRUE,color="red")+
-  geom_smooth(aes(x=leafcn_forest,y=nuptake_gpp),method = "lm", se = TRUE,color="orange")+
-  geom_smooth(aes(x=nre_pft,y=nuptake_gpp),method = "lm", se = TRUE,color="yellow")
 
 
 #now, select median values from available grids only - and do each step-by-step
@@ -431,7 +347,7 @@ cal_nuptake <- function(Tg_pred,PPFD_pred,vpd_pred,fAPAR_pred,age_pred,CNrt_pred
   npp_g <- gpp_df$gpp * summary(tnpp_grass)$coef[1,1]
   anpp_g <- gpp_df$gpp * summary(anpp_grass)$coef[1,1]
   bnpp_g <- npp_g-anpp_g
-  lnf_g <- anpp_g *(1/18)*(1-nre_f)
+  lnf_g <- anpp_g *(1/18)*(1-nre_constant_grass)
   bnf_g <- bnpp_g *(1/41)
   nuptake_g <- lnf_g + bnf_g
   
@@ -501,23 +417,30 @@ for (i in 1:nrow(nuptake_all)){
 
 apparent_point <- as.data.frame(cbind(gpp_df[,c("lon","lat")],nuptake_all[,c("most_factor","most_factor_value")]))
 apparent_point_available <- subset(apparent_point,is.na(most_factor_value)==FALSE) 
-
+dim(apparent_point_available)
 apparent_point_available$most_factor_value <- as.numeric(apparent_point_available$most_factor_value)
 
 apparent_point_available %>% group_by(most_factor) %>% summarise(number=n())
 
 area_final <- as.data.frame(cbind(gpp_df[,c("lon","lat")],nuptake_all[,c("most_factor","most_factor_value")]))
-area_final$ratio <- conversion/sum(conversion,na.rm = TRUE)
+area_final$conversion <- conversion
 
-area_final %>% group_by(most_factor) %>% summarise(sum = sum(ratio), n = n())
+dim(subset(area_final,is.na(most_factor_value)==FALSE)) # area only available in those grids
+#total area
+sum(subset(area_final,is.na(most_factor_value)==FALSE)$conversion, na.rm = TRUE)
 
+area_final$ratio <- area_final$conversion/sum(subset(area_final,is.na(most_factor_value)==FALSE)$conversion, na.rm = TRUE)
+
+aa <- area_final %>% group_by(most_factor) %>% summarise(sum = sum(ratio)*100, n = n())
+sum(aa$sum,na.rm=TRUE)
+aa
 
 # count the needed levels of a factor
 gg <- plot_map3(all_maps[,c("lon","lat","nuptake_pft")],
-                varnam = "nuptake_pft",plot_title = paste("N uptake Constrained by most important factor"),
+                varnam = "nuptake_pft",plot_title = paste("N demand of GPP constrained by most important factor"),
                 latmin = -65, latmax = 85,combine=FALSE)
 
-colors <-  c("red","red","red","red","red","red","red","red", "cyan","yellow","blue","black","red","orange","green","purple")
+colors <-  c("red","red","red","red","red","red","red","red","cyan","yellow","green","purple","red","blue","purple")
 gg$ggmap + geom_point(data=apparent_point_available,aes(lon,lat,color=most_factor),size=0.5)+
   scale_color_manual(values = colors)+ theme(
     legend.text = element_text(size = 20))+
@@ -541,14 +464,12 @@ for (i in 3:10){
   percentage_value <- label_percent()(relative_value)
   plot_map3(nuptake_all_coord[,c("lon","lat",varname)],
             varnam = varname,plot_title = paste(varname, percentage_value, sep=": " ),
-            latmin = -65, latmax = 85,breaks=c(seq(-0.4, 0.8, by = 0.1)))
+            latmin = -65, latmax = 85,
+            colorscale = c( "royalblue4", "wheat", "tomato2", "tomato4" ),
+            breaks = c(-0.3,-0.25,-0.2,-0.15,-0.1,-0.05,-0.025, 0,
+                       0.025,0.05,0.1,0.15,0.2,0.25,0.3,0.4,0.6,0.8))
   ggsave(paste("/Users/yunpeng/data/output/output_onefactor/",varname,".jpg",sep=""))
 }
-#colorscale = c("blue", "white", "red")
-
-plot_map3(nuptake_all_coord[,c("lon","lat",varname)],
-          varnam = varname,plot_title = paste(varname, percentage_value, sep=": " ),
-          latmin = -65, latmax = 85, colorscale = c("blue", "white", "red"), breaks = c(-0.4, -0.2, -0.01, 0.01, 0.2, 0.4))
 
 ######
 #quantify each component
@@ -600,7 +521,7 @@ cal_nuptake_model <- function(gpp,model1_npp_gpp,model2_anpp_gpp,model3_lnpp_anp
   npp_g <- gpp* summary(tnpp_grass)$coef[1,1]
   anpp_g <- gpp * summary(anpp_grass)$coef[1,1]
   bnpp_g <- npp_g-anpp_g
-  lnf_g <- anpp_g *(1/18)*(1-nre_f)
+  lnf_g <- anpp_g *(1/18)*(1-nre_constant_grass)
   bnf_g <- bnpp_g *(1/41)
   nuptake_g <- lnf_g + bnf_g
   
@@ -674,14 +595,20 @@ for (i in 1:nrow(nuptake_all2)){
 
 apparent_point2 <- as.data.frame(cbind(gpp_df[,c("lon","lat")],nuptake_all2[,c("most_factor","most_factor_value")]))
 apparent_point_available2 <- subset(apparent_point2,is.na(most_factor_value)==FALSE) 
-dim(apparent_point_available)
+dim(apparent_point_available2)
 
 apparent_point_available2 %>% group_by(most_factor) %>% summarise(number=n())
 
 area_final2 <- as.data.frame(cbind(gpp_df[,c("lon","lat")],nuptake_all2[,c("most_factor","most_factor_value")]))
-area_final2$ratio <- conversion/sum(conversion,na.rm = TRUE)
+area_final2$conversion <- conversion
 
-area_final2 %>% group_by(most_factor) %>% summarise(sum = sum(ratio), n = n())
+sum(subset(area_final2,is.na(most_factor_value)==FALSE)$conversion, na.rm = TRUE)
+
+area_final2$ratio <- area_final2$conversion/sum(subset(area_final2,is.na(most_factor_value)==FALSE)$conversion, na.rm = TRUE)
+
+bb <- area_final2 %>% group_by(most_factor) %>% summarise(sum = sum(ratio)*100, n = n())
+sum(bb$sum,na.rm=TRUE)
+bb
 
 # count the needed levels of a factor
 gg <- plot_map3(all_maps[,c("lon","lat","nuptake_pft")],
@@ -714,7 +641,7 @@ for (i in 3:8){
   ggsave(paste("/Users/yunpeng/data/output/output_onefactor/",varname,".jpg",sep=""))
 }
 
-save.image(file = "/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/output/output.Rdata")
+#save.image(file = "/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/output/output.Rdata")
 
 #now, deal with uncertainty
 #firstly, load all forest models
@@ -876,8 +803,7 @@ uncertainty_grass_bnpp <- sqrt((uncertainty_grass_npp)^2 + (uncertainty_grass_an
 summary(uncertainty_grass_bnpp/bnpp_g)
 
 #lnf = anpp * (1/18.0)* (1-NRE)
-uncertainty_grass_lnf <- lnf_g * sqrt( (uncertainty_grass_anpp/anpp_g)^2 +
-                                                          (mod_nre_uncertainty/(1-nre_f))^2)
+uncertainty_grass_lnf <- (lnf_g/anpp_g) * uncertainty_grass_anpp
 summary(uncertainty_grass_lnf/lnf_g)
 
 #bnf = bnpp * (1/41.0)
@@ -902,8 +828,8 @@ sum(uncertainty_lnpp*(forest_percent *conversion)*available_grid2,na.rm=TRUE)
 sum(mod_lnpp_uncertainty*(forest_percent *conversion)*available_grid2,na.rm=TRUE)
 
 #uncertainty of wood npp/gpp
-
 sum(uncertainty_wnpp_gpp*(forest_percent *conversion)*available_grid2,na.rm=TRUE)
+
 
 sum(uncertainty_wnpp*(forest_percent *conversion)*available_grid2,na.rm=TRUE)
 sum(uncertainty_lnf*(forest_percent *conversion)*available_grid2,na.rm=TRUE)
