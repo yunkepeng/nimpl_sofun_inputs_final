@@ -1035,8 +1035,9 @@ summary(NPP_grassland_final12$End_year - NPP_grassland$End_year)
 summary(NPP_grassland_final12$ANPP_2 - NPP_grassland$ANPP_2)
 summary(NPP_grassland_final12$TNPP_1 - NPP_grassland$TNPP_1)
 
-#csvfile <- paste("/Users/yunpeng/data/NPP_Grassland_final/NPP_grassland.csv")
-#write_csv(NPP_grassland_final12, path = csvfile)
+csvfile <- paste("/Users/yunpeng/data/NPP_Grassland_final/NPP_grassland.csv")
+write_csv(NPP_grassland_final12, path = csvfile)
+
 
 #now, newly add net minerlization rate and GCME N uptake sites
 #### Input N uptake

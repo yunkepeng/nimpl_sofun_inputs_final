@@ -77,8 +77,8 @@ stopifnot( all(siteinfo_final$year_start == floor(siteinfo_final$year_start)) )
 stopifnot( all(siteinfo_final$year_end == floor(siteinfo_final$year_end)) )
 summary(siteinfo_final$year_end  - siteinfo_final$year_start)
 
-csvfile <- paste("/Users/yunpeng/data/NPP_final/fpar_name/grassland_fpar_name.csv",sep = "")
-write.csv(siteinfo_final, csvfile, row.names = TRUE)
+#csvfile <- paste("/Users/yunpeng/data/NPP_final/fpar_name/grassland_fpar_name.csv",sep = "")
+#write.csv(siteinfo_final, csvfile, row.names = TRUE)
 
 #1. input fapar
 fapar_df <- list.files("/Users/yunpeng/data/NPP_Grassland_final/reprocessing_fapar_final/fpar_all/",full.names = T)

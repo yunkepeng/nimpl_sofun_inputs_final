@@ -33,6 +33,11 @@ NPP_Forest$year_end <-NPP_Forest$End_year
 NPP_Forest$year_start[NPP_Forest$Begin_year<=1980] <- 1980
 NPP_Forest$year_end[NPP_Forest$End_year<=1980] <- 1989
 
+#output,site-name
+#info_f <- NPP_Forest[,c("sitename","sitename_fpar","lon","lat","z","year_start","year_end")]
+#csvfile <- paste("/Users/yunpeng/data/NPP_final/fpar_name/forest_fpar_name.csv")
+#write_csv(info_f, path = csvfile)
+
 ####now, input forcing data from two times simulation
 forcing_df <- list.files("/Users/yunpeng/data/NPP_final/reprocessing_climates/",full.names = T)
 length(forcing_df)
@@ -76,16 +81,11 @@ for (i in 1:(length(forcing_df))){
 
 diff <- setdiff(1:935, empty_vec)
 diff
-NPP_Forest[diff,]
-
-points(NPP_Forest$lon[338],NPP_Forest$lat[338], col="blue", pch=16,cex=1)
-points(NPP_Forest$lon[390],NPP_Forest$lat[390], col="blue", pch=16,cex=1)
+#NPP_F893,NPP_F354
 
 #totally 5 sites were missing:
-na_fapar$sitename
-NPP_Forest[diff,]$sitename
-all_na_points <- c(na_fapar$sitename,NPP_Forest[diff,]$sitename)
-#NPP_F556, NPP_F697, NPP_F700 (due to fapar) and NPP_F338, NPP_F390 (due to climate forcing)
+all_na_points <- c(na_fapar$sitename,c("NPP_F338","NPP_390"))
+#NPP_F556, NPP_F697, NPP_F700 (due to fapar orig missing in ingestr_fpar261,263,264) and NPP_F338, NPP_F390 (due to climate forcing missing)
 
 
 
