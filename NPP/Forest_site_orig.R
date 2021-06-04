@@ -721,24 +721,8 @@ NPP_Forest$file[NPP_Forest$z!=NPP_old$z |
                   NPP_Forest$Begin_year!=NPP_old$Begin_year|
                   NPP_Forest$End_year!=NPP_old$End_year]
 
-#check other measured variables
-#NPP_Forest$NPP.foliage_old <- NPP_old$NPP.foliage
-#NPP_Forest$ANPP_2_old <- NPP_old$ANPP_2
-#NPP_Forest$BNPP_1_old <- NPP_old$BNPP_1
-#NPP_Forest$TNPP_1_old <- NPP_old$TNPP_1
-#NPP_Forest$GPP_old <- NPP_old$GPP
-#NPP_Forest$CN_leaf_org_old <- NPP_old$CN_leaf_org
-#aaa <- subset(NPP_Forest,GPP - GPP_old > 0.1 | GPP - GPP_old < -0.1)
-#all from sara vicca and forc, as expected (before it was just merged by hand for merging forc, now merging exactly primarily by sitename+yr, and secondly by sitename)
-#also a few due to misranking - accept it anyways since we have corrected siteinfo for climate forcing here.
-#also, for ForC now only be merged once (sitename + start_yr + end_yr) so that it will not cause misleading error about allocations
-#aaa <- subset(NPP_Forest,TNPP_1 - TNPP_1_old > 0.1 | TNPP_1 - TNPP_1_old < -0.1)
-#aaa <- subset(NPP_Forest,ANPP_2 - ANPP_2_old > 0.1 | ANPP_2 - ANPP_2_old < -0.1)
-#aaa <- subset(NPP_Forest,NPP.foliage - NPP.foliage_old > 0.1 | NPP.foliage - NPP.foliage_old < -0.1)
-#aaa <- subset(NPP_Forest,CN_leaf_org - CN_leaf_org_old > 0.1 | CN_leaf_org - CN_leaf_org_old < -0.1)
-
-csvfile <- paste("/Users/yunpeng/data/NPP_final/NPP_Forest.csv")
-write_csv(NPP_Forest, path = csvfile)
+#csvfile <- paste("/Users/yunpeng/data/NPP_final/NPP_Forest.csv")
+#write_csv(NPP_Forest, path = csvfile)
 
 ### Grassland: collect unchanged climate forcing data, based on same lon+lat+z+Begin_year+End_year, 
 #old
@@ -1035,8 +1019,8 @@ summary(NPP_grassland_final12$End_year - NPP_grassland$End_year)
 summary(NPP_grassland_final12$ANPP_2 - NPP_grassland$ANPP_2)
 summary(NPP_grassland_final12$TNPP_1 - NPP_grassland$TNPP_1)
 
-csvfile <- paste("/Users/yunpeng/data/NPP_Grassland_final/NPP_grassland.csv")
-write_csv(NPP_grassland_final12, path = csvfile)
+#csvfile <- paste("/Users/yunpeng/data/NPP_Grassland_final/NPP_grassland.csv")
+#write_csv(NPP_grassland_final12, path = csvfile)
 
 
 #now, newly add net minerlization rate and GCME N uptake sites

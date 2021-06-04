@@ -34,7 +34,7 @@ NPP_Forest$year_start[NPP_Forest$Begin_year<=1980] <- 1980
 NPP_Forest$year_end[NPP_Forest$End_year<=1980] <- 1989
 
 #output,site-name
-#info_f <- NPP_Forest[,c("sitename","sitename_fpar","lon","lat","z","year_start","year_end")]
+#info_f <- NPP_Forest[,c("site","sitename","sitename_fpar","lon","lat","z","year_start","year_end")]
 #csvfile <- paste("/Users/yunpeng/data/NPP_final/fpar_name/forest_fpar_name.csv")
 #write_csv(info_f, path = csvfile)
 
