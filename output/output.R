@@ -293,7 +293,9 @@ plot_map3(simulations[,c("lon","lat","nuptake_pft")],
           latmin = -65, latmax = 85)
 plot_map3(simulations[,c("lon","lat","nue_gpp")],
           varnam = "nue_gpp",
-          latmin = -65, latmax = 85)
+          latmin = -65, latmax = 85,
+          breaks = c(0.002,0.003,0.004,0.005,0.006,0.007,0.008,0.009,0.010,
+                     0.011,0.012,0.013,0.014,0.015,0.016,0.017,0.018,0.019,0.020))
 
 
 #now, select median values from available grids only - and do each step-by-step
@@ -640,8 +642,73 @@ for (i in 3:8){
             latmin = -65, latmax = 85,breaks=c(seq(-4, 2, by = 0.1)))
   ggsave(paste("/Users/yunpeng/data/output/output_onefactor/",varname,".jpg",sep=""))
 }
-
 #save.image(file = "/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/output/output.Rdata")
+
+
+#now, deal with how npp/gpp...nre would affect nuptake/gpp
+nuptake_all3 <- as.data.frame(cbind(npp_gpp_model,anpp_gpp_model,
+                                    lnpp_anpp_model,leafnc_model,nre_model))
+
+for (i in 1:nrow(nuptake_all3)){
+  if (is.na(nuptake_all3[i,1])==TRUE){
+    nuptake_all3$most_factor[i] <- NA
+    nuptake_all3$most_factor_value[i] <- NA
+  } else { 
+    nuptake_all3$most_factor[i] <- names((which.max(abs(log(nuptake_all3[i,1:5])))))
+    nuptake_all3$most_factor_value[i] <- max(abs(log(nuptake_all3[i,1:5])))
+  }
+}
+
+apparent_point3 <- as.data.frame(cbind(gpp_df[,c("lon","lat")],nuptake_all3[,c("most_factor","most_factor_value")]))
+apparent_point_available3 <- subset(apparent_point3,is.na(most_factor_value)==FALSE) 
+dim(apparent_point_available2)
+
+apparent_point_available3 %>% group_by(most_factor) %>% summarise(number=n())
+
+area_final3 <- as.data.frame(cbind(gpp_df[,c("lon","lat")],nuptake_all3[,c("most_factor","most_factor_value")]))
+area_final3$conversion <- conversion
+
+sum(subset(area_final3,is.na(most_factor_value)==FALSE)$conversion, na.rm = TRUE)
+
+area_final3$ratio <- area_final3$conversion/sum(subset(area_final3,is.na(most_factor_value)==FALSE)$conversion, na.rm = TRUE)
+
+cc <- area_final3 %>% group_by(most_factor) %>% summarise(sum = sum(ratio)*100, n = n())
+sum(cc$sum,na.rm=TRUE)
+cc
+
+# count the needed levels of a factor
+gg <- plot_map3(all_maps[,c("lon","lat","nuptake_pft")],
+                varnam = "nuptake_pft",plot_title = paste("N uptake Constrained by most important factor"),
+                latmin = -65, latmax = 85,combine=FALSE)
+
+colors <-  c("red","red","red","red","red","red","red","red", "brown","royalblue3","plum2","red","yellow","red","red","red")
+gg$ggmap + geom_point(data=apparent_point_available3,aes(lon,lat,color=most_factor),size=0.5)+
+  scale_color_manual(values = colors)+ theme(
+    legend.text = element_text(size = 20))+
+  guides(colour = guide_legend(override.aes = list(size = 5)))
+ggsave(paste("/Users/yunpeng/data/output/output_onefactor/allfactor_model_outgpp.jpg",sep=""))
+
+nuptake_all_coord3 <- as.data.frame(cbind(gpp_df[,c("lon","lat")],nuptake_all3))
+summary(nuptake_all_coord3)
+nuptake_all_coord3[,3:7] <- log(nuptake_all_coord3[,3:7])
+summary(nuptake_all_coord3[,3:7])
+
+#now, output each factor
+total_sum3 <- sum(abs((nuptake_all_coord3[,3:7])*conversion),na.rm=TRUE)
+total_sum3
+
+for (i in 3:7){
+  varname <- names(nuptake_all_coord3)[i]
+  relative_value <- round(sum(abs((nuptake_all_coord3[,i])*conversion),na.rm=TRUE)/total_sum3,2)
+  percentage_value <- label_percent()(relative_value)
+  plot_map3(nuptake_all_coord3[,c("lon","lat",varname)],
+            varnam = varname,plot_title = paste(varname, percentage_value, sep=": " ),
+            latmin = -65, latmax = 85,
+            colorscale = c( "royalblue4", "wheat", "tomato2"),
+            breaks = c(-0.45,-0.4,-0.35,-0.3,-0.25,-0.2,-0.15,-0.1,-0.05,-0.025, 0,
+                       0.025,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45))
+  ggsave(paste("/Users/yunpeng/data/output/output_onefactor/","more_",varname,".jpg",sep=""))
+}
 
 #now, deal with uncertainty
 #firstly, load all forest models
@@ -862,6 +929,22 @@ sqrt(sum(uncertainty_bnpp*(forest_percent *conversion)*available_grid2,na.rm=TRU
 sqrt(sum(uncertainty_lnf*(forest_percent *conversion)*available_grid2,na.rm=TRUE)^2 + sum(uncertainty_grass_lnf*(grass_percent *conversion)*available_grid2,na.rm=TRUE)^2)
 sqrt(sum(uncertainty_bnf*(forest_percent *conversion)*available_grid2,na.rm=TRUE)^2 + sum(uncertainty_grass_bnf*(grass_percent *conversion)*available_grid2,na.rm=TRUE)^2)
 sqrt(sum(uncertainty_nuptake*(forest_percent *conversion)*available_grid2,na.rm=TRUE)^2 + sum(uncertainty_grass_nuptake*(grass_percent *conversion)*available_grid2,na.rm=TRUE)^2)
+
+#uncertainty of total nuptake and nue
+aa <- sqrt((uncertainty_nuptake*forest_percent*available_grid2)^2 +
+    (uncertainty_grass_nuptake*grass_percent*available_grid2)^2)
+
+simulations$uncertainty_nuptake <- aa
+simulations_predictors <- as.data.frame(cbind(all_predictors[,-c(9,10,11)],simulations))
+
+simulations$uncertainty_nuptake_gpp <- simulations$uncertainty_nuptake/simulations$gpp
+
+plot_map3(simulations[,c("lon","lat","uncertainty_nuptake")],
+          varnam = "uncertainty_nuptake",
+          latmin = -65, latmax = 85)
+plot_map3(simulations[,c("lon","lat","uncertainty_nuptake_gpp")],
+          varnam = "uncertainty_nuptake_gpp",
+          latmin = -65, latmax = 85)
 
 
 '''

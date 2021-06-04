@@ -29,6 +29,8 @@ devtools::load_all("/Users/yunpeng/yunkepeng/Grassland_new_ingestr_rsofun_202103
 NPP_grassland  <- read.csv("/Users/yunpeng/data/NPP_Grassland_final/NPP_grassland.csv")
 
 NPP_grassland$sitename <- NA
+#not used this sitename (NPP1...) anymore - all
+#climate and fapar both using sitemame2 (ingestr1-485)
 for (i in 1:nrow(NPP_grassland)){
   NPP_grassland$sitename[i] <- paste("NPP",i,sep = "")
 }
