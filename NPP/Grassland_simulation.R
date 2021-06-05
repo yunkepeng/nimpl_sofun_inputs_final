@@ -283,7 +283,6 @@ for (i in 1:nrow(siteinfo_final)) {
 
 
 #collect gpp and combine it into NPP_grassland
-summary(siteinfo_final_gpp) # 10 sites missing as expected due to no fapar data available.
 siteinfo_final_gpp <- siteinfo_final[,c("sitename","pred_gpp_c3","pred_gpp_c4","max_vcmax25_c3","max_vcmax25_c4")]
 names(siteinfo_final_gpp) <- c("sitename2","pred_gpp_c3","pred_gpp_c4","max_vcmax25_c3","max_vcmax25_c4")
 NPP_grassland_all2 <-Reduce(function(x,y) merge(x = x, y = y, by = c("sitename2"),all.x=TRUE), 
@@ -297,6 +296,8 @@ NPP_grassland$pred_gpp_c4 <- NPP_grassland_all2$pred_gpp_c4
 NPP_grassland$max_vcmax25_c3 <- NPP_grassland_all2$max_vcmax25_c3
 NPP_grassland$max_vcmax25_c4 <- NPP_grassland_all2$max_vcmax25_c4
 
+summary(siteinfo_final_gpp) # 10 sites missing as expected due to no fapar data available.
+subset(siteinfo_final_gpp,is.na(pred_gpp_c3)==TRUE)$sitename2
 
 #input nc file
 elev_nc <- read_nc_onefile("~/data/watch_wfdei/WFDEI-elevation.nc")

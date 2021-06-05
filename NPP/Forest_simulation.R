@@ -1,6 +1,6 @@
 rm(list=ls())
 
-load(file = "/Users/yunpeng/data/NPP_final/Forest_site_simulation.Rdata")
+#load(file = "/Users/yunpeng/data/NPP_final/Forest_site_simulation.Rdata")
 
 devtools::load_all("/Users/yunpeng/yunkepeng/Grassland_new_ingestr_rsofun_20210326/rsofun/")
 library(dplyr)
@@ -36,6 +36,7 @@ NPP_Forest$year_end[NPP_Forest$End_year<=1980] <- 1989
 
 #output,site-name
 #info_f <- NPP_Forest[,c("site","sitename","sitename_fpar","lon","lat","z","year_start","year_end")]
+#names(info_f) <- c("site","sitename","sitename_fpar","lon","lat","elv","year_start","year_end")
 #csvfile <- paste("/Users/yunpeng/data/NPP_final/fpar_name/forest_fpar_name.csv")
 #write_csv(info_f, path = csvfile)
 
@@ -76,14 +77,14 @@ points(na_fapar$lon,na_fapar$lat, col="red", pch=16,cex=1)
 #the code of this is available at L90-110 in forest/Reprocessing_fpar_climates_forest.R
 
 #now, reprocessing such values - by updating such fapar ###this code (from 79 to 86) add addtional data from n_focal = 1 or 2 (if not using them the don't run!)
-#fapar_df_new <- list.files("~/data/forest_npp/reprocessing_fpar_raw/",full.names = T)
-#for (i in 1:(length(fapar_df_new)-1)){
-#  df1 <- read.csv(fapar_df_new[i])
-#  df1$date <- as.Date(df1$date)
-#  df1 <- df1[!(format(df1$date,"%m") == "02" & format(df1$date, "%d") == "29"), , drop = FALSE]
-#  df2 <- df1[,c("date","modisvar_filled")]
-#  assign(substr(sub('.*daily_', '', fapar_df_new[i]),1,nchar(sub('.*daily_', '', fapar_df_new[i]))-4), df2) 
-#}
+fapar_df_new <- list.files("~/data/forest_npp/reprocessing_fpar_raw/",full.names = T)
+for (i in 1:(length(fapar_df_new)-1)){
+  df1 <- read.csv(fapar_df_new[i])
+  df1$date <- as.Date(df1$date)
+  df1 <- df1[!(format(df1$date,"%m") == "02" & format(df1$date, "%d") == "29"), , drop = FALSE]
+  df2 <- df1[,c("date","modisvar_filled")]
+  assign(substr(sub('.*daily_', '', fapar_df_new[i]),1,nchar(sub('.*daily_', '', fapar_df_new[i]))-4), df2) 
+}
 
 
 
