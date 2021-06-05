@@ -1,4 +1,5 @@
 rm(list=ls())
+
 load(file = "/Users/yunpeng/data/NPP_final/Forest_site_simulation.Rdata")
 
 devtools::load_all("/Users/yunpeng/yunkepeng/Grassland_new_ingestr_rsofun_20210326/rsofun/")
@@ -71,6 +72,21 @@ plot(newmap, xlim = c(-180, 180), ylim = c(-75, 75), asp = 1)
 points(na_fapar$lon,na_fapar$lat, col="red", pch=16,cex=1)
 #3 samples were missing fapar in the edge, which was expected.
 
+#we have newly interpolate their fapar primarily based on n_focal = 1, then n_focal = 2, and saved it in "/Users/yunpeng/data/forest_npp/reprocessing_fpar_raw/"
+#the code of this is available at L90-110 in forest/Reprocessing_fpar_climates_forest.R
+
+#now, reprocessing such values - by updating such fapar ###this code (from 79 to 86) add addtional data from n_focal = 1 or 2 (if not using them the don't run!)
+#fapar_df_new <- list.files("~/data/forest_npp/reprocessing_fpar_raw/",full.names = T)
+#for (i in 1:(length(fapar_df_new)-1)){
+#  df1 <- read.csv(fapar_df_new[i])
+#  df1$date <- as.Date(df1$date)
+#  df1 <- df1[!(format(df1$date,"%m") == "02" & format(df1$date, "%d") == "29"), , drop = FALSE]
+#  df2 <- df1[,c("date","modisvar_filled")]
+#  assign(substr(sub('.*daily_', '', fapar_df_new[i]),1,nchar(sub('.*daily_', '', fapar_df_new[i]))-4), df2) 
+#}
+
+
+
 #check climate forcing missing data
 empty_vec <- c()
 
@@ -81,7 +97,7 @@ for (i in 1:(length(forcing_df))){
 
 diff <- setdiff(1:935, empty_vec)
 diff
-#NPP_F893,NPP_F354
+#NPP_F338,NPP_390
 
 #totally 5 sites were missing:
 all_na_points <- c(na_fapar$sitename,c("NPP_F338","NPP_390"))
@@ -90,12 +106,13 @@ all_na_points <- c(na_fapar$sitename,c("NPP_F338","NPP_390"))
 
 
 #2. forcing - combing fapar and climates into a df.
-
+#there are some extra csv from forcing files (e.g. Sara Vicca_flux), which was not used in the final version of rsofun -because such additional data in 47 points don't have flux data, but only have biomass data (not useful here).
+#therefore, it would strictly follows data that it included in NPP_Forest
 for (i in 1:length(forcing_df)){
   tryCatch({
   df1 <- read.csv(forcing_df[i])
   df1$date <- as.Date(df1$date)
-  
+  #below is important - if consistent then continue - if not then it may be from Sara Vicca_flux therefore not available
   sitename_climate <- subset(NPP_Forest,NPP_Forest$sitename == df1$sitename[1])$sitename
   sitename_fapar <- subset(NPP_Forest,NPP_Forest$sitename == df1$sitename[1])$sitename_fpar
   # 5 points were missing - let's clarify them firstly
@@ -132,8 +149,6 @@ for (i in 1:length(forcing_df)){
   }
 }, error=function(e){})} 
 
-
-
 #3. rsofun to predict gpp
 df_soiltexture <- bind_rows(
   top    = tibble(layer = "top",    fsand = 0.4, fclay = 0.3, forg = 0.1, fgravel = 0.1),
@@ -190,123 +205,9 @@ for (i in 1:nrow(NPP_Forest)) {
     NPP_Forest[i,c("max_vcmax25_c3")] <- max_vcmax25
   }, error=function(e){})} 
 
-#this sites have no gpp data - must because their fapar in n_focal = 0, we need to fill them by alternatively applying n_focal = 1, then 2...
-subset(NPP_Forest,pred_gpp_c3=="NaN")$sitename_fpar
-
-#we have newly interpolate their fapar primarily based on n_focal = 1, then n_focal = 2, and saved it in "/Users/yunpeng/data/forest_npp/reprocessing_fpar_raw/"
-#the code of this is available at L90-110 in forest/Reprocessing_fpar_climates_forest.R
-
-#now, reprocessing such values - by updating such fapar 
-fapar_df_new <- list.files("~/data/forest_npp/reprocessing_fpar_raw/",full.names = T)
-
-for (i in 1:(length(fapar_df_new)-1)){
-  df1 <- read.csv(fapar_df_new[i])
-  df1$date <- as.Date(df1$date)
-  df1 <- df1[!(format(df1$date,"%m") == "02" & format(df1$date, "%d") == "29"), , drop = FALSE]
-  df2 <- df1[,c("date","modisvar_filled")]
-  assign(substr(sub('.*daily_', '', fapar_df_new[i]),1,nchar(sub('.*daily_', '', fapar_df_new[i]))-4), df2) 
-}
-
-
-#2. forcing - combing fapar and climates into a dataframe.
-for (i in 1:length(forcing_df)){
-  df1 <- read.csv(forcing_df[i])
-  df1$date <- as.Date(df1$date)
-  
-  sitename_climate <- subset(NPP_Forest,NPP_Forest$sitename == df1$sitename[1])$sitename
-  sitename_fapar <- subset(NPP_Forest,NPP_Forest$sitename == df1$sitename[1])$sitename_fpar
-  # 5 points were missing - let's clarify them firstly
-  if (sitename_climate %in% all_na_points){
-    print (sitename_climate)
-    print ("this site is not available")
-  } else {
-    fapar <- (eval(parse(text=sitename_fapar)))
-    fapar$Year <- year(fapar$date)
-    
-    yr_start <- subset(NPP_Forest,NPP_Forest$sitename == df1$sitename[1])$year_start
-    yr_end <- subset(NPP_Forest,NPP_Forest$sitename == df1$sitename[1])$year_end
-    
-    if (yr_start<=2002) { # if measurement year before 2002 for a certain site --> calculating 2003-2012 average of MCD15A3H (since this product only available after the 2003, as entire year)
-      df1a <- fapar[fapar$date >= "2003-01-01" & fapar$date <= "2012-12-31",c("date","modisvar_filled")]
-      df1b <- df1a %>% mutate(ymonth = month(date),
-                              yday = day(date)) %>% 
-        group_by(ymonth, yday) %>% 
-        summarise(fpar = mean(modisvar_filled, na.rm = TRUE))
-      df1b <- as.data.frame(df1b)[,3] # averaged fapar from 2003 - 2012 (365 length of data)
-      df2 <- rep(df1b,(yr_end- yr_start+1)) # repeated it to multiple years, the number of years is consitent to what we collect climate forcing
-    } else { # if measurement year bewteen 2003 and 2015 --> use such years directly where consistent with climate forcing
-      df1a <- subset(fapar,Year>=yr_start & Year<=yr_end)
-      df2 <- df1a$modisvar_filled }
-    
-    fpar <- df2
-    
-    df3 <- cbind(df1,fpar)
-    df3 <- df3[,c("date","temp","prec","rain","snow","vpd","ppfd","patm","ccov_int","ccov","fpar","co2")]
-    names(df3)[names(df3) == 'rain'] <- 'rainf'
-    names(df3)[names(df3) == 'snow'] <- 'snowf'
-    names(df3)[names(df3) == 'fpar'] <- 'fapar'
-    assign(paste("final",df1$sitename[1],sep="_"), as_tibble(df3))
-  }
-}
-
-#3. rsofun to predict gpp
-df_soiltexture <- bind_rows(
-  top    = tibble(layer = "top",    fsand = 0.4, fclay = 0.3, forg = 0.1, fgravel = 0.1),
-  bottom = tibble(layer = "bottom", fsand = 0.4, fclay = 0.3, forg = 0.1, fgravel = 0.1))
-params_modl <- list(
-  kphio           = 0.09423773,
-  soilm_par_a     = 0.33349283,
-  soilm_par_b     = 1.45602286)
-
-NPP_Forest$whc = 170
-
-NPP_Forest$pred_gpp_c3 <- NA
-#NPP_Forest$pred_gpp_c4 <- NA
-NPP_Forest$max_vcmax25_c3 <- NA
-#NPP_Forest$max_vcmax25_c4 <- NA
-
-
-#using rsofun
-for (i in 1:nrow(NPP_Forest)) {
-  tryCatch({
-    #c3
-    forcing <- (eval(parse(text=(paste("final",NPP_Forest$sitename[i],sep="_")))))
-    modlist <- run_pmodel_f_bysite( 
-      NPP_Forest$sitename[i], 
-      params_siml <- list(
-        spinup             = TRUE,
-        spinupyears        = 10,
-        recycle            = 1,
-        soilmstress        = TRUE,
-        tempstress         = TRUE,
-        calc_aet_fapar_vpd = FALSE,
-        in_ppfd            = TRUE,
-        in_netrad          = FALSE,
-        outdt              = 1,
-        ltre               = FALSE,
-        ltne               = FALSE,
-        ltrd               = FALSE,
-        ltnd               = FALSE,
-        lgr3               = TRUE,
-        lgn3               = FALSE,
-        lgr4               = FALSE,
-        firstyeartrend = NPP_Forest$year_start[i],
-        nyeartrend = NPP_Forest$year_end[i]-NPP_Forest$year_start[i]+1), 
-      siteinfo = NPP_Forest[i,], 
-      forcing, 
-      df_soiltexture, 
-      params_modl = params_modl, 
-      makecheck = TRUE)
-    
-    pred_gpp_list <- modlist %>% mutate(ymonth = month(date),yday = day(date)) %>% group_by(ymonth, yday) %>% summarise(gpp = mean(gpp, na.rm = TRUE))
-    max_vcmax25 <- max(modlist$vcmax25)*1000000
-    
-    NPP_Forest[i,c("pred_gpp_c3")] <- sum(pred_gpp_list$gpp)
-    NPP_Forest[i,c("max_vcmax25_c3")] <- max_vcmax25
-  }, error=function(e){})} 
-
+#check missing gpp
 subset(NPP_Forest,is.na(pred_gpp_c3)==TRUE)$sitename_fpar
-
+length(subset(NPP_Forest,is.na(pred_gpp_c3)==TRUE)$sitename_fpar)
 plot(newmap, xlim = c(-180, 180), ylim = c(-75, 75), asp = 1)
 points(subset(NPP_Forest,is.na(pred_gpp_c3)==TRUE)$lon,subset(NPP_Forest,is.na(pred_gpp_c3)==TRUE)$lat, col="red", pch=16,cex=1)
 #these points were missing, either due to fapar or climate forcing missing
@@ -543,7 +444,7 @@ NPP_Forest$pred_lnf <- NPP_Forest$pred_lnpp*NPP_Forest$pred_leafnc
 #median of wood cn and root cn
 # see below
 summary(read.csv("/Users/yunpeng/data/CN_wood/wood_cn.csv")$OrigValueStr) #from TRY database
-summary(NPP_Forest2$CN_root_final)
+#summary(NPP_Forest2$CN_root_final) # see below
 #using median of wood =100
 #using median of root = 94
 
@@ -557,6 +458,8 @@ NPP_Forest$pred_bnf <- NPP_Forest$pred_bnpp/94
 #Remove Schulze - their c/n unit is kg/ha - which is quite strange - we don't know how many species they considered for leaf C/N! See hist of their lnf_obs_org. Also, the reference is too old, which is not reliable when just citing them in a book
 NPP_Forest$rep_info[is.na(NPP_Forest$rep_info)==TRUE] <- ""
 NPP_Forest2 <- subset(NPP_Forest,rep_info!="rep" & rep_info!="rep2" &file!="NPP_Schulze")
+
+summary(NPP_Forest2$CN_root_final) # see above
 
 NPP_Forest2_sitemean <- aggregate(NPP_Forest2,by=list(NPP_Forest2$lon,NPP_Forest2$lat,NPP_Forest2$z), FUN=mean, na.rm=TRUE) #site-mean
 
