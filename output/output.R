@@ -291,11 +291,55 @@ simulations_predictors <- as.data.frame(cbind(all_predictors[,-c(9,10,11)],simul
 plot_map3(simulations[,c("lon","lat","nuptake_pft")],
           varnam = "nuptake_pft",
           latmin = -65, latmax = 85)
+plot_map3(simulations[,c("lon","lat","nuptake_forest")],
+          varnam = "nuptake_pft",
+          latmin = -65, latmax = 85)
+
 plot_map3(simulations[,c("lon","lat","nue_gpp")],
           varnam = "nue_gpp",
           latmin = -65, latmax = 85,
-          breaks = c(0.002,0.003,0.004,0.005,0.006,0.007,0.008,0.009,0.010,
-                     0.011,0.012,0.013,0.014,0.015,0.016,0.017,0.018,0.019,0.020))
+          breaks = c(0.001,0.002,0.003,0.004,0.005,0.006,0.007,0.008,0.009,0.010))
+
+#####nue -forest, grassland
+simulations$nue_gpp_forest <- simulations$nuptake_forest/simulations$gpp
+simulations$nue_gpp_grass <- simulations$nuptake_grass/simulations$gpp
+
+plot_map3(simulations[,c("lon","lat","nue_gpp_forest")],
+          varnam = "nue_gpp_forest",
+          latmin = -65, latmax = 85,
+          breaks = c(0.001,0.002,0.003,0.004,0.005,0.006,0.007,0.008,0.009,0.010))
+
+plot_map3(simulations[,c("lon","lat","nue_gpp")],
+          varnam = "nue_gpp",
+          latmin = -65, latmax = 85,
+          breaks = c(0.001,0.002,0.003,0.004,0.005,0.006,0.007,0.008,0.009,0.010))
+
+
+ggplot(data=simulations, aes(simulations$nue_gpp)) + 
+  geom_histogram()+
+  geom_vline(aes(xintercept = mean(simulations$nue_gpp,na.rm=TRUE),col='all'),size=2)+
+  geom_vline(aes(xintercept = mean(nuptake_f/gpp_df$gpp,na.rm=TRUE),col='forest'),size=2)+
+  geom_vline(aes(xintercept = mean(nuptake_g/gpp_df$gpp,na.rm=TRUE),col='grassland'),size=2)+
+  theme(text = element_text(size=20),
+        legend.title = element_text(size = 20),
+        legend.text = element_text(size = 20))+
+  theme(legend.title = element_blank())+
+  labs(x = "N demand of GPP (gN/gC)")
+
+hist(1/simulations$nue_gpp)
+#hist(1/simulations$nue_gpp_grass)
+#hist(1/simulations$nue_gpp_forest)
+
+ggplot(data=simulations, aes(nuptake_pft)) + 
+  geom_histogram()+
+  geom_vline(aes(xintercept = mean(nuptake_pft,na.rm=TRUE),col='all'),size=2)+
+  geom_vline(aes(xintercept = mean(nuptake_f,na.rm=TRUE),col='forest'),size=2)+
+  geom_vline(aes(xintercept = mean(nuptake_g,na.rm=TRUE),col='grassland'),size=2)+
+  theme(text = element_text(size=20),
+        legend.title = element_text(size = 20),
+        legend.text = element_text(size = 20))+
+  theme(legend.title = element_blank())+
+  labs(x = "Total N uptake (gN/m2/yr)") 
 
 
 #now, select median values from available grids only - and do each step-by-step
