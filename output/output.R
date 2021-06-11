@@ -643,7 +643,7 @@ apparent_point2 <- as.data.frame(cbind(gpp_df[,c("lon","lat")],nuptake_all2[,c("
 apparent_point_available2 <- subset(apparent_point2,is.na(most_factor_value)==FALSE) 
 dim(apparent_point_available2)
 
-apparent_point_available2 %>% group_by(most_factor) %>% summarise(number=n())
+apparent_point_available2 %>% group_by(most_factor) %>% dplyr::summarise(number=n())
 
 area_final2 <- as.data.frame(cbind(gpp_df[,c("lon","lat")],nuptake_all2[,c("most_factor","most_factor_value")]))
 area_final2$conversion <- conversion
