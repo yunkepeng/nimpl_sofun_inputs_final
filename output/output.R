@@ -187,6 +187,16 @@ forest_percent <- rowSums(pftcover[,1:6],na.rm=TRUE)/rowSums(pftcover[,c(1:6,8)]
 grass_percent <- pftcover[,8]/rowSums(pftcover[,c(1:6,8)],na.rm = TRUE)
 summary(grass_percent + forest_percent) # check - their sum = 1, perfect!
 
+a1 <- as.data.frame(cbind(gpp_df,forest_percent,grass_percent))
+#forest map
+plot_map3(a1[,c("lon","lat","forest_percent")],
+          varnam = "forest_percent",
+          latmin = -65, latmax = 85)
+#grass map
+plot_map3(a1[,c("lon","lat","grass_percent")],
+          varnam = "grass_percent",
+          latmin = -65, latmax = 85)
+
 #now, calculate weighted-sum
 #firstly - filter na points
 all_predictors <- as.data.frame(cbind(Tg$myvar,PPFD$myvar,vpd$myvar,
@@ -504,6 +514,13 @@ summary(nuptake_all_coord[,3:10])
 total_sum <- sum(abs((nuptake_all_coord[,3:10])*conversion),na.rm=TRUE)
 total_sum
 
+#global trend
+global_trend <- (nuptake_all_coord[,3:10])*conversion/sum(conversion,na.rm = TRUE)
+colSums(global_trend,na.rm=TRUE)
+sum(colSums(global_trend,na.rm=TRUE))
+exp(sum(colSums(global_trend,na.rm=TRUE)))
+#increased 6%
+
 for (i in 3:10){
   varname <- names(nuptake_all_coord)[i]
   relative_value <- round(sum(abs((nuptake_all_coord[,i])*conversion),na.rm=TRUE)/total_sum,2)
@@ -677,13 +694,22 @@ summary(nuptake_all_coord2[,3:8])
 total_sum2 <- sum(abs((nuptake_all_coord2[,3:8])*conversion),na.rm=TRUE)
 total_sum2
 
+#global_trend
+global_trend2 <- (nuptake_all_coord2[,3:8])*conversion/sum(conversion,na.rm = TRUE)
+colSums(global_trend2,na.rm=TRUE)
+sum(colSums(global_trend2,na.rm=TRUE))
+exp(sum(colSums(global_trend2,na.rm=TRUE)))
+#increased 6%
+
+
 for (i in 3:8){
   varname <- names(nuptake_all_coord2)[i]
   relative_value <- round(sum(abs((nuptake_all_coord2[,i])*conversion),na.rm=TRUE)/total_sum2,2)
   percentage_value <- label_percent()(relative_value)
   plot_map3(nuptake_all_coord2[,c("lon","lat",varname)],
             varnam = varname,plot_title = paste(varname, percentage_value, sep=": " ),
-            latmin = -65, latmax = 85,breaks=c(seq(-4, 2, by = 0.1)))
+            latmin = -65, latmax = 85,breaks=c(seq(-4, 2, by = 0.5)),
+            colorscale = c( "royalblue4","royalblue2", "wheat", "tomato2" ))
   ggsave(paste("/Users/yunpeng/data/output/output_onefactor/",varname,".jpg",sep=""))
 }
 #save.image(file = "/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/output/output.Rdata")
