@@ -1,5 +1,5 @@
 rm(list=ls())
-
+#for figure 1 - just summarizing each part
 #load(file = "/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/output/output.Rdata")
 
 nre_constant_grass <- 0.69
