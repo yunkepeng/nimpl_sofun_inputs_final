@@ -1,0 +1,58 @@
+---
+title: "Global input for all prediction field"
+author: "Yunke Peng"
+date: "Nov 18 2020"
+output: html_document
+---
+
+## Introduction about Global nc files
+ * alpha (SPLASH: asssited by David Sandoval)
+
+#4. alpha
+
+```{r}
+library(raster)
+library(ncdf4)
+library(dplyr)
+library(maps)
+library(rgdal)
+library(rbeni)
+alphalist <- list.files(path = "~/data/alpha/data_orig/",full.names = T) # here this file includes 116 data - that is the annual alpha from 1901 to 2016
+
+#alphalist <- list.files(path = "E:/C-N cycling/Carbon allocation/672 sites analysis/alpha/",full.names = T)
+
+#Input alpha from a list of data frame from 1901 to 2016 (list 116)
+empty_alpha <- data.frame(matrix(NA)) 
+
+#calculate alpha within 30 years (1982-2011)
+for (i in 82:111){ #here 82:111 means 1982-2011
+  load(file = alphalist[i])
+  empty_alpha[1:259200,i-81] <- rowMeans(SP_result_monthly,na.rm = TRUE)
+}
+
+final_alpha <- rowMeans(empty_alpha,na.rm = TRUE)
+
+alpha_input <- as.data.frame(cbind(lonlat,final_alpha)) 
+names(alpha_input) <- c("lon","lat","alpha")
+
+df_alpha <- alpha_input
+
+coordinates(alpha_input) <- ~lon+lat 
+gridded(alpha_input) <- TRUE
+
+r4 <- raster(alpha_input, "alpha") 
+plot(r4)
+
+#output nc file - In Euler its path is same: "~/data/nimpl_sofun_inputs/map/Final_ncfile"
+df_alpha$alpha[df_alpha$alpha == "NaN"] <- NA
+summary(df_alpha)
+
+alpha_nc <- list(df_to_grid(df_alpha,varnam = "alpha", lonnam = "lon", latnam = "lat"))
+names(alpha_nc) <- "alpha"
+varams = "alpha"
+test <- list(lon,lat,alpha_nc,varams)
+names(test) <- c("lon","lat","vars","varams")
+write_nc2(test,varnams = "alpha",long_name = "alpha",units = "unitless",
+          path = "~/data/nimpl_sofun_inputs/map/Final_ncfile/alpha.nc")
+
+``` 

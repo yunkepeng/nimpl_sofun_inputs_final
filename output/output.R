@@ -217,6 +217,7 @@ summary(all_predictors)
 
 #final calculation
 npp_pft <- available_grid2* (npp_f*forest_percent +npp_g*grass_percent)
+npp_pft_final <- npp_pft
 npp_forest <- available_grid2* (npp_f*forest_percent)
 npp_grass <- available_grid2* (npp_g*grass_percent)
 
@@ -293,8 +294,8 @@ My_Theme = theme(
   axis.text.y = element_text(size = 20))
 
 simulations <- all_maps
-#simulations$nue <- simulations$nuptake_pft/simulations$npp_pft
-simulations$nue_gpp <- simulations$nuptake_pft/simulations$gpp
+simulations$nue <- simulations$nuptake_pft/simulations$npp_pft
+#simulations$nue_gpp <- simulations$nuptake_pft/simulations$gpp
 simulations_predictors <- as.data.frame(cbind(all_predictors[,-c(9,10,11)],simulations))
 
 #####nue
@@ -305,36 +306,28 @@ plot_map3(simulations[,c("lon","lat","nuptake_forest")],
           varnam = "nuptake_pft",
           latmin = -65, latmax = 85)
 
-plot_map3(simulations[,c("lon","lat","nue_gpp")],
-          varnam = "nue_gpp",
-          latmin = -65, latmax = 85,
-          breaks = c(0.001,0.002,0.003,0.004,0.005,0.006,0.007,0.008,0.009,0.010))
+plot_map3(simulations[,c("lon","lat","nue")],
+          varnam = "nue",
+          latmin = -65, latmax = 85)
 
 #####nue -forest, grassland
-simulations$nue_gpp_forest <- simulations$nuptake_forest/simulations$gpp
-simulations$nue_gpp_grass <- simulations$nuptake_grass/simulations$gpp
+simulations$nue_forest <- simulations$nuptake_forest/simulations$npp_forest
+simulations$nue_grass <- simulations$nuptake_grass/simulations$npp_grass
 
-plot_map3(simulations[,c("lon","lat","nue_gpp_forest")],
-          varnam = "nue_gpp_forest",
-          latmin = -65, latmax = 85,
-          breaks = c(0.001,0.002,0.003,0.004,0.005,0.006,0.007,0.008,0.009,0.010))
+plot_map3(simulations[,c("lon","lat","nue_forest")],
+          varnam = "nue_forest",
+          latmin = -65, latmax = 85)
 
-plot_map3(simulations[,c("lon","lat","nue_gpp")],
-          varnam = "nue_gpp",
-          latmin = -65, latmax = 85,
-          breaks = c(0.001,0.002,0.003,0.004,0.005,0.006,0.007,0.008,0.009,0.010))
-
-
-ggplot(data=simulations, aes(simulations$nue_gpp)) + 
+ggplot(data=simulations, aes(simulations$nue)) + 
   geom_histogram()+
-  geom_vline(aes(xintercept = mean(simulations$nue_gpp,na.rm=TRUE),col='all'),size=2)+
-  geom_vline(aes(xintercept = mean(nuptake_f/gpp_df$gpp,na.rm=TRUE),col='forest'),size=2)+
-  geom_vline(aes(xintercept = mean(nuptake_g/gpp_df$gpp,na.rm=TRUE),col='grassland'),size=2)+
+  geom_vline(aes(xintercept = mean(simulations$nue,na.rm=TRUE),col='all'),size=2)+
+  geom_vline(aes(xintercept = mean(simulations$nuptake_forest/simulations$npp_forest,na.rm=TRUE),col='forest'),size=2)+
+  geom_vline(aes(xintercept = mean(simulations$nuptake_grass/simulations$npp_grass,na.rm=TRUE),col='grassland'),size=2)+
   theme(text = element_text(size=20),
         legend.title = element_text(size = 20),
         legend.text = element_text(size = 20))+
   theme(legend.title = element_blank())+
-  labs(x = "N demand of GPP (gN/gC)")
+  labs(x = "N demand of NPP (gN/gC)")
 
 hist(1/simulations$nue_gpp)
 #hist(1/simulations$nue_gpp_grass)
@@ -363,7 +356,7 @@ mean_CNrt <- mean(CNrt$myvar[is.na(all_predictors$available_grid)==FALSE])
 mean_LMA <- mean(LMA$myvar[is.na(all_predictors$available_grid)==FALSE])
 mean_vcmax25 <- mean(vcmax25_df$vcmax25[is.na(all_predictors$available_grid)==FALSE])
 
-#create a function to control each factor --> output ratio of nuptake_factor / nuptake_standard
+#create a function to control each factor --> output ratio of N demand of NPP
 cal_nuptake <- function(Tg_pred,PPFD_pred,vpd_pred,fAPAR_pred,age_pred,CNrt_pred,LMA_pred,vcmax25_pred){
   npp_f <- gpp_df$gpp * (1/(1 + exp(-(summary(mod_tnpp)$coef[1,1]+
                                         summary(mod_tnpp)$coef[2,1]* log(CNrt_pred)+
@@ -441,7 +434,7 @@ cal_nuptake <- function(Tg_pred,PPFD_pred,vpd_pred,fAPAR_pred,age_pred,CNrt_pred
   nuptake_pft <- available_grid2*(nuptake_f*forest_percent +nuptake_g*grass_percent)
   nuptake_forest <- available_grid2* (nuptake_f*forest_percent)
   nuptake_grass <- available_grid2* (nuptake_g*grass_percent)
-  nuptake_pft_ratio <- nuptake_pft_final/nuptake_pft
+  nuptake_pft_ratio <- (nuptake_pft_final/npp_pft_final)/(nuptake_pft/npp_pft)
   return(nuptake_pft_ratio)
 }
 
@@ -493,10 +486,19 @@ aa
 
 # count the needed levels of a factor
 gg <- plot_map3(all_maps[,c("lon","lat","nuptake_pft")],
-                varnam = "nuptake_pft",plot_title = paste("N demand of GPP constrained by most important factor"),
+                varnam = "nuptake_pft",plot_title = paste("N demand of NPP constrained by most important factor"),
                 latmin = -65, latmax = 85,combine=FALSE)
 
-colors <-  c("red","red","red","red","red","red","red","red","cyan","yellow","green","purple","red","blue","purple")
+apparent_point_available$most_factor[apparent_point_available$most_factor=="nuptake_age"] <- "age"
+apparent_point_available$most_factor[apparent_point_available$most_factor=="nuptake_CNrt"] <- "Soil C/N"
+apparent_point_available$most_factor[apparent_point_available$most_factor=="nuptake_fAPAR"] <- "fAPAR"
+apparent_point_available$most_factor[apparent_point_available$most_factor=="nuptake_LMA"] <- "LMA"
+apparent_point_available$most_factor[apparent_point_available$most_factor=="nuptake_PPFD"] <- "PPFD"
+apparent_point_available$most_factor[apparent_point_available$most_factor=="nuptake_Tg"] <- "Tg"
+apparent_point_available$most_factor[apparent_point_available$most_factor=="nuptake_vcmax25"] <- "Vcmax25"
+apparent_point_available$most_factor[apparent_point_available$most_factor=="nuptake_vpd"] <- "vpd"
+
+colors <-  c("red","red","red","red","red","red","red","red","cyan","black","yellow","green","orange","red","blue","purple")
 gg$ggmap + geom_point(data=apparent_point_available,aes(lon,lat,color=most_factor),size=0.5)+
   scale_color_manual(values = colors)+ theme(
     legend.text = element_text(size = 20))+
@@ -521,18 +523,36 @@ sum(colSums(global_trend,na.rm=TRUE))
 exp(sum(colSums(global_trend,na.rm=TRUE)))
 #increased 6%
 
-for (i in 3:10){
+names(nuptake_all_coord) <- c("lon","lat","Tg","PPFD","vpd","fAPAR","age","Soil C:N","LMA","Vcmax25","most_factor","most_factor_value")
+
+for (i in c(3,5,10)){
   varname <- names(nuptake_all_coord)[i]
   relative_value <- round(sum(abs((nuptake_all_coord[,i])*conversion),na.rm=TRUE)/total_sum,2)
   percentage_value <- label_percent()(relative_value)
   plot_map3(nuptake_all_coord[,c("lon","lat",varname)],
             varnam = varname,plot_title = paste(varname, percentage_value, sep=": " ),
             latmin = -65, latmax = 85,
-            colorscale = c( "royalblue4", "wheat", "tomato2", "tomato4" ),
-            breaks = c(-0.3,-0.25,-0.2,-0.15,-0.1,-0.05,-0.025, 0,
-                       0.025,0.05,0.1,0.15,0.2,0.25,0.3,0.4,0.6,0.8))
+            colorscale = c( "royalblue4", "wheat","tomato3"),
+            breaks = c(-0.5,-0.45,-0.4,-0.35,-0.3,-0.25,-0.2,-0.15,-0.1,-0.05,-0.025, 0,
+                       0.025,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5))
   ggsave(paste("/Users/yunpeng/data/output/output_onefactor/",varname,".jpg",sep=""))
 }
+
+for (i in c(4,6,7,8,9)){
+  varname <- names(nuptake_all_coord)[i]
+  relative_value <- round(sum(abs((nuptake_all_coord[,i])*conversion),na.rm=TRUE)/total_sum,2)
+  percentage_value <- label_percent()(relative_value)
+  plot_map3(nuptake_all_coord[,c("lon","lat",varname)],
+            varnam = varname,plot_title = paste(varname, percentage_value, sep=": " ),
+            latmin = -65, latmax = 85,
+            colorscale = c( "royalblue4", "wheat","tomato3"),
+            breaks = c(-0.1,-0.05,-0.025, 0,
+                       0.025,0.05,0.1))
+  ggsave(paste("/Users/yunpeng/data/output/output_onefactor/",varname,".jpg",sep=""))
+}
+
+save.image(file = "/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/output/output.Rdata")
+
 
 ######
 #quantify each component
@@ -643,16 +663,18 @@ lnpp_anpp_model <- cal_nuptake_model(gpp_df$gpp,model1_npp_gpp,model2_anpp_gpp,r
 leafnc_model <- cal_nuptake_model(gpp_df$gpp,model1_npp_gpp,model2_anpp_gpp,model3_lnpp_anpp,rep(mean_leafnc,259200),model5_nre)
 nre_model <- cal_nuptake_model(gpp_df$gpp,model1_npp_gpp,model2_anpp_gpp,model3_lnpp_anpp,model4_leafnc,rep(mean_nre,259200))
 
-nuptake_all2 <- as.data.frame(cbind(gpp_model,npp_gpp_model,anpp_gpp_model,
+nuptake_all2 <- as.data.frame(cbind(npp_gpp_model,anpp_gpp_model,
                                     lnpp_anpp_model,leafnc_model,nre_model))
+#disregard gpp effect - now it researched on how each model affect Nup/gpp
+summary(nuptake_all2)
 
 for (i in 1:nrow(nuptake_all2)){
   if (is.na(nuptake_all2[i,1])==TRUE){
     nuptake_all2$most_factor[i] <- NA
     nuptake_all2$most_factor_value[i] <- NA
   } else { 
-    nuptake_all2$most_factor[i] <- names((which.max(abs(log(nuptake_all2[i,1:6])))))
-    nuptake_all2$most_factor_value[i] <- max(abs(log(nuptake_all2[i,1:6])))
+    nuptake_all2$most_factor[i] <- names((which.max(abs(log(nuptake_all2[i,1:5])))))
+    nuptake_all2$most_factor_value[i] <- max(abs(log(nuptake_all2[i,1:5])))
   }
 }
 
@@ -675,10 +697,10 @@ bb
 
 # count the needed levels of a factor
 gg <- plot_map3(all_maps[,c("lon","lat","nuptake_pft")],
-                varnam = "nuptake_pft",plot_title = paste("N uptake Constrained by most important factor"),
+                varnam = "nuptake_pft",plot_title = paste("N uptake/GPP constrained by most important model"),
                 latmin = -65, latmax = 85,combine=FALSE)
 
-colors <-  c("red","red","red","red","red","red","red","red", "brown","yellow","cyan","black","orange","red","green","purple")
+colors <-  c("red","red","red","red","red","red","red","red", "blue","yellow","red","black","orange","red","green","purple")
 gg$ggmap + geom_point(data=apparent_point_available2,aes(lon,lat,color=most_factor),size=0.5)+
   scale_color_manual(values = colors)+ theme(
     legend.text = element_text(size = 20))+

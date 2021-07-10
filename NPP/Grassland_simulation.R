@@ -533,27 +533,33 @@ NPP_grassland_final4
 csvfile <- paste("/Users/yunpeng/data/NPP_Grassland_final/NPP_grass_validation.csv")
 write.csv(NPP_grassland_final4, csvfile, row.names = TRUE)
 
+My_Theme = theme(
+  axis.title.x = element_text(size = 20),
+  axis.text.x = element_text(size = 20),
+  axis.title.y = element_text(size = 20),
+  axis.text.y = element_text(size = 20))
+
 ggplot(NPP_grassland_final4, aes(x=weightedgpp_all, y=GPP)) +
   geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
-  xlab("Predicted GPP")+ylab("Measured GPP")+theme_classic() + My_Theme #+ggtitle("Observed GPP vs. Predicted GPP")
+  xlab("Prediction")+ylab("Observation")+theme_classic() + My_Theme #+ggtitle("Observed GPP vs. Predicted GPP")
 summary(lm(GPP~weightedgpp_all,data=NPP_grassland_final4))
 
 #####npp r2 = 0.1128
 ggplot(NPP_grassland_final4, aes(x=pred_npp, y=TNPP_1)) +
   geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
-  xlab("Predicted NPP")+ylab("Measured NPP")+theme_classic() + My_Theme 
+  xlab("Prediction")+ylab("Observation")+theme_classic() + My_Theme 
 summary(lm(TNPP_1~pred_npp,data=NPP_grassland_final4))
 
 ####anpp r2 = 0.1732
 ggplot(NPP_grassland_final4, aes(x=pred_anpp, y=ANPP_2)) +
   geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
-  xlab("Predicted ANPP")+ylab("Measured ANPP")+theme_classic() + My_Theme 
+  xlab("Prediction")+ylab("Observation")+theme_classic() + My_Theme 
 summary(lm(ANPP_2~pred_anpp,data=NPP_grassland_final4)) 
 
 #leaf N flux r2 = 0.096
 ggplot(NPP_grassland_final4, aes(x=pred_lnf, y=lnf_obs_final)) +
   geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+ xlim(c(0,10))+
-  xlab("Predicted leaf N flux")+ylab("Measured leaf N flux")+theme_classic() + My_Theme
+  xlab("Prediction")+ylab("Observation")+theme_classic() + My_Theme
 summary(lm(lnf_obs_final~pred_lnf,data=NPP_grassland_final4)) 
 
 #add legume and biome
@@ -620,6 +626,9 @@ china %>% group_by(c3_percentage_final)  %>% summarise(number = n())
 
 china$c3_china[china$c3_percentage_final<1] <- "c4"
 china$c3_china[china$c3_percentage_final==1] <- "c3"
+
+china$c3_china[china$c3_percentage_final<0.5] <- "c4"
+china$c3_china[china$c3_percentage_final>=0.5] <- "c3"
 
 
 ggplot(china, aes(x=pred_lnf, y=lnf_obs_final)) +geom_abline(intercept=0,slope=1)+geom_smooth(aes(color=factor(c3_percentage_final)),method = "lm", se = TRUE)+ xlim(c(0,10))+
