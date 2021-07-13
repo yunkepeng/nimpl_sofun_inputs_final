@@ -1,6 +1,5 @@
 rm(list=ls())
 #for figure 1 - just summarizing each part
-#load(file = "/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/output/output.Rdata")
 
 nre_constant_grass <- 0.69
 
@@ -306,60 +305,74 @@ fland <- output_fland$myvar
 conversion <- area_m2 * fland /1e+15
 
 #now, defined four things
-PAR <- PPFD$myvar*fAPAR$myvar
-LUE <- gpp_df$gpp/PAR
+GPP <- gpp_df$gpp
 CUE <- npp_pft/gpp_df$gpp
-NUE_1 <- nuptake_pft/npp_pft
-Nup <- PAR*LUE*CUE*NUE_1
+NUE <- npp_pft/nuptake_pft
+Nup <- GPP*CUE*(1/NUE)
+#test
+summary(log(Nup/(GPP*CUE*(1/NUE))))
 
-
-plot(NUE_1~CUE)
-plot(LUE~NUE_1)
-
-n_PAR <- log(Nup/(mean(PAR,na.rm=TRUE)*LUE*CUE*NUE_1))
-n_LUE <- log(Nup/(PAR*mean(LUE,na.rm=TRUE)*CUE*NUE_1))
-n_CUE <- log(Nup/(PAR*LUE*mean(CUE,na.rm=TRUE)*NUE_1))
-n_NUE_1 <- log(Nup/(PAR*LUE*CUE*mean(NUE_1,na.rm=TRUE)))
-n_all <- as.data.frame(cbind(n_PAR,n_LUE,n_CUE,n_NUE_1))
+n_GPP <- log(Nup/(mean(GPP,na.rm=TRUE)*CUE*(1/NUE)))
+n_CUE <- log(Nup/(GPP*mean(CUE,na.rm=TRUE)*(1/NUE)))
+n_NUE <- log(Nup/(GPP*CUE*(1/mean(NUE,na.rm=TRUE))))
+n_all <- as.data.frame(cbind(n_GPP,n_CUE,n_NUE))
 total_sum <- sum(abs((n_all)*conversion),na.rm=TRUE)
 #now, research on 4 componenets
-sum(abs((n_PAR)*conversion),na.rm=TRUE)/total_sum
-sum(abs((n_LUE)*conversion),na.rm=TRUE)/total_sum
+sum(abs((n_GPP)*conversion),na.rm=TRUE)/total_sum
 sum(abs((n_CUE)*conversion),na.rm=TRUE)/total_sum
-sum(abs((n_NUE_1)*conversion),na.rm=TRUE)/total_sum
+sum(abs((n_NUE)*conversion),na.rm=TRUE)/total_sum
 
-all_maps1 <- as.data.frame(cbind(gpp_df,n_PAR,n_LUE,n_CUE,n_NUE_1))
-plot_map3(all_maps1[,c("lon","lat","n_PAR")],
-          varnam = "n_PAR",
-          latmin = -65, latmax = 85,font_size = 12,
+all_maps1 <- as.data.frame(cbind(gpp_df,n_GPP,n_CUE,n_NUE))
+summary(all_maps1)
+plot_map3(all_maps1[,c("lon","lat","n_GPP")],
+          varnam = "n_GPP",
+          latmin = -65, latmax = 85,font_size = 15,
           colorscale = c( "royalblue4", "wheat","tomato3"),
-          breaks = seq(-3,3,0.25))
-ggsave(paste("/Users/yunpeng/data/output/output_map/effect_PAR.jpg",sep=""))
+          breaks = seq(-3,3,0.5))
 
-plot_map3(all_maps1[,c("lon","lat","n_LUE")],
-          varnam = "n_LUE",
-          latmin = -65, latmax = 85,font_size = 12,
-          colorscale = c( "royalblue4", "wheat","tomato3"),
-          breaks = seq(-2.5,2.5,0.25))
-ggsave(paste("/Users/yunpeng/data/output/output_map/effect_n_LUE.jpg",sep=""))
+ggsave(paste("/Users/yunpeng/data/output/output_map/effect_GPP.jpg",sep=""))
 
 plot_map3(all_maps1[,c("lon","lat","n_CUE")],
           varnam = "n_CUE",
           latmin = -65, latmax = 85,font_size = 15,
           colorscale = c( "royalblue4", "wheat","tomato3"),
-          breaks = c(-0.6,-0.5,-0.4,-0.3,-0.2,-0.1, 0,
-                     0.1,0.2,0.3,0.4,0.5,0.6))
+          breaks = c(-0.5,-0.4,-0.3,-0.2,-0.1, 0,
+                     0.1,0.2,0.3,0.4,0.5))
 ggsave(paste("/Users/yunpeng/data/output/output_map/effect_n_CUE.jpg",sep=""))
 
-plot_map3(all_maps1[,c("lon","lat","n_NUE_1")],
-          varnam = "n_NUE_1",
+plot_map3(all_maps1[,c("lon","lat","n_NUE")],
+          varnam = "n_NUE",
           latmin = -65, latmax = 85,font_size = 15,
           colorscale = c( "royalblue4", "wheat","tomato3"),
-          breaks = c(-0.6,-0.5,-0.4,-0.3,-0.2,-0.1, 0,
-                     0.1,0.2,0.3,0.4,0.5,0.6))
-ggsave(paste("/Users/yunpeng/data/output/output_map/effect_n_NUE_1.jpg",sep=""))
+          breaks = c(-0.5,-0.4,-0.3,-0.2,-0.1, 0,
+                     0.1,0.2,0.3,0.4,0.5))
+ggsave(paste("/Users/yunpeng/data/output/output_map/effect_n_NUE.jpg",sep=""))
 
-summary(all_maps1)
+summary(all_maps)
+My_Theme = theme(
+  axis.title.x = element_text(size = 40),
+  axis.text.x = element_text(size = 20),
+  axis.title.y = element_text(size = 40),
+  axis.text.y = element_text(size = 20))
+
+ggplot(data=all_maps, aes(x=cue_pft, y=nue_pft)) +
+  geom_point()+geom_smooth(method = "lm", se = TRUE)+
+  xlab("CUE")+ylab("NUE")+theme_classic()+My_Theme
+
+mid <- mean(all_maps$nuptake_pft,na.rm=TRUE)
+
+ggplot(data=all_maps, aes(x=cue_pft, y=nue_pft)) +
+  geom_point(aes(color=nuptake_pft),alpha=0.5)+geom_smooth(method = "lm", se = TRUE)+ 
+  scale_color_gradient2(midpoint = mid, low = "blue", mid = "white",high = "red", space = "Lab")+
+  xlab("CUE")+ylab("NUE")+theme_classic()+theme(
+    axis.title.x = element_text(size = 40),
+    axis.text.x = element_text(size = 20),
+    axis.title.y = element_text(size = 40),
+    axis.text.y = element_text(size = 20))
+
+ggsave(paste("/Users/yunpeng/data/output/output_map/NUE_CUE.jpg",sep=""))
+summary(lm(nue_pft~cue_pft,all_maps))
+
 all_maps1_max <- all_maps1[,5:8]
 
 for (i in 1:nrow(all_maps1_max)){
@@ -433,11 +446,6 @@ plot_map3(all_maps2[,c("lon","lat","Nup")],
           latmin = -65, latmax = 85,font_size = 15)
 ggsave(paste("/Users/yunpeng/data/output/output_map/Nup.jpg",sep=""))
 
-My_Theme = theme(
-  axis.title.x = element_text(size = 40),
-  axis.text.x = element_text(size = 20),
-  axis.title.y = element_text(size = 40),
-  axis.text.y = element_text(size = 20))
 
 ggplot(data=all_maps2, aes(x=LUE, y=CUE)) +
   geom_point()+geom_smooth(method = "lm", se = TRUE)+

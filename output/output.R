@@ -1,6 +1,6 @@
 rm(list=ls())
 
-load(file = "/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/output/output.Rdata")
+#load(file = "/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/output/output.Rdata")
 
 nre_constant_grass <- 0.69
 
@@ -540,7 +540,7 @@ cal_nuptake <- function(Tg_pred,PPFD_pred,vpd_pred,fAPAR_pred,age_pred,CNrt_pred
   nuptake_pft <- available_grid2*(nuptake_f*forest_percent +nuptake_g*grass_percent)
   nuptake_forest <- available_grid2* (nuptake_f*forest_percent)
   nuptake_grass <- available_grid2* (nuptake_g*grass_percent)
-  nuptake_pft_ratio <- (nuptake_pft_final/npp_pft_final)/(nuptake_pft/npp_pft)
+  nuptake_pft_ratio <- (nuptake_pft_final/gpp_df$gpp)/(nuptake_pft/gpp_df$gpp)
   return(nuptake_pft_ratio)
 }
 
@@ -631,7 +631,7 @@ exp(sum(colSums(global_trend,na.rm=TRUE)))
 
 names(nuptake_all_coord) <- c("lon","lat","Tg","PPFD","vpd","fAPAR","age","Soil C:N","LMA","Vcmax25","most_factor","most_factor_value")
 
-for (i in c(3,5,10)){
+for (i in c(3,5,6,7,8,10)){
   varname <- names(nuptake_all_coord)[i]
   relative_value <- round(sum(abs((nuptake_all_coord[,i])*conversion),na.rm=TRUE)/total_sum,2)
   percentage_value <- label_percent()(relative_value)
@@ -644,7 +644,7 @@ for (i in c(3,5,10)){
   ggsave(paste("/Users/yunpeng/data/output/output_onefactor/",varname,".jpg",sep=""))
 }
 
-for (i in c(4,6,7,8,9)){
+for (i in c(4,8,9)){
   varname <- names(nuptake_all_coord)[i]
   relative_value <- round(sum(abs((nuptake_all_coord[,i])*conversion),na.rm=TRUE)/total_sum,2)
   percentage_value <- label_percent()(relative_value)
@@ -652,8 +652,8 @@ for (i in c(4,6,7,8,9)){
             varnam = varname,plot_title = paste(varname, percentage_value, sep=": " ),
             latmin = -65, latmax = 85,
             colorscale = c( "royalblue4", "wheat","tomato3"),
-            breaks = c(-0.1,-0.05,-0.025, 0,
-                       0.025,0.05,0.1))
+            breaks = c(-0.2,-0.1,-0.05,-0.025, 0,
+                       0.025,0.05,0.1,0.2))
   ggsave(paste("/Users/yunpeng/data/output/output_onefactor/",varname,".jpg",sep=""))
 }
 
