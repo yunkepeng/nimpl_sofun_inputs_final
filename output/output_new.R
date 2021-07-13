@@ -226,7 +226,11 @@ bnpp_grass <- available_grid2* (bnpp_g*grass_percent)
 
 leafcn_forest <- available_grid2*leafcn_f*forest_percent
 
-nre_pft <- available_grid2*nre_f * (forest_percent+grass_percent)
+leafcn_pft <- 1/(available_grid2*leafcn_forest * forest_percent+
+  available_grid2* (1/18) * grass_percent)
+
+nre_pft <- available_grid2*nre_f * forest_percent+
+  available_grid2*0.69 * grass_percent
 
 lnf_pft <- available_grid2*(lnf_f*forest_percent +lnf_g*grass_percent)
 lnf_forest <- available_grid2* (lnf_f*forest_percent)
@@ -247,10 +251,45 @@ nuptake_grass <- available_grid2* (nuptake_g*grass_percent)
 all_maps <- as.data.frame(cbind(gpp_df,npp_pft,npp_forest,npp_grass,
                                 anpp_pft,anpp_forest,aanpp_grass,
                                 bnpp_pft,bnpp_forest,bnpp_grass,
-                                lnpp_forest,wnpp_forest,leafcn_forest,nre_pft,wnf_forest,
+                                lnpp_forest,wnpp_forest,leafcn_forest,nre_pft,
+                                leafcn_pft,wnf_forest,
                                 lnf_pft,lnf_forest,lnf_grass,
                                 bnf_pft,bnf_forest,bnf_grass,
                                 nuptake_pft,nuptake_forest,nuptake_grass))
+all_maps$cue_pft <- all_maps$npp_pft/all_maps$gpp
+all_maps$nue_pft <- all_maps$npp_pft/all_maps$nuptake_pft
+
+plot_map3(all_maps[,c("lon","lat","npp_pft")],
+          varnam = "npp_pft",
+          latmin = -65, latmax = 85,font_size = 12)
+ggsave(paste("/Users/yunpeng/data/output/output_map/npp_pft.jpg",sep=""))
+
+plot_map3(all_maps[,c("lon","lat","leafcn_pft")],
+          varnam = "leafcn_pft",
+          latmin = -65, latmax = 85,font_size = 12)
+ggsave(paste("/Users/yunpeng/data/output/output_map/leafcn_pft.jpg",sep=""))
+
+plot_map3(all_maps[,c("lon","lat","nre_pft")],
+          varnam = "nre_pft",
+          latmin = -65, latmax = 85,font_size = 12)
+ggsave(paste("/Users/yunpeng/data/output/output_map/nre_pft.jpg",sep=""))
+
+plot_map3(all_maps[,c("lon","lat","cue_pft")],
+          varnam = "cue_pft",
+          latmin = -65, latmax = 85,font_size = 12)
+ggsave(paste("/Users/yunpeng/data/output/output_map/cue_pft.jpg",sep=""))
+
+plot_map3(all_maps[,c("lon","lat","nue_pft")],
+          varnam = "nue_pft",
+          latmin = -65, latmax = 85,font_size = 12)
+ggsave(paste("/Users/yunpeng/data/output/output_map/nue_pft.jpg",sep=""))
+
+plot_map3(all_maps[,c("lon","lat","nuptake_pft")],
+          varnam = "nuptake_pft",
+          latmin = -65, latmax = 85,font_size = 12)
+ggsave(paste("/Users/yunpeng/data/output/output_map/nuptake_pft.jpg",sep=""))
+
+
 #####area_m2 to show each grid's area in m2
 calc_area <- function( lat, dx=1, dy=1 ){
   r_earth <- 6370499.317638  # to be consistent with how Ferret calculates areas of spheres (https://www.pmel.noaa.gov/maillists/tmap/ferret_users/fu_2016/msg00155.html)
@@ -288,6 +327,87 @@ sum(abs((n_PAR)*conversion),na.rm=TRUE)/total_sum
 sum(abs((n_LUE)*conversion),na.rm=TRUE)/total_sum
 sum(abs((n_CUE)*conversion),na.rm=TRUE)/total_sum
 sum(abs((n_NUE_1)*conversion),na.rm=TRUE)/total_sum
+
+all_maps1 <- as.data.frame(cbind(gpp_df,n_PAR,n_LUE,n_CUE,n_NUE_1))
+plot_map3(all_maps1[,c("lon","lat","n_PAR")],
+          varnam = "n_PAR",
+          latmin = -65, latmax = 85,font_size = 12,
+          colorscale = c( "royalblue4", "wheat","tomato3"),
+          breaks = seq(-3,3,0.25))
+ggsave(paste("/Users/yunpeng/data/output/output_map/effect_PAR.jpg",sep=""))
+
+plot_map3(all_maps1[,c("lon","lat","n_LUE")],
+          varnam = "n_LUE",
+          latmin = -65, latmax = 85,font_size = 12,
+          colorscale = c( "royalblue4", "wheat","tomato3"),
+          breaks = seq(-2.5,2.5,0.25))
+ggsave(paste("/Users/yunpeng/data/output/output_map/effect_n_LUE.jpg",sep=""))
+
+plot_map3(all_maps1[,c("lon","lat","n_CUE")],
+          varnam = "n_CUE",
+          latmin = -65, latmax = 85,font_size = 15,
+          colorscale = c( "royalblue4", "wheat","tomato3"),
+          breaks = c(-0.6,-0.5,-0.4,-0.3,-0.2,-0.1, 0,
+                     0.1,0.2,0.3,0.4,0.5,0.6))
+ggsave(paste("/Users/yunpeng/data/output/output_map/effect_n_CUE.jpg",sep=""))
+
+plot_map3(all_maps1[,c("lon","lat","n_NUE_1")],
+          varnam = "n_NUE_1",
+          latmin = -65, latmax = 85,font_size = 15,
+          colorscale = c( "royalblue4", "wheat","tomato3"),
+          breaks = c(-0.6,-0.5,-0.4,-0.3,-0.2,-0.1, 0,
+                     0.1,0.2,0.3,0.4,0.5,0.6))
+ggsave(paste("/Users/yunpeng/data/output/output_map/effect_n_NUE_1.jpg",sep=""))
+
+summary(all_maps1)
+all_maps1_max <- all_maps1[,5:8]
+
+for (i in 1:nrow(all_maps1_max)){
+  if (is.na(all_maps1_max[i,1])==TRUE){
+    all_maps1_max$most_factor[i] <- NA
+    all_maps1_max$most_factor_value[i] <- NA
+  } else {
+    all_maps1_max$most_factor[i] <- names((which.max(abs((all_maps1_max[i,1:4])))))
+    all_maps1_max$most_factor_value[i] <- max(abs((all_maps1_max[i,1:4])))
+  }
+}
+
+apparent_point <- as.data.frame(cbind(gpp_df[,c("lon","lat")],all_maps1_max[,c("most_factor","most_factor_value")]))
+apparent_point_available <- subset(apparent_point,is.na(most_factor_value)==FALSE) 
+dim(apparent_point_available)
+apparent_point_available$most_factor_value <- as.numeric(apparent_point_available$most_factor_value)
+
+apparent_point_available %>% group_by(most_factor) %>% summarise(number=n())
+
+area_final <- as.data.frame(cbind(gpp_df[,c("lon","lat")],all_maps1_max[,c("most_factor","most_factor_value")]))
+area_final$conversion <- conversion
+
+dim(subset(area_final,is.na(most_factor_value)==FALSE)) # area only available in those grids
+#total area
+sum(subset(area_final,is.na(most_factor_value)==FALSE)$conversion, na.rm = TRUE)
+
+area_final$ratio <- area_final$conversion/sum(subset(area_final,is.na(most_factor_value)==FALSE)$conversion, na.rm = TRUE)
+
+aa <- area_final %>% group_by(most_factor) %>% summarise(sum = sum(ratio)*100, n = n())
+sum(aa$sum,na.rm=TRUE)
+aa
+
+# count the needed levels of a factor
+gg <- plot_map3(all_maps[,c("lon","lat","nuptake_pft")],
+                varnam = "nuptake_pft",plot_title = paste(" "),
+                latmin = -65, latmax = 85,combine=FALSE)
+apparent_point_available$most_factor[apparent_point_available$most_factor=="n_CUE"] <- "CUE"
+apparent_point_available$most_factor[apparent_point_available$most_factor=="n_LUE"] <- "LUE"
+apparent_point_available$most_factor[apparent_point_available$most_factor=="n_NUE_1"] <- "N demand of NPP"
+apparent_point_available$most_factor[apparent_point_available$most_factor=="n_PAR"] <- "PAR"
+
+colors <-  c("red","red","red","red","red","red","red","red","red","black","yellow","green","orange","red","blue","purple")
+gg$ggmap + geom_point(data=apparent_point_available,aes(lon,lat,color=most_factor),size=0.5)+
+  scale_color_manual(values = colors)+ theme(
+    legend.text = element_text(size = 20))+
+  guides(colour = guide_legend(override.aes = list(size = 5)))
+ggsave(paste("/Users/yunpeng/data/output/output_onefactor/allfactor_fig1.jpg",sep=""))
+
 
 
 all_maps2 <- as.data.frame(cbind(gpp_df,PAR,LUE,CUE,NUE_1,Nup))

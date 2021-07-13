@@ -344,6 +344,112 @@ ggplot(data=simulations, aes(nuptake_pft)) +
   theme(legend.title = element_blank())+
   labs(x = "Total N uptake (gN/m2/yr)") 
 
+#now, prepare effect on CUE
+mean_fAPAR <- mean(fAPAR$myvar[is.na(all_predictors$available_grid)==FALSE])
+mean_age <- mean(age$myvar[is.na(all_predictors$available_grid)==FALSE])
+mean_CNrt <- mean(CNrt$myvar[is.na(all_predictors$available_grid)==FALSE])
+cal_cue <- function(fAPAR_pred,age_pred,CNrt_pred){
+  npp_f <- gpp_df$gpp * (1/(1 + exp(-(summary(mod_tnpp)$coef[1,1]+
+                                        summary(mod_tnpp)$coef[2,1]* log(CNrt_pred)+
+                                        summary(mod_tnpp)$coef[3,1] * log(age_pred) + 
+                                        summary(mod_tnpp)$coef[4,1]* fAPAR_pred))))
+  #grass
+  npp_g <- gpp_df$gpp * summary(tnpp_grass)$coef[1,1]
+  #pft
+  npp_pft <- available_grid2* (npp_f*forest_percent +npp_g*grass_percent)
+  nuptake_pft_ratio <- npp_pft_final/npp_pft
+  return(nuptake_pft_ratio)
+}
+
+cue_standard <- cal_cue(fAPAR$myvar,age$myvar,CNrt$myvar)
+summary(nuptake_standard)
+
+cue_fAPAR <- (cal_cue(rep(mean_fAPAR,259200),age$myvar,CNrt$myvar))
+cue_age <- (cal_cue(fAPAR$myvar,rep(mean_age,259200),CNrt$myvar))
+cue_CNrt <- (cal_cue(fAPAR$myvar,age$myvar,rep(mean_CNrt,259200)))
+summary(cue_fAPAR)
+
+cue_all <- as.data.frame(cbind(cue_fAPAR,cue_age,cue_CNrt))
+summary(cue_all)
+
+#output most max factor, and its value
+for (i in 1:nrow(cue_all)){
+  if (is.na(cue_all[i,1])==TRUE){
+    cue_all$most_factor[i] <- NA
+    cue_all$most_factor_value[i] <- NA
+  } else {
+    cue_all$most_factor[i] <- names((which.max(abs(log(cue_all[i,1:3])))))
+    cue_all$most_factor_value[i] <- max(abs(log(cue_all[i,1:3])))
+  }
+}
+
+apparent_point <- as.data.frame(cbind(gpp_df[,c("lon","lat")],cue_all[,c("most_factor","most_factor_value")]))
+apparent_point_available <- subset(apparent_point,is.na(most_factor_value)==FALSE) 
+dim(apparent_point_available)
+apparent_point_available$most_factor_value <- as.numeric(apparent_point_available$most_factor_value)
+
+apparent_point_available %>% group_by(most_factor) %>% summarise(number=n())
+
+area_final <- as.data.frame(cbind(gpp_df[,c("lon","lat")],cue_all[,c("most_factor","most_factor_value")]))
+area_final$conversion <- conversion
+
+dim(subset(area_final,is.na(most_factor_value)==FALSE)) # area only available in those grids
+#total area
+sum(subset(area_final,is.na(most_factor_value)==FALSE)$conversion, na.rm = TRUE)
+
+area_final$ratio <- area_final$conversion/sum(subset(area_final,is.na(most_factor_value)==FALSE)$conversion, na.rm = TRUE)
+
+aa <- area_final %>% group_by(most_factor) %>% summarise(sum = sum(ratio)*100, n = n())
+sum(aa$sum,na.rm=TRUE)
+aa
+
+# count the needed levels of a factor
+gg <- plot_map3(all_maps[,c("lon","lat","nuptake_pft")],
+                varnam = "nuptake_pft",plot_title = paste(" "),
+                latmin = -65, latmax = 85,combine=FALSE)
+
+apparent_point_available$most_factor[apparent_point_available$most_factor=="cue_age"] <- "age"
+apparent_point_available$most_factor[apparent_point_available$most_factor=="cue_CNrt"] <- "Soil C:N"
+apparent_point_available$most_factor[apparent_point_available$most_factor=="cue_fAPAR"] <- "fAPAR"
+
+colors <-  c("red","red","red","red","red","red","red","red","cyan","black","yellow","green","orange","red","blue","purple")
+gg$ggmap + geom_point(data=apparent_point_available,aes(lon,lat,color=most_factor),size=0.5)+
+  scale_color_manual(values = colors)+ theme(
+    legend.text = element_text(size = 20))+
+  guides(colour = guide_legend(override.aes = list(size = 5)))
+ggsave(paste("/Users/yunpeng/data/output/output_onefactor/allfactor_cue.jpg",sep=""))
+
+#now, output each factor's effect
+#devtools::load_all("/Users/yunpeng/yunkepeng/Grassland_new_ingestr_rsofun_20210326/rbeni/")
+
+cue_all_coord <- as.data.frame(cbind(gpp_df[,c("lon","lat")],cue_all))
+summary(cue_all_coord)
+cue_all_coord[,3:5] <- log(cue_all_coord[,3:5])
+summary(cue_all_coord[,3:5])
+
+total_sum <- sum(abs((cue_all_coord[,3:5])*conversion),na.rm=TRUE)
+total_sum
+
+#global trend
+global_trend <- (cue_all_coord[,3:5])*conversion/sum(conversion,na.rm = TRUE)
+colSums(global_trend,na.rm=TRUE)
+sum(colSums(global_trend,na.rm=TRUE))
+exp(sum(colSums(global_trend,na.rm=TRUE)))
+#increased 6%
+
+names(cue_all_coord) <- c("lon","lat","fAPAR","age","Soil C:N")
+
+for (i in c(3,4,5)){
+  varname <- names(cue_all_coord)[i]
+  relative_value <- round(sum(abs((cue_all_coord[,i])*conversion),na.rm=TRUE)/total_sum,2)
+  percentage_value <- label_percent()(relative_value)
+  plot_map3(cue_all_coord[,c("lon","lat",varname)],
+            varnam = varname,plot_title = paste(varname, percentage_value, sep=": " ),
+            latmin = -65, latmax = 85,
+            colorscale = c( "royalblue4", "wheat","tomato3"),
+            breaks = c(-0.3,-0.25,-0.2,-0.15,-0.1,-0.05,0,0.05,0.1,0.15,0.2,0.25,0.3))
+  ggsave(paste("/Users/yunpeng/data/output/output_onefactor/",varname,"_cue.jpg",sep=""))
+}
 
 #now, select median values from available grids only - and do each step-by-step
 length(Tg$myvar[is.na(all_predictors$available_grid)==FALSE])
