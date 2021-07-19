@@ -1,6 +1,6 @@
 ---
 title: "Statistical models for C-N cycles"
-author: "Yunke Peng, Beni Stocker"
+author: "Yunke Peng"
 date: "Sep 16, 2020; revision Jan 17 2021"
 output:
   html_document: default

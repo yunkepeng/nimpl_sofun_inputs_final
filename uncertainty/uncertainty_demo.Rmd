@@ -1,0 +1,223 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+
+---
+title: "A demo for uncertainty of npp"
+author: "Yunke Peng"
+date: "Dec 20 2020"
+output: html_document
+---
+
+
+## Here is the demo for calculating uncertainty of npp
+
+
+1. library
+```{r}
+rm(list=ls())
+library(tidyverse)  # depends
+library(ncmeta)
+library(viridis)
+library(ggthemes)
+library(LSD)
+library(yardstick)
+library(ggplot2)
+library(RColorBrewer)
+library(dplyr)
+library(gplots)
+library(tidyselect)
+library(extrafont)
+library(rbeni)
+library(raster)
+library(maps)
+library(rworldmap)
+library(cowplot)
+library(ncdf4)
+
+```
+
+2. Just input 30 nc files of 30 years gpp --> and caluclate them as an average
+```{r}
+
+#### Forest
+#1. In our path (with multiple years data), identify which is the first year and end year of those files
+firstyr_data <- 1982 # In data file, which is the first year
+endyr_data <- 2011 # In data file, which is the last year
+location <- "/Users/yunpeng/data/output/latest_forest/"
+alloutput_list <- list.files(location,full.names = T)
+
+#input elevation nc file, which will be cbind with global df directly
+elev_nc <- read_nc_onefile("~/data/watch_wfdei/WFDEI-elevation.nc")
+#elev_nc <- read_nc_onefile("D:/PhD/nimpl_sofun_inputs/Data/Elevation/WFDEI-elevation.nc")
+elev <- as.data.frame(nc_to_df(elev_nc, varnam = "elevation"))
+
+#2. Create a function to specify path, loop many years nc file and output a dataframe (lon, lat, var).
+inputnc <- function(name,start_year,end_year){
+  #-----------------------------------------------------------------------
+  # Input: 
+  # name: gpp, npp, anpp, vcmax25, leafcn, nuptake...
+  # start_year: e.g. 1981
+  # end_year: e.g. 2016
+  # location: e.g "D:/PhD/nimpl_sofun_inputs/Data/output/" or in Euler: "~/yunkebranch_units/outputnc/"
+  #-----------------------------------------------------------------------
+  output_allyears <- data.frame(matrix(NA))
+  # first, include all years annual data into a daframe
+  for (i in firstyr_data:endyr_data){
+    if (name == "npp"){
+      nc <- read_nc_onefile(alloutput_list[grepl("a.npp.nc", list.files(location,full.names = T))][i-firstyr_data+1]) #we only rely this to filter npp.nc file...
+    } else {
+      nc <- read_nc_onefile(alloutput_list[grepl(name, list.files(location,full.names = T))][i-firstyr_data+1]) #Input nc
+    }
+    output_year <- nc_to_df(nc, varnam = name)[,3] #Yearly output
+    output_allyears[1:259200,i-firstyr_data+1] <- output_year #here first column represents first year of data file 's output
+  }
+  names(output_allyears) <- paste(name,firstyr_data:endyr_data,sep="")
+  #this variable above (output_allyears), could be end of the function, which is variable at multiple years. But for our purporses, we need mean of select years
+  #then, only calculate means of selected years
+  output_selected_yrs <- rowMeans(output_allyears[,(start_year-firstyr_data+1):(end_year-firstyr_data+1)],na.rm = TRUE) # only calculated means based on selected start and end year (see function)
+  coord <- nc_to_df(nc, varnam = name)[,1:2] # obtain lon and lat
+  final_output <- cbind(coord,elev[,3],output_selected_yrs) # combine lon, lat,z with rowmeans variable
+  names(final_output) <- c("lon","lat","z",name)
+  return(final_output)
+  #-----------------------------------------------------------------------
+  # Output: output_final: the output data (259200 * 3) including lon, lat and value
+  #-----------------------------------------------------------------------
+}
+
+#3. select data over 30 years, each df includes lon, lat, z, var
+gpp_df <- inputnc("gpp",1982,2011)
+```
+
+3. Calculate npp - based on prediction fields from fitted regressions
+```{r}
+
+Tg <- as.data.frame(nc_to_df(read_nc_onefile(
+  "~/data/nimpl_sofun_inputs/map/Final_ncfile/Tg.nc"),
+  varnam = "Tg"))
+
+PPFD <- as.data.frame(nc_to_df(read_nc_onefile(
+  "~/data/nimpl_sofun_inputs/map/Final_ncfile/PPFD.nc"),
+  varnam = "PPFD"))
+
+vpd <- as.data.frame(nc_to_df(read_nc_onefile(
+  "~/data/nimpl_sofun_inputs/map/Final_ncfile/vpd.nc"),
+  varnam = "vpd"))
+
+fAPAR <- as.data.frame(nc_to_df(read_nc_onefile(
+  "~/data/nimpl_sofun_inputs/map/Final_ncfile/fAPAR.nc"),
+  varnam = "fAPAR"))
+
+age <- as.data.frame(nc_to_df(read_nc_onefile(
+  "~/data/nimpl_sofun_inputs/map/Final_ncfile/age.nc"),
+  varnam = "age"))
+
+CNrt <- as.data.frame(nc_to_df(read_nc_onefile(
+  "~/data/nimpl_sofun_inputs/map/Final_ncfile/CNrt.nc"),
+  varnam = "CNrt"))
+
+LMA <- as.data.frame(nc_to_df(read_nc_onefile(
+  "~/data/nimpl_sofun_inputs/map/Final_ncfile/LMA.nc"),
+  varnam = "LMA"))
+
+load("/Users/yunpeng/data/NPP_final/statistical_model/mod_tnpp.RData")
+summary(mod_tnpp)
+
+#four fitted coefficients
+a1 <- summary(mod_tnpp)$coef[1,1]
+a2 <- summary(mod_tnpp)$coef[2,1]
+a3 <- summary(mod_tnpp)$coef[3,1]
+a4 <- summary(mod_tnpp)$coef[4,1]
+
+npp_grid <- gpp_df$gpp * (1/(1 + exp(-(a1 + a2 * log(CNrt$myvar)+ a3*log(age$myvar)+a4* fAPAR$myvar))))
+
+gpp_npp_grid <- as.data.frame(cbind(gpp_df,npp_grid))
+dim(gpp_npp_grid)
+names(gpp_npp_grid) <- c("lon","lat","z","gpp","npp")
+summary(gpp_npp_grid)
+
+#just plot
+plot_map3(gpp_npp_grid[,c("lon","lat","gpp")], 
+                varnam = "gpp",plot_title = "gpp(gC/m2/yr)",
+                latmin = -65, latmax = 85)
+
+plot_map3(gpp_npp_grid[,c("lon","lat","npp")], 
+                varnam = "npp",plot_title = "npp (gC/m2/yr)",
+                latmin = -65, latmax = 85)
+
+```
+
+4. Calculate uncertainty of npp/gpp. The step was based on three steps
+- since we know logit (npp/gpp) = regression. We assumed npp/gpp =a, and regression =b. Then a = 1 / (1 + exp(-b)).
+
+- the uncertainty of b (delta b) can be calculated directly based on summary(mod_tnpp)$sigma, as loaded in above.
+
+```{r}
+
+mod_tnpp_uncertainty <- summary(mod_tnpp)$sigma  #random factor: a population parameter - estimated automatically
+#mod_tnpp_uncertainty <- sd(residuals(mod_tnpp))  #random factor: a parameter in a subset of the population - estimated manually
+mod_tnpp_uncertainty
+```
+
+- The uncertainty of a (i.e. NPP/GPP), was equal to delta b * (deriative a / deriative b). After adjustment, a = delta b *exp(-b)/((1 + exp(-b))^2). Where b is the outputted map from regression calculations.
+
+```{r}
+#firstly, calculate b (see text in 3)
+tnpp_b <- a1 + a2 * log(CNrt[,3])  +
+  a3*log(age[,3]) + a4 * fAPAR[,3]
+
+#secondly, uncertainty of a (npp/gpp) (see text in 3)
+
+npp_gpp_uncertainty <- mod_tnpp_uncertainty *  exp(-tnpp_b) / ( (1 + exp(-tnpp_b)) ^2)
+
+gpp_npp_grid$npp_gpp_uncertainty <- npp_gpp_uncertainty
+
+plot_map3(gpp_npp_grid[,c("lon","lat","npp_gpp_uncertainty")], 
+                varnam = "npp_gpp_uncertainty",plot_title = "Uncertainty of npp/gpp",
+                latmin = -65, latmax = 85)
+
+```
+
+5. Finally calculate uncertainty of npp. Since npp = (npp/gpp) * gpp --> delta npp =  npp * sqrt((delta(npp/gpp)/(npp/gpp))^2 + (delta(gpp)/gpp)^2).
+- Within delta(gpp)/gpp --> delta gpp was obtained from standard deviations between predicted and measured gpp in FLUXNET sites (Stocker et al. 2021 GMD); and gpp was accordinly defined as mean values of site-predicted gpp values.
+
+```{r}
+#firstly, calculate uncertainty of gpp, and mean values of predicted gpp
+
+load("/Users/yunpeng/data/gpp_gmd/stocker20gmd_outputs/rdata_objects/out_eval_FULL.Rdata")
+#Data in Euler is from: /cluster/work/climate/bestocke/data/stocker20gmd_outputs/rdata_objects/out_eval_FULL.Rdata 
+
+obs <-out_eval_FULL$gpp$fluxnet$data$meandf$obs
+pred <- out_eval_FULL$gpp$fluxnet$data$meandf$mod
+obs_pred <- as.data.frame(cbind(obs,pred))
+obs_pred <- na.omit(obs_pred)
+
+# According to textbook:Uncertainty estimates obtained as standard deviations of repeated measurement results are called A type uncertainty estimates. 
+# In this way,  “sample mean” corresponds to the true GPP, and the “observation” is the modelled GPP.
+obs_pred$variance <- (obs_pred$obs - obs_pred$pred)^2
+uncertainty_gpp <- sqrt(sum(obs_pred$variance)/nrow(obs_pred))
+uncertainty_gpp
+
+mean_gpp <- mean(obs_pred$pred,na.rm=TRUE)
+mean_gpp
+
+#calculate uncertainty of npp
+gpp_npp_grid$uncertainty_npp <- gpp_npp_grid$npp * sqrt((npp_gpp_uncertainty/(gpp_npp_grid$npp/gpp_npp_grid$gpp))^2 + 
+                                       (uncertainty_gpp/mean_gpp)^2)
+# the range was reasonalbly within npp, 
+summary(gpp_npp_grid$uncertainty_npp/gpp_npp_grid$npp)
+
+```
+
+(5) Therefore, the uncertainty map of npp was obtained.
+
+```{r}
+
+plot_map3(gpp_npp_grid[,c("lon","lat","uncertainty_npp")], 
+                varnam = "uncertainty_npp",plot_title = "Uncertainty of npp (gC/m2/yr)",
+                latmin = -65, latmax = 85)
+
+```
