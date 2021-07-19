@@ -144,7 +144,7 @@ mod_tnpp <- lmer(log((TNPP_1/GPP)/(1-(TNPP_1/GPP))) ~ log(soilCN) + log(age) + o
 summary(mod_tnpp)
 r.squaredGLMM(mod_tnpp)
 
-#2. now, add Malhi
+#2. now, add Malhi # NPP_Malhi's data needs double check
 NPP_Malhi <- read.csv("/Users/yunpeng/data/NPP_Yunke/NPP_Malhi/NPP_Malhi.csv")
 NPP_Malhi <- NPP_Malhi[,c("site","lon","lat","z","file","Begin_year","End_year","Source","NPP.foliage","NPP.stem","NPP.wood","NPP.fine","NPP.coarse","ANPP_2","BNPP_1","TNPP_1","GPP")]
 names(NPP_Malhi) <- c("Plot","lon","lat","Elevation","file","Begin.year","End.year","Source_NPP","NPP.foliage","NPP.stem","NPP.wood","NPP.fine","NPP.coarse","ANPP_2","BNPP_1","TNPP_1","GPP")
@@ -721,8 +721,8 @@ NPP_Forest$file[NPP_Forest$z!=NPP_old$z |
                   NPP_Forest$Begin_year!=NPP_old$Begin_year|
                   NPP_Forest$End_year!=NPP_old$End_year]
 
-#csvfile <- paste("/Users/yunpeng/data/NPP_final/NPP_Forest.csv")
-#write_csv(NPP_Forest, path = csvfile)
+csvfile <- paste("/Users/yunpeng/data/NPP_final/NPP_Forest.csv")
+write_csv(NPP_Forest, path = csvfile)
 
 ### Grassland: collect unchanged climate forcing data, based on same lon+lat+z+Begin_year+End_year, 
 #old
@@ -1019,8 +1019,8 @@ summary(NPP_grassland_final12$End_year - NPP_grassland$End_year)
 summary(NPP_grassland_final12$ANPP_2 - NPP_grassland$ANPP_2)
 summary(NPP_grassland_final12$TNPP_1 - NPP_grassland$TNPP_1)
 
-#csvfile <- paste("/Users/yunpeng/data/NPP_Grassland_final/NPP_grassland.csv")
-#write_csv(NPP_grassland_final12, path = csvfile)
+csvfile <- paste("/Users/yunpeng/data/NPP_Grassland_final/NPP_grassland.csv")
+write_csv(NPP_grassland_final12, path = csvfile)
 
 
 #now, newly add net minerlization rate and GCME N uptake sites

@@ -362,16 +362,19 @@ ggplot(data=all_maps, aes(x=cue_pft, y=nue_pft)) +
 mid <- mean(all_maps$nuptake_pft,na.rm=TRUE)
 
 ggplot(data=all_maps, aes(x=cue_pft, y=nue_pft)) +
-  geom_point(aes(color=nuptake_pft),alpha=0.5)+geom_smooth(method = "lm", se = TRUE)+ 
-  scale_color_gradient2(midpoint = mid, low = "blue", mid = "white",high = "red", space = "Lab")+
+  geom_point(aes(color=nuptake_pft),alpha=1)+geom_smooth(method = "lm", se = TRUE)+ 
+  scale_color_gradient2(midpoint = 4.39, low = "#0000FF", mid = "#FFFFFF", high ="#FF0000")+
   xlab("CUE")+ylab("NUE")+theme_classic()+theme(
+    legend.title = element_text(color = "black", size = 20),
+    legend.text = element_text(color = "black", size = 20),
     axis.title.x = element_text(size = 40),
     axis.text.x = element_text(size = 20),
     axis.title.y = element_text(size = 40),
-    axis.text.y = element_text(size = 20))
+    axis.text.y = element_text(size = 20))+labs(color='N uptake')
 
 ggsave(paste("/Users/yunpeng/data/output/output_map/NUE_CUE.jpg",sep=""))
 summary(lm(nue_pft~cue_pft,all_maps))
+
 
 all_maps1_max <- all_maps1[,5:8]
 
