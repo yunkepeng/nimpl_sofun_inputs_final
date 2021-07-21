@@ -408,7 +408,7 @@ load("/Users/yunpeng/data/NPP_final/statistical_model/mod_lnpp.RData")
 summary(mod_lnpp)
 load("/Users/yunpeng/data/NPP_final/statistical_model/nmass.RData")
 summary(n1)
-load("/Users/yunpeng/data/NPP_final/statistical_model/nre_model.RData")
+load("/Users/yunpeng/data/NPP_final/statistical_model/nre_model_forest.RData")
 summary(nre_model)
 
 #now, using several statistical models to predict npp, anpp, npp.leaf....
@@ -759,6 +759,4 @@ ggplot(data=NRE_climate, aes(x=pred_nre, y=nre)) + xlim(c(0.25,1))+ylim(c(0.25,1
 summary(lm(nre~pred_nre,NRE_climate))
 csvfile <- paste("/Users/yunpeng/data/NPP_final/NRE_validation.csv")
 write.csv(NRE_climate, csvfile, row.names = TRUE)
-
-
 save.image(file = "/Users/yunpeng/data/NPP_final/Forest_site_simulation.Rdata")

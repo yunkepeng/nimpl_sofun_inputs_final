@@ -23,7 +23,7 @@ library(lubridate)
 library(lme4)
 library(MuMIn)
 library(lmerTest)
-load(file = "/Users/yunpeng/data/NPP_Grassland_final/grass_simulation.Rdata")
+#load(file = "/Users/yunpeng/data/NPP_Grassland_final/grass_simulation.Rdata")
 devtools::load_all("/Users/yunpeng/yunkepeng/Grassland_new_ingestr_rsofun_20210326/rsofun/")
 #see "/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/NPP/Forest_site_orig.R" - sitename and sitename_fapar already been well checked
 NPP_grassland  <- read.csv("/Users/yunpeng/data/NPP_Grassland_final/NPP_grassland.csv")
