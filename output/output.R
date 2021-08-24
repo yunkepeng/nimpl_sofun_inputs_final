@@ -1008,6 +1008,7 @@ gg$ggmap + geom_point(data=apparent_point_available2,aes(lon,lat,color=most_fact
   scale_color_manual(values = colors)+ theme(
     legend.text = element_text(size = 20))+
   guides(colour = guide_legend(override.aes = list(size = 5)))
+
 ggsave(paste("/Users/yunpeng/data/output/output_onefactor/allfactor_model.jpg",sep=""))
 
 nuptake_all_coord2 <- as.data.frame(cbind(gpp_df[,c("lon","lat")],nuptake_all2))
@@ -1354,8 +1355,12 @@ for (i in 4:ncol(all_maps)){
   ggsave(paste("/Users/yunpeng/data/output/output_map/no_points/",varname,".jpg",sep=""))
 }
 
+
 #now, read all_points from forest, grass, leafnc, nre
 #1. gpp
+rm(list=ls())
+load(file = "/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/output/output.Rdata")
+
 library(rbeni)
 NPP_forest <- read.csv("/Users/yunpeng/data/NPP_final/NPP_validation.csv")
 NPP_grassland <- read.csv("/Users/yunpeng/data/NPP_Grassland_final/NPP_grass_validation.csv")
@@ -1369,27 +1374,34 @@ varname
 total_value <- round(sum(all_maps[,i]*conversion,na.rm=TRUE),2)
 gg <- plot_map3(all_maps[,c("lon","lat",varname)],
                 varnam = varname,plot_title = paste(varname, ":", total_value, "Pg/yr", sep=" " ),
-                latmin = -65, latmax = 85,combine=FALSE)
+                latmin = -65, latmax = 85,combine=FALSE,font_size=8)
 gg$ggmap +
-  geom_point(data=gpp_f,aes(lon,lat),col="red")+
-  geom_point(data=gpp_g,aes(lon,lat),col="blue")
+  geom_point(data=gpp_f,aes(lon,lat),col="red",size=2)+
+  geom_point(data=gpp_g,aes(lon,lat),col="blue",size=2)
 ggsave(paste("/Users/yunpeng/data/output/output_map/",varname,".jpg",sep=""))
+plot_map3(all_maps[,c("lon","lat",varname)],
+          varnam = varname,plot_title = paste(varname, ":", total_value, "Pg/yr", sep=" " ),
+          latmin = -65, latmax = 85,font_size=8)
+ggsave(paste("/Users/yunpeng/data/output/output_map/legend/",varname,".jpg",sep=""))
 
 #2.tnpp
 npp_f <- (NPP_forest %>% filter(TNPP_1>0) %>% filter(pred_npp>0))[,c("lon","lat")]
 npp_g <- (NPP_grassland %>% filter(TNPP_1>0) %>% filter(pred_npp>0))[,c("lon","lat")]
-
 i=5
 varname <- names(all_maps)[i]
 varname
 total_value <- round(sum(all_maps[,i]*conversion,na.rm=TRUE),2)
 gg <- plot_map3(all_maps[,c("lon","lat",varname)],
           varnam = varname,plot_title = paste(varname, ":", total_value, "Pg/yr", sep=" " ),
-          latmin = -65, latmax = 85,combine=FALSE)
+          latmin = -65, latmax = 85,font_size=8,combine=FALSE)
 gg$ggmap +
-  geom_point(data=npp_f,aes(lon,lat),col="red")+
-  geom_point(data=npp_g,aes(lon,lat),col="blue")
+  geom_point(data=npp_f,aes(lon,lat),col="red",size=2)+
+  geom_point(data=npp_g,aes(lon,lat),col="blue",size=2)
 ggsave(paste("/Users/yunpeng/data/output/output_map/",varname,".jpg",sep=""))
+plot_map3(all_maps[,c("lon","lat",varname)],
+          varnam = varname,plot_title = paste(varname, ":", total_value, "Pg/yr", sep=" " ),
+          latmin = -65, latmax = 85,font_size=8)
+ggsave(paste("/Users/yunpeng/data/output/output_map/legend/",varname,".jpg",sep=""))
 
 #3.anpp
 anpp_f <- (NPP_forest %>% filter(ANPP_2>0) %>% filter(pred_anpp>0))[,c("lon","lat")]
@@ -1401,11 +1413,15 @@ varname
 total_value <- round(sum(all_maps[,i]*conversion,na.rm=TRUE),2)
 gg <- plot_map3(all_maps[,c("lon","lat",varname)],
                 varnam = varname,plot_title = paste(varname, ":", total_value, "Pg/yr", sep=" " ),
-                latmin = -65, latmax = 85,combine=FALSE)
+                latmin = -65, latmax = 85,font_size=8,combine=FALSE)
 gg$ggmap +
-  geom_point(data=anpp_f,aes(lon,lat),col="red")+
-  geom_point(data=anpp_g,aes(lon,lat),col="blue")
+  geom_point(data=anpp_f,aes(lon,lat),col="red",size=2)+
+  geom_point(data=anpp_g,aes(lon,lat),col="blue",size=2)
 ggsave(paste("/Users/yunpeng/data/output/output_map/",varname,".jpg",sep=""))
+plot_map3(all_maps[,c("lon","lat",varname)],
+          varnam = varname,plot_title = paste(varname, ":", total_value, "Pg/yr", sep=" " ),
+          latmin = -65, latmax = 85,font_size=8)
+ggsave(paste("/Users/yunpeng/data/output/output_map/legend/",varname,".jpg",sep=""))
 
 #4.leaf npp
 lnpp_f <- (NPP_forest %>% filter(NPP.foliage>0) %>% filter(pred_lnpp>0))[,c("lon","lat")]
@@ -1416,10 +1432,14 @@ varname
 total_value <- round(sum(all_maps[,i]*conversion,na.rm=TRUE),2)
 gg <- plot_map3(all_maps[,c("lon","lat",varname)],
                 varnam = varname,plot_title = paste(varname, ":", total_value, "Pg/yr", sep=" " ),
-                latmin = -65, latmax = 85,combine=FALSE)
+                latmin = -65, latmax = 85,font_size=8,combine=FALSE)
 gg$ggmap +
-  geom_point(data=lnpp_f,aes(lon,lat),col="red")  
+  geom_point(data=lnpp_f,aes(lon,lat),col="red",size=2) 
 ggsave(paste("/Users/yunpeng/data/output/output_map/",varname,".jpg",sep=""))
+plot_map3(all_maps[,c("lon","lat",varname)],
+          varnam = varname,plot_title = paste(varname, ":", total_value, "Pg/yr", sep=" " ),
+          latmin = -65, latmax = 85,font_size=8)
+ggsave(paste("/Users/yunpeng/data/output/output_map/legend/",varname,".jpg",sep=""))
 
 # 5. bnpp
 bnpp_f <- (NPP_forest %>% filter(BNPP_1>0) %>% filter(pred_bnpp>0))[,c("lon","lat")]
@@ -1431,14 +1451,18 @@ varname
 total_value <- round(sum(all_maps[,i]*conversion,na.rm=TRUE),2)
 gg <- plot_map3(all_maps[,c("lon","lat",varname)],
                 varnam = varname,plot_title = paste(varname, ":", total_value, "Pg/yr", sep=" " ),
-                latmin = -65, latmax = 85,combine=FALSE)
+                latmin = -65, latmax = 85,font_size=8,combine=FALSE)
 gg$ggmap +
-  geom_point(data=bnpp_f,aes(lon,lat),col="red")+
-  geom_point(data=bnpp_g,aes(lon,lat),col="blue")
+  geom_point(data=bnpp_f,aes(lon,lat),col="red",size=2)+
+  geom_point(data=bnpp_g,aes(lon,lat),col="blue",size=2)
 ggsave(paste("/Users/yunpeng/data/output/output_map/",varname,".jpg",sep=""))
+plot_map3(all_maps[,c("lon","lat",varname)],
+          varnam = varname,plot_title = paste(varname, ":", total_value, "Pg/yr", sep=" " ),
+          latmin = -65, latmax = 85,font_size=8)
+ggsave(paste("/Users/yunpeng/data/output/output_map/legend/",varname,".jpg",sep=""))
 
 # 6. laefnc
-SP_input <- read.csv(file="/Users/yunpeng/data/leaf_traits/combined_leaf_traits.csv") #new one 
+SP_input <- read.csv(file="/Users/yunpeng/data/leaf_traits/combined_leaf_traits_updated.csv") #new one 
 SP_input2 <- SP_input[,c("lat","lon","z","Vcmax25","narea","lma")]
 sitemean <- aggregate(SP_input2,by=list(SP_input2$lon,SP_input2$lat), FUN=mean, na.rm=TRUE) 
 sitemean$pred_leafn <- (summary(n1)$coefficients[1,1]) + (summary(n1)$coefficients[2,1])* sitemean$Vcmax25/sitemean$lma
@@ -1446,16 +1470,20 @@ sitemean$obs_leafn <- sitemean$narea/sitemean$lma
 
 laefnc_f <- (sitemean %>% filter(pred_leafn>0) %>% filter(obs_leafn>0))[,c("lon","lat")]
 
-i=16
+i=18
 varname <- names(all_maps)[i]
 varname
 total_value <- round(mean(all_maps[,i],na.rm=TRUE),3)
 gg <- plot_map3(all_maps[,c("lon","lat",varname)],
                 varnam = varname,plot_title = paste("leaf N/C", ":", total_value, "(assuming C% as global constant = 48%)", sep=" " ),
-                latmin = -65, latmax = 85,combine=FALSE)
+                latmin = -65, latmax = 85,font_size=8,combine=FALSE)
 gg$ggmap +
-  geom_point(data=laefnc_f,aes(lon,lat),col="red")
+  geom_point(data=laefnc_f,aes(lon,lat),col="red",size=2)
 ggsave(paste("/Users/yunpeng/data/output/output_map/",varname,".jpg",sep=""))
+plot_map3(all_maps[,c("lon","lat",varname)],
+          varnam = varname,plot_title = paste(varname, ":", total_value, "Pg/yr", sep=" " ),
+          latmin = -65, latmax = 85,font_size=8)
+ggsave(paste("/Users/yunpeng/data/output/output_map/legend/",varname,".jpg",sep=""))
 
 # 7. NRE
 NRE_validation <- read.csv(file="/Users/yunpeng/data/NPP_final/NRE_validation.csv") #new one 
@@ -1468,10 +1496,14 @@ varname
 total_value <- round(mean(all_maps[,i],na.rm=TRUE),3)
 gg <- plot_map3(all_maps[,c("lon","lat",varname)],
                 varnam = varname,plot_title = paste("N resorption efficiency", ":", total_value, sep=" " ),
-                latmin = -65, latmax = 85,combine=FALSE)
+                latmin = -65, latmax = 85,font_size=8,combine=FALSE)
 gg$ggmap +
-  geom_point(data=nre_f,aes(lon,lat),col="red")
+  geom_point(data=nre_f,aes(lon,lat),col="red",size=2)
 ggsave(paste("/Users/yunpeng/data/output/output_map/",varname,".jpg",sep=""))
+plot_map3(all_maps[,c("lon","lat",varname)],
+          varnam = varname,plot_title = paste(varname, ":", total_value, "Pg/yr", sep=" " ),
+          latmin = -65, latmax = 85,font_size=8)
+ggsave(paste("/Users/yunpeng/data/output/output_map/legend/",varname,".jpg",sep=""))
 
 
 # 8. lnf
@@ -1484,26 +1516,34 @@ varname
 total_value <- round(sum(all_maps[,i]*conversion,na.rm=TRUE),2)
 gg <- plot_map3(all_maps[,c("lon","lat",varname)],
                 varnam = varname,plot_title = paste(varname, ":", total_value, "Pg/yr", sep=" " ),
-                latmin = -65, latmax = 85,combine=FALSE)
+                latmin = -65, latmax = 85,font_size=8,combine=FALSE)
 gg$ggmap +
-  geom_point(data=lnf_f,aes(lon,lat),col="red")+
-  geom_point(data=lnf_g,aes(lon,lat),col="blue")
+  geom_point(data=lnf_f,aes(lon,lat),col="red",size=2)+
+  geom_point(data=lnf_g,aes(lon,lat),col="blue",size=2)
 ggsave(paste("/Users/yunpeng/data/output/output_map/",varname,".jpg",sep=""))
+plot_map3(all_maps[,c("lon","lat",varname)],
+          varnam = varname,plot_title = paste(varname, ":", total_value, "Pg/yr", sep=" " ),
+          latmin = -65, latmax = 85,font_size=8)
+ggsave(paste("/Users/yunpeng/data/output/output_map/legend/",varname,".jpg",sep=""))
 
 
 # 9. nuptake
 Nmin_validation <- read.csv("/Users/yunpeng/data/NPP_final/Nmin_validation.csv")
 nuptake_f <- (Nmin_validation %>% filter(pred_nuptake>0) %>% filter(obs_nuptake>0))[,c("lon","lat")]
 
-i=25
+i=26
 varname <- names(all_maps)[i]
 varname
 total_value <- round(sum(all_maps[,i]*conversion,na.rm=TRUE),2)
 gg <- plot_map3(all_maps[,c("lon","lat",varname)],
                 varnam = varname,plot_title = paste(varname, ":", total_value, "Pg/yr", sep=" " ),
-                latmin = -65, latmax = 85,combine=FALSE)
+                latmin = -65, latmax = 85,font_size=8,combine=FALSE)
 gg$ggmap +
-  geom_point(data=nuptake_f,aes(lon,lat),col="red")
+  geom_point(data=nuptake_f,aes(lon,lat),col="red",size=2)
 ggsave(paste("/Users/yunpeng/data/output/output_map/",varname,".jpg",sep=""))
+plot_map3(all_maps[,c("lon","lat",varname)],
+          varnam = varname,plot_title = paste(varname, ":", total_value, "Pg/yr", sep=" " ),
+          latmin = -65, latmax = 85,font_size=8)
+ggsave(paste("/Users/yunpeng/data/output/output_map/legend/",varname,".jpg",sep=""))
 
 

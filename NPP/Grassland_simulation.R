@@ -23,7 +23,7 @@ library(lubridate)
 library(lme4)
 library(MuMIn)
 library(lmerTest)
-#load(file = "/Users/yunpeng/data/NPP_Grassland_final/grass_simulation.Rdata")
+load(file = "/Users/yunpeng/data/NPP_Grassland_final/grass_simulation.Rdata")
 devtools::load_all("/Users/yunpeng/yunkepeng/Grassland_new_ingestr_rsofun_20210326/rsofun/")
 #see "/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/NPP/Forest_site_orig.R" - sitename and sitename_fapar already been well checked
 NPP_grassland  <- read.csv("/Users/yunpeng/data/NPP_Grassland_final/NPP_grassland.csv")
@@ -543,24 +543,36 @@ ggplot(NPP_grassland_final4, aes(x=weightedgpp_all, y=GPP)) +
   geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
   xlab("Prediction")+ylab("Observation")+theme_classic() + My_Theme #+ggtitle("Observed GPP vs. Predicted GPP")
 summary(lm(GPP~weightedgpp_all,data=NPP_grassland_final4))
+a10 <- lm(GPP~weightedgpp_all,NPP_grassland_final4)
+mean_GPP <- mean(subset(NPP_grassland_final4,GPP>0 & weightedgpp_all>0)$GPP)
+sqrt(mean(a10$residuals^2))/mean_GPP
 
 #####npp r2 = 0.1128
 ggplot(NPP_grassland_final4, aes(x=pred_npp, y=TNPP_1)) +
   geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
   xlab("Prediction")+ylab("Observation")+theme_classic() + My_Theme 
 summary(lm(TNPP_1~pred_npp,data=NPP_grassland_final4))
+a11 <- lm(TNPP_1~pred_npp,NPP_grassland_final4)
+mean_NPP <- mean(subset(NPP_grassland_final4,TNPP_1>0 & pred_npp>0)$TNPP_1)
+sqrt(mean(a11$residuals^2))/mean_NPP
 
 ####anpp r2 = 0.1732
 ggplot(NPP_grassland_final4, aes(x=pred_anpp, y=ANPP_2)) +
   geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
   xlab("Prediction")+ylab("Observation")+theme_classic() + My_Theme 
 summary(lm(ANPP_2~pred_anpp,data=NPP_grassland_final4)) 
+a12 <- lm(ANPP_2~pred_anpp,NPP_grassland_final4)
+mean_ANPP <- mean(subset(NPP_grassland_final4,ANPP_2>0 & pred_anpp>0)$ANPP_2)
+sqrt(mean(a12$residuals^2))/mean_ANPP
 
 #leaf N flux r2 = 0.096
 ggplot(NPP_grassland_final4, aes(x=pred_lnf, y=lnf_obs_final)) +
   geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+ xlim(c(0,10))+
   xlab("Prediction")+ylab("Observation")+theme_classic() + My_Theme
 summary(lm(lnf_obs_final~pred_lnf,data=NPP_grassland_final4)) 
+a13 <- lm(lnf_obs_final~pred_lnf,NPP_grassland_final4)
+mean_LNX <- mean(subset(NPP_grassland_final4,lnf_obs_final>0 & pred_lnf>0)$lnf_obs_final)
+sqrt(mean(a13$residuals^2))/mean_LNX
 
 #add legume and biome
 legume_N <- read.csv("/Users/yunpeng/data/npp_stoichiometry_grasslands_tiandi/China_grassland_CN_stoichiometry_with_matched_NPP_species_legume_20201214.csv")

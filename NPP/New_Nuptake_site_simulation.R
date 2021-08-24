@@ -411,10 +411,14 @@ ggplot(data=NPP_Forest, aes(x=pred_nuptake, y=Nmin)) +
   xlab("Prediction")+ylab("Observation")+theme_classic()+My_Theme
 summary(lm(Nmin~pred_nuptake,NPP_Forest))
 
+#we use this
 ggplot(data=subset(NPP_Forest,Biome!="med"), aes(x=pred_nuptake, y=Nmin)) +
   geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+xlim(0,25)+ylim(0,25)+
   xlab("Prediction")+ylab("Observation")+theme_classic()+My_Theme
 summary(lm(Nmin~pred_nuptake,subset(NPP_Forest,Biome!="med")))
+a13 <- lm(Nmin~pred_nuptake,subset(NPP_Forest,Biome!="med"))
+mean_Nup <- mean(subset(NPP_Forest,Biome!="med"&Nmin>0 & pred_nuptake>0)$Nmin)
+sqrt(mean(a13$residuals^2))/mean_Nup
 
 Nmin_all <- subset(NPP_Forest,Biome!="med")
 Nmin_all$obs_nuptake <- Nmin_all$Nmin
@@ -591,6 +595,7 @@ ggplot(data=NPP_Forest, aes(x=pred_nuptake, y=Nmin)) +
   geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+xlim(0,25)+ylim(0,25)+
   xlab("Prediction")+ylab("Observation")+theme_classic()+My_Theme
 summary(lm(Nmin~pred_nuptake,NPP_Forest))
+
 
 NPP_final <- rbind(NPP_grassland[,c("pred_nuptake","Nmin","Biome")],
                    NPP_Forest[,c("pred_nuptake","Nmin","Biome")])

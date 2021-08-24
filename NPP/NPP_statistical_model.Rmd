@@ -442,9 +442,20 @@ NRE_climate$nre <- NRE_climate$NRE/100
 nre_a <- log(NRE_climate$nre/(1-NRE_climate$nre))
 Tg_a <- NRE_climate$Tg
 vpd_a <- log(NRE_climate$vpd)
+PPFD_a <- log(NRE_climate$PPFD)
 
 nre_model <- lm(nre_a~Tg_a+vpd_a)
 save(nre_model, file = "/Users/yunpeng/data/NPP_final/statistical_model/nre_model_forest.RData")
+
+nre_model1 <- lm(nre_a~Tg_a)
+nre_model2 <- lm(nre_a~vpd_a)
+nre_model3 <- lm(nre_a~PPFD_a)
+nre_model4 <- lm(nre_a~Tg_a+PPFD_a)
+nre_model5 <- lm(nre_a~vpd_a+PPFD_a)
+nre_model6 <- lm(nre_a~Tg_a+vpd_a+PPFD_a)
+summary(nre_model6)
+AIC(nre_model1);AIC(nre_model2);AIC(nre_model3);AIC(nre_model4);AIC(nre_model5);AIC(nre_model6);AIC(nre_model)
+
 
 summary(nre_model)
 

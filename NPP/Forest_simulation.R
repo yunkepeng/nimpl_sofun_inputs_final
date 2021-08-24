@@ -1,6 +1,6 @@
 rm(list=ls())
 
-#load(file = "/Users/yunpeng/data/NPP_final/Forest_site_simulation.Rdata")
+load(file = "/Users/yunpeng/data/NPP_final/Forest_site_simulation.Rdata")
 
 devtools::load_all("/Users/yunpeng/yunkepeng/Grassland_new_ingestr_rsofun_20210326/rsofun/")
 library(dplyr)
@@ -479,37 +479,54 @@ ggplot(data=NPP_Forest2, aes(x=pred_gpp_c3, y=GPP)) +
   geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
   xlab("Prediction")+ylab("Observation")+theme_classic()+My_Theme
 summary(lm(GPP~pred_gpp_c3,NPP_Forest2))
-
+a1 <- lm(GPP~pred_gpp_c3,NPP_Forest2)
+mean_GPP <- mean(subset(NPP_Forest2,GPP>0 & pred_gpp_c3>0)$GPP)
+sqrt(mean(a1$residuals^2))/mean_GPP
 
 #analyse_modobs2(forest_site2,"pred_npp", "TNPP_1",type = "points")
 ggplot(data=NPP_Forest2, aes(x=pred_npp, y=TNPP_1)) +
   geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
   xlab("Prediction")+ylab("Observation")+theme_classic()+My_Theme
 summary(lm(TNPP_1~pred_npp,NPP_Forest2))
+a2 <- lm(TNPP_1~pred_npp,NPP_Forest2)
+mean_NPP <- mean(subset(NPP_Forest2,TNPP_1>0 & pred_npp>0)$TNPP_1)
+sqrt(mean(a2$residuals^2))/mean_NPP
 
 #analyse_modobs2(forest_site2,"pred_anpp", "ANPP_2",type = "points")
 ggplot(data=NPP_Forest2, aes(x=pred_anpp, y=ANPP_2)) +
   geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
   xlab("Prediction")+ylab("Observation")+theme_classic()+My_Theme
 summary(lm(ANPP_2~pred_anpp,NPP_Forest2))
+a3 <- lm(ANPP_2~pred_anpp,NPP_Forest2)
+mean_ANPP <- mean(subset(NPP_Forest2,ANPP_2>0 & pred_anpp>0)$ANPP_2)
+sqrt(mean(a3$residuals^2))/mean_ANPP
 
 #analyse_modobs2(forest_site2,"pred_lnpp", "NPP.foliage",type = "points")
 ggplot(data=NPP_Forest2, aes(x=pred_lnpp, y=NPP.foliage)) +
   geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
   xlab("Prediction")+ylab("Observation")+theme_classic()+My_Theme
 summary(lm(NPP.foliage~pred_lnpp,NPP_Forest2))
+a4 <- lm(NPP.foliage~pred_lnpp,NPP_Forest2)
+mean_LNPP <- mean(subset(NPP_Forest2,NPP.foliage>0 & pred_lnpp>0)$NPP.foliage)
+sqrt(mean(a4$residuals^2))/mean_LNPP
 
 #analyse_modobs2(forest_site,"pred_wnpp", "NPP.wood",type = "points")
 ggplot(data=NPP_Forest2, aes(x=pred_wnpp, y=NPP.wood)) +
   geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
   xlab("Prediction")+ylab("Observation")+theme_classic()+My_Theme
 summary(lm(NPP.wood~pred_wnpp,NPP_Forest2))
+a5 <- lm(NPP.wood~pred_wnpp,NPP_Forest2)
+mean_WNPP <- mean(subset(NPP_Forest2,NPP.wood>0 & pred_wnpp>0)$NPP.wood)
+sqrt(mean(a5$residuals^2))/mean_WNPP
 
 #analyse_modobs2(forest_site2,"pred_bnpp", "BNPP_1",type = "points")
 ggplot(data=NPP_Forest2, aes(x=pred_bnpp, y=BNPP_1)) +
   geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
   xlab("Prediction")+ylab("Observation")+theme_classic()+My_Theme
 summary(lm(BNPP_1~pred_bnpp,NPP_Forest2))
+a6 <- lm(BNPP_1~pred_bnpp,NPP_Forest2)
+mean_BNPP <- mean(subset(NPP_Forest2,BNPP_1>0 & pred_bnpp>0)$BNPP_1)
+sqrt(mean(a6$residuals^2))/mean_BNPP
 
 #analyse_modobs2(forest_site,"pred_lnf", "lnf_obs",type = "points") 
 ggplot(data=NPP_Forest2, aes(x=pred_lnf, y=lnf_obs_final)) +
@@ -522,6 +539,9 @@ ggplot(data=NPP_Forest2, aes(x=pred_lnf, y=lnf_obs_org)) +
   geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
   xlab("Prediction")+ylab("Observation")+theme_classic()+My_Theme
 summary(lm(lnf_obs_org~pred_lnf,NPP_Forest2))
+a7 <- lm(lnf_obs_org~pred_lnf,NPP_Forest2)
+mean_LNF <- mean(subset(NPP_Forest2,lnf_obs_org>0 & pred_lnf>0)$lnf_obs_org)
+sqrt(mean(a7$residuals^2))/mean_LNF
 
 #wnf - assuming constant wood/cn = 97
 
@@ -556,6 +576,9 @@ ggplot(data=sitemean, aes(x=pred_leafn, y=obs_leafn)) +
   geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
   xlab("Prediction")+ylab("Observation")+theme_classic()+My_Theme
 summary(lm(obs_leafn~pred_leafn,sitemean))
+a8 <- lm(obs_leafn~pred_leafn,sitemean)
+mean_NMASS <- mean(subset(sitemean,obs_leafn>0 & pred_leafn>0)$obs_leafn)
+sqrt(mean(a8$residuals^2))/mean_NMASS
 
 #nuptake
 NPP_Forest2$pred_nuptake <- NPP_Forest2$pred_lnf + NPP_Forest2$pred_bnf + NPP_Forest2$pred_wnf
@@ -757,6 +780,10 @@ ggplot(data=NRE_climate, aes(x=pred_nre, y=nre)) + xlim(c(0.25,1))+ylim(c(0.25,1
   geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
   xlab("Prediction")+ylab("Observation")+theme_classic()+My_Theme
 summary(lm(nre~pred_nre,NRE_climate))
+a9 <- lm(nre~pred_nre,NRE_climate)
+mean_NRE <- mean(subset(NRE_climate,nre>0 & pred_nre>0)$nre)
+sqrt(mean(a9$residuals^2))/mean_NRE
+
 csvfile <- paste("/Users/yunpeng/data/NPP_final/NRE_validation.csv")
 write.csv(NRE_climate, csvfile, row.names = TRUE)
 save.image(file = "/Users/yunpeng/data/NPP_final/Forest_site_simulation.Rdata")
