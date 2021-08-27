@@ -192,6 +192,10 @@ visreg(mod_lnpp,"Tg_c",type="contrast",line=list(col="black",lwd=2), points=list
 visreg(mod_lnpp,"vpd_c",type="contrast",line=list(col="black",lwd=2), points=list(cex=0.5, pch=16,col="black"),
        ylab=" ",xlab=" ")
 
+#output it to a separate file for final use of paper
+csvfile <- paste("/Users/yunpeng/data/NPP_final/NPP_statistical_forest.csv")
+write.csv(NPP_statistical, csvfile, row.names = TRUE)
+
 ```
 
 4. Leaf Nmass ~ Vcmax25/LMA (site-species mean), using mixed-effects model based on large dataset from Peng et al. 2021 Communications Biology. it considered (1|site) and (1|species) as the only random factor. 
@@ -446,6 +450,8 @@ PPFD_a <- log(NRE_climate$PPFD)
 
 nre_model <- lm(nre_a~Tg_a+vpd_a)
 save(nre_model, file = "/Users/yunpeng/data/NPP_final/statistical_model/nre_model_forest.RData")
+csvfile <- paste("/Users/yunpeng/data/NPP_final/NRE_statistical_forest.csv")
+write.csv(NRE_climate, csvfile, row.names = TRUE)
 
 nre_model1 <- lm(nre_a~Tg_a)
 nre_model2 <- lm(nre_a~vpd_a)

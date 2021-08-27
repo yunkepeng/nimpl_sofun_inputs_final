@@ -704,7 +704,7 @@ NPP_Forest$sitename <- NPP_old$sitename
 NPP_Forest$rep_info <- NPP_old$rep_info
 
 #ignore below######
-#and here is info we need to re-interpolate to update (as recently re-interpolate elevation or measurement year, and using original year info)
+#and here is info we need to re-interpolate to update in files (as recently re-interpolate elevation or measurement year, and using original year info)
 corrected_info <- NPP_Forest$sitename[NPP_Forest$z!=NPP_old$z |
                       NPP_Forest$Begin_year!=NPP_old$Begin_year|
                       NPP_Forest$End_year!=NPP_old$End_year]

@@ -1,6 +1,6 @@
 rm(list=ls())
 
-load(file = "/Users/yunpeng/data/NPP_final/Forest_site_simulation.Rdata")
+#load(file = "/Users/yunpeng/data/NPP_final/Forest_site_simulation.Rdata")
 
 devtools::load_all("/Users/yunpeng/yunkepeng/Grassland_new_ingestr_rsofun_20210326/rsofun/")
 library(dplyr)
@@ -471,9 +471,10 @@ My_Theme = theme(
   axis.text.y = element_text(size = 20))
 
 #check
-
 csvfile <- paste("/Users/yunpeng/data/NPP_final/NPP_validation.csv")
 write.csv(NPP_Forest2, csvfile, row.names = TRUE)
+#######finished at here! and then directly running site validation in validation_fig2.R
+
 
 ggplot(data=NPP_Forest2, aes(x=pred_gpp_c3, y=GPP)) +
   geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+
@@ -579,6 +580,10 @@ summary(lm(obs_leafn~pred_leafn,sitemean))
 a8 <- lm(obs_leafn~pred_leafn,sitemean)
 mean_NMASS <- mean(subset(sitemean,obs_leafn>0 & pred_leafn>0)$obs_leafn)
 sqrt(mean(a8$residuals^2))/mean_NMASS
+
+sitemean2 <- sitemean[,-c(1,2)]
+csvfile <- paste("/Users/yunpeng/data/NPP_final/Nmass_validation.csv")
+write.csv(sitemean2, csvfile, row.names = TRUE)
 
 #nuptake
 NPP_Forest2$pred_nuptake <- NPP_Forest2$pred_lnf + NPP_Forest2$pred_bnf + NPP_Forest2$pred_wnf
@@ -771,10 +776,9 @@ nre_a <- log(NRE_climate$nre/(1-NRE_climate$nre))
 Tg_a <- NRE_climate$Tg
 vpd_a <- log(NRE_climate$vpd)
 
-nre_model <- lm(nre_a~Tg_a+vpd_a)
+load("/Users/yunpeng/data/NPP_final/statistical_model/nre_model_forest.RData")
 summary(nre_model)
-save(nre_model, file = "/Users/yunpeng/data/NPP_final/statistical_model/nre_model_forest.RData")
-summary(nre_model)
+
 NRE_climate$pred_nre <- (1/(1+exp(-(summary(nre_model)$coefficients[1,1] + summary(nre_model)$coefficients[2,1] *NRE_climate$Tg + summary(nre_model)$coefficients[3,1] * log(NRE_climate$vpd)))))
 ggplot(data=NRE_climate, aes(x=pred_nre, y=nre)) + xlim(c(0.25,1))+ylim(c(0.25,1))+
   geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+

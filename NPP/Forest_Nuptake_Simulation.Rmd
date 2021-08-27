@@ -424,6 +424,7 @@ ggplot(data=NPP_Forest, aes(x=pred_nuptake, y=Nmin)) +
   xlab("Prediction")+ylab("Observation")+theme_classic()+My_Theme
 summary(lm(Nmin~pred_nuptake,NPP_Forest))
 
+#use this!!!
 ggplot(data=subset(NPP_Forest,Biome!="med"), aes(x=pred_nuptake, y=Nmin)) +
   geom_point()+geom_abline(intercept=0,slope=1)+geom_smooth(method = "lm", se = TRUE)+xlim(0,25)+ylim(0,25)+
   xlab("Prediction")+ylab("Observation")+theme_classic()+My_Theme

@@ -559,58 +559,6 @@ nuptake_vcmax25 <- cal_nuptake(Tg$myvar,PPFD$myvar,vpd$myvar,fAPAR$myvar,age$myv
 nuptake_all <- as.data.frame(cbind(nuptake_Tg,nuptake_PPFD,nuptake_vpd,nuptake_fAPAR,nuptake_age,nuptake_CNrt,nuptake_LMA,nuptake_vcmax25))
 summary(nuptake_all)
 
-#output most max factor, and its value
-for (i in 1:nrow(nuptake_all)){
-  if (is.na(nuptake_all[i,1])==TRUE){
-    nuptake_all$most_factor[i] <- NA
-    nuptake_all$most_factor_value[i] <- NA
-  } else {
-    nuptake_all$most_factor[i] <- names((which.max(abs(log(nuptake_all[i,1:8])))))
-    nuptake_all$most_factor_value[i] <- max(abs(log(nuptake_all[i,1:8])))
-  }
-}
-
-apparent_point <- as.data.frame(cbind(gpp_df[,c("lon","lat")],nuptake_all[,c("most_factor","most_factor_value")]))
-apparent_point_available <- subset(apparent_point,is.na(most_factor_value)==FALSE) 
-dim(apparent_point_available)
-apparent_point_available$most_factor_value <- as.numeric(apparent_point_available$most_factor_value)
-
-apparent_point_available %>% group_by(most_factor) %>% summarise(number=n())
-
-area_final <- as.data.frame(cbind(gpp_df[,c("lon","lat")],nuptake_all[,c("most_factor","most_factor_value")]))
-area_final$conversion <- conversion
-
-dim(subset(area_final,is.na(most_factor_value)==FALSE)) # area only available in those grids
-#total area
-sum(subset(area_final,is.na(most_factor_value)==FALSE)$conversion, na.rm = TRUE)
-
-area_final$ratio <- area_final$conversion/sum(subset(area_final,is.na(most_factor_value)==FALSE)$conversion, na.rm = TRUE)
-
-aa <- area_final %>% group_by(most_factor) %>% summarise(sum = sum(ratio)*100, n = n())
-sum(aa$sum,na.rm=TRUE)
-aa
-
-# count the needed levels of a factor
-gg <- plot_map3(all_maps[,c("lon","lat","nuptake_pft")],
-                varnam = "nuptake_pft",plot_title = paste("N demand of NPP constrained by most important factor"),
-                latmin = -65, latmax = 85,combine=FALSE)
-
-apparent_point_available$most_factor[apparent_point_available$most_factor=="nuptake_age"] <- "age"
-apparent_point_available$most_factor[apparent_point_available$most_factor=="nuptake_CNrt"] <- "Soil C/N"
-apparent_point_available$most_factor[apparent_point_available$most_factor=="nuptake_fAPAR"] <- "fAPAR"
-apparent_point_available$most_factor[apparent_point_available$most_factor=="nuptake_LMA"] <- "LMA"
-apparent_point_available$most_factor[apparent_point_available$most_factor=="nuptake_PPFD"] <- "PPFD"
-apparent_point_available$most_factor[apparent_point_available$most_factor=="nuptake_Tg"] <- "Tg"
-apparent_point_available$most_factor[apparent_point_available$most_factor=="nuptake_vcmax25"] <- "Vcmax25"
-apparent_point_available$most_factor[apparent_point_available$most_factor=="nuptake_vpd"] <- "vpd"
-
-colors <-  c("red","red","red","red","red","red","red","red","cyan","black","yellow","green","orange","red","blue","purple")
-gg$ggmap + geom_point(data=apparent_point_available,aes(lon,lat,color=most_factor),size=0.5)+
-  scale_color_manual(values = colors)+ theme(
-    legend.text = element_text(size = 20))+
-    guides(colour = guide_legend(override.aes = list(size = 5)))
-ggsave(paste("/Users/yunpeng/data/output/output_onefactor/allfactor.jpg",sep=""))
-
 #now, output each factor's effect
 #devtools::load_all("/Users/yunpeng/yunkepeng/Grassland_new_ingestr_rsofun_20210326/rbeni/")
 
@@ -629,9 +577,9 @@ sum(colSums(global_trend,na.rm=TRUE))
 exp(sum(colSums(global_trend,na.rm=TRUE)))
 #increased 6%
 
-names(nuptake_all_coord) <- c("lon","lat","Tg","PPFD","vpd","fAPAR","age","Soil C:N","LMA","Vcmax25","most_factor","most_factor_value")
+names(nuptake_all_coord) <- c("lon","lat","Tg","PPFD","vpd","fAPAR","age","Soil C:N","LMA","Vcmax25")
 
-for (i in c(3,5,6,7,8,10)){
+for (i in c(3,5,6,7,10)){
   varname <- names(nuptake_all_coord)[i]
   relative_value <- round(sum(abs((nuptake_all_coord[,i])*conversion),na.rm=TRUE)/total_sum,2)
   percentage_value <- label_percent()(relative_value)
@@ -657,6 +605,52 @@ for (i in c(4,8,9)){
   ggsave(paste("/Users/yunpeng/data/output/output_onefactor/",varname,".jpg",sep=""))
 }
 
+#define new range
+#range from -0.5 to 0.5
+for (i in c(3)){
+  varname <- names(nuptake_all_coord)[i]
+  relative_value <- round(sum(abs((nuptake_all_coord[,i])*conversion),na.rm=TRUE)/total_sum,2)
+  percentage_value <- label_percent()(relative_value)
+  plot_map3(na.omit(nuptake_all_coord[,c("lon","lat",varname)]),
+            varnam = varname,plot_title = paste(varname, percentage_value, sep=": " ),
+            latmin = -65, latmax = 85,
+            colorscale = c( "royalblue4", "wheat","tomato3"),
+            breaks = c(-0.5,-0.45,-0.4,-0.35,-0.3,-0.25,-0.2,-0.15,-0.1,-0.05,-0.025, 0,
+                       0.025,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5))
+  ggsave(paste("/Users/yunpeng/data/output/output_onefactor/",varname,".jpg",sep=""))
+}
+
+i=8
+varname <- names(nuptake_all_coord)[i]
+summary(na.omit(nuptake_all_coord[,c("lon","lat",varname)]))
+
+#range from -0.3 to 0.3
+for (i in c(5,10)){
+  varname <- names(nuptake_all_coord)[i]
+  relative_value <- round(sum(abs((nuptake_all_coord[,i])*conversion),na.rm=TRUE)/total_sum,2)
+  percentage_value <- label_percent()(relative_value)
+  plot_map3(na.omit(nuptake_all_coord[,c("lon","lat",varname)]),
+            varnam = varname,plot_title = paste(varname, percentage_value, sep=": " ),
+            latmin = -65, latmax = 85,
+            colorscale = c( "royalblue4", "wheat","tomato3"),
+            breaks = c(-0.3,-0.25,-0.2,-0.15,-0.1,-0.05,-0.025, 0,
+                       0.025,0.05,0.1,0.15,0.2,0.25,0.3))
+  ggsave(paste("/Users/yunpeng/data/output/output_onefactor/",varname,".jpg",sep=""))
+}
+
+#range from -0.2 to 0.2
+for (i in c(6)){
+  varname <- names(nuptake_all_coord)[i]
+  relative_value <- round(sum(abs((nuptake_all_coord[,i])*conversion),na.rm=TRUE)/total_sum,2)
+  percentage_value <- label_percent()(relative_value)
+  plot_map3(na.omit(nuptake_all_coord[,c("lon","lat",varname)]),
+            varnam = varname,plot_title = paste(varname, percentage_value, sep=": " ),
+            latmin = -65, latmax = 85,
+            colorscale = c( "royalblue4", "wheat","tomato3"),
+            breaks = c(-0.2,-0.15,-0.1,-0.05,-0.025, 0,
+                       0.025,0.05,0.1,0.15,0.2,0.3,0.35))
+  ggsave(paste("/Users/yunpeng/data/output/output_onefactor/",varname,".jpg",sep=""))
+}
 
 ###now research on nue (NPP/Nuptake)
 cal_nuptake_nue <- function(Tg_pred,PPFD_pred,vpd_pred,fAPAR_pred,age_pred,CNrt_pred,LMA_pred,vcmax25_pred){

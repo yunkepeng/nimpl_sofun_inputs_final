@@ -23,7 +23,7 @@ library(lubridate)
 library(lme4)
 library(MuMIn)
 library(lmerTest)
-load(file = "/Users/yunpeng/data/NPP_Grassland_final/grass_simulation.Rdata")
+#load(file = "/Users/yunpeng/data/NPP_Grassland_final/grass_simulation.Rdata")
 devtools::load_all("/Users/yunpeng/yunkepeng/Grassland_new_ingestr_rsofun_20210326/rsofun/")
 #see "/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/NPP/Forest_site_orig.R" - sitename and sitename_fapar already been well checked
 NPP_grassland  <- read.csv("/Users/yunpeng/data/NPP_Grassland_final/NPP_grassland.csv")
@@ -573,6 +573,10 @@ summary(lm(lnf_obs_final~pred_lnf,data=NPP_grassland_final4))
 a13 <- lm(lnf_obs_final~pred_lnf,NPP_grassland_final4)
 mean_LNX <- mean(subset(NPP_grassland_final4,lnf_obs_final>0 & pred_lnf>0)$lnf_obs_final)
 sqrt(mean(a13$residuals^2))/mean_LNX
+
+##Finish at here!!!
+
+
 
 #add legume and biome
 legume_N <- read.csv("/Users/yunpeng/data/npp_stoichiometry_grasslands_tiandi/China_grassland_CN_stoichiometry_with_matched_NPP_species_legume_20201214.csv")
