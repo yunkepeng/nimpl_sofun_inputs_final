@@ -11,7 +11,7 @@ library(visreg)
 
 ###1. statistical model of NPP/GPP, ANPP/GPP, leaf NPP/ANPP.
 #input data was derived from /Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/NPP/NPP_statistical_model.Rmd
-NPP_statistical <- read.csv("/Users/yunpeng/data/NPP_final/NPP_statistical_forest.csv")
+NPP_statistical <- read.csv("~/data/NPP_final/NPP_statistical_forest.csv")
 
 tnpp_gpp_a <- log((NPP_statistical$TNPP_1/NPP_statistical$GPP)/(1-(NPP_statistical$TNPP_1/NPP_statistical$GPP)))
 soilCN_a <- log(NPP_statistical$soilCN)
@@ -147,7 +147,7 @@ a8 <- ~{
 
 a9 <- ~{
   p1a <- visreg(mod_lnpp,"vpd_c",type="contrast")
-  plot(p1a,ylab=" ",xlab="D (kPa)",
+  plot(p1a,ylab=" ",xlab="ln D (kPa)",
        cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
 
 a10 <- ~{
@@ -157,7 +157,7 @@ a10 <- ~{
 
 a11 <- ~{
   p1a <- visreg(nre_model,"vpd_a",type="contrast")
-  plot(p1a,ylab=" ",xlab="D (kPa)",
+  plot(p1a,ylab=" ",xlab="ln D (kPa)",
        cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
 
 

@@ -282,17 +282,6 @@ fland <- output_fland$myvar
 conversion <- area_m2 * fland /1e+15
 
 #now, produce results
-
-#####Table S1
-#just print estimations of all values
-for (i in 4:ncol(all_maps)){
-  varname <- names(all_maps)[i]
-  total_value <- round(sum(all_maps[,i]*conversion,na.rm=TRUE),2)
-  print(varname)
-  print(total_value)
-}
-
-
 #Figure 3 - map output along with validated sites in forest (red) and grassland (blue)
 #1. gpp
 NPP_forest <- read.csv("/Users/yunpeng/data/NPP_final/NPP_validation.csv")
@@ -366,7 +355,7 @@ a8 <- gg$gglegend
 
 #5. NRE
 NRE_validation <- read.csv(file="/Users/yunpeng/data/NPP_final/NRE_validation.csv") 
-nre_f <- (NRE_validation %>% filter(pred_nre>0) %>% filter(NRE>0))[,c("lon","lat")]
+nre_site <- (NRE_validation %>% filter(pred_nre>0) %>% filter(NRE>0))[,c("lon","lat")]
 
 gg <- plot_map3(na.omit(all_maps[,c("lon","lat","nre_pft")]),
                 varnam = "nre_pft",latmin = -65, latmax = 85,combine=FALSE)
@@ -374,7 +363,7 @@ gg <- plot_map3(na.omit(all_maps[,c("lon","lat","nre_pft")]),
 total_value <- round(mean(nre_pft,na.rm=TRUE),2)
 
 a9 <- gg$ggmap +
-  geom_point(data=NRE_validation,aes(lon,lat),col="red",size=1.5)+
+  geom_point(data=nre_site,aes(lon,lat),col="red",size=1.5)+
   labs(title = paste("NRE: ", total_value))+
   theme_grey(base_size = 12)
 
@@ -926,3 +915,14 @@ plot_grid(g1,g2,g3,g4,g5,g6,
                      '(g)',' ','(h)',' '),label_size = 15)
 
 ggsave(paste("~/data/output/figS2.jpg",sep=""),width = 20, height = 10)
+
+#table S1 - global estimations and uncertainty evaluation
+#####Table S1
+#just print estimations of all values
+for (i in 4:31){
+  varname <- names(all_maps)[i]
+  total_value <- round(sum(all_maps[,i]*conversion,na.rm=TRUE),2)
+  print(varname)
+  print(total_value)
+}
+
