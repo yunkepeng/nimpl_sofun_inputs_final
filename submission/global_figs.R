@@ -117,10 +117,10 @@ load("~/data/NPP_final/statistical_model/nre_model_forest.RData")
 summary(nre_model)
 
 #now, do the same for grassland
-load(file = "~/data/NPP_grassland_final/statistical_model/tnpp_grass.RData")
+load(file = "~/data/NPP_Grassland_final/statistical_model/tnpp_grass.RData")
 mod_tnpp_grass<- tnpp_grass
 summary(mod_tnpp_grass)
-load(file = "~/data/NPP_grassland_final/statistical_model/anpp_grass.RData")
+load(file = "~/data/NPP_Grassland_final/statistical_model/anpp_grass.RData")
 mod_anpp_grass <- anpp_grass
 summary(mod_anpp_grass)
 
@@ -178,7 +178,7 @@ bnf_g <- bnpp_g *(1/41)
 nuptake_g <- lnf_g + bnf_g
 
 ###2. input land cover
-ncin <- nc_open("/Users/yunpeng/data/landcover/modis_landcover_halfdeg_2010_FILLED.nc")
+ncin <- nc_open("~/data/landcover/modis_landcover_halfdeg_2010_FILLED.nc")
 lon <- ncvar_get(ncin,"lon")
 nlon <- dim(lon) 
 lat<-ncvar_get(ncin,"lat")
@@ -275,7 +275,7 @@ calc_area <- function( lat, dx=1, dy=1 ){
 lonlat <- gpp_df[,c("lon","lat")]
 area_m2 <- calc_area(lonlat$lat,0.5,0.5)
 #fland - to show each grid's land cover percentage
-nc <- read_nc_onefile("/Users/yunpeng/data/fland/global.fland.nc") #Input nc
+nc <- read_nc_onefile("~/data/fland/global.fland.nc") #Input nc
 output_fland <- nc_to_df(nc, varnam = "fland")
 fland <- output_fland$myvar
 #include conversion factor (from g to Pg)
@@ -284,8 +284,8 @@ conversion <- area_m2 * fland /1e+15
 #now, produce results
 #Figure 3 - map output along with validated sites in forest (red) and grassland (blue)
 #1. gpp
-NPP_forest <- read.csv("/Users/yunpeng/data/NPP_final/NPP_validation.csv")
-NPP_grassland <- read.csv("/Users/yunpeng/data/NPP_Grassland_final/NPP_grass_validation.csv")
+NPP_forest <- read.csv("~/data/NPP_final/NPP_validation.csv")
+NPP_grassland <- read.csv("~/data/NPP_Grassland_final/NPP_grass_validation.csv")
 
 gpp_f <- (NPP_forest %>% filter(GPP>0) %>% filter(pred_gpp_c3>0))[,c("lon","lat")]
 gpp_g <- (NPP_grassland %>% filter(GPP>0) %>% filter(weightedgpp_measured_c3>0))[,c("lon","lat")]
@@ -334,7 +334,7 @@ a5 <- gg$ggmap +
 a6 <- gg$gglegend+labs(title = ~paste("gC m"^-2,"s"^-1))
 
 #4. leaf c/n
-SP_input <- read.csv(file="/Users/yunpeng/data/leaf_traits/combined_leaf_traits_updated.csv") #new one 
+SP_input <- read.csv(file="~/data/leaf_traits/combined_leaf_traits_updated.csv") #new one 
 SP_input2 <- SP_input[,c("lat","lon","z","Vcmax25","narea","lma")]
 sitemean <- aggregate(SP_input2,by=list(SP_input2$lon,SP_input2$lat), FUN=mean, na.rm=TRUE) 
 sitemean$pred_leafn <- (summary(n1)$coefficients[1,1]) + (summary(n1)$coefficients[2,1])* sitemean$Vcmax25/sitemean$lma
@@ -354,7 +354,7 @@ a7 <- gg$ggmap +
 a8 <- gg$gglegend
 
 #5. NRE
-NRE_validation <- read.csv(file="/Users/yunpeng/data/NPP_final/NRE_validation.csv") 
+NRE_validation <- read.csv(file="~/data/NPP_final/NRE_validation.csv") 
 nre_site <- (NRE_validation %>% filter(pred_nre>0) %>% filter(NRE>0))[,c("lon","lat")]
 
 gg <- plot_map3(na.omit(all_maps[,c("lon","lat","nre_pft")]),
@@ -370,7 +370,7 @@ a9 <- gg$ggmap +
 a10 <- gg$gglegend
 
 #6. nuptake
-Nmin_validation <- read.csv("/Users/yunpeng/data/NPP_final/Nmin_validation.csv")
+Nmin_validation <- read.csv("~/data/NPP_final/Nmin_validation.csv")
 nuptake_f <- (Nmin_validation %>% filter(pred_nuptake>0) %>% filter(obs_nuptake>0))[,c("lon","lat")]
 
 total_value <- 1000*round(sum(all_maps[,"nuptake_pft"]*conversion,na.rm=TRUE),2) #unit convert from PgN/yr to TgN/yr

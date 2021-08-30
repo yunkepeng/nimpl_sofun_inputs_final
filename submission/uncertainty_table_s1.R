@@ -179,7 +179,7 @@ bnf_g <- bnpp_g *(1/41)
 nuptake_g <- lnf_g + bnf_g
 
 ###2. input land cover
-ncin <- nc_open("/Users/yunpeng/data/landcover/modis_landcover_halfdeg_2010_FILLED.nc")
+ncin <- nc_open("~/data/landcover/modis_landcover_halfdeg_2010_FILLED.nc")
 lon <- ncvar_get(ncin,"lon")
 nlon <- dim(lon) 
 lat<-ncvar_get(ncin,"lat")
@@ -277,7 +277,7 @@ calc_area <- function( lat, dx=1, dy=1 ){
 lonlat <- gpp_df[,c("lon","lat")]
 area_m2 <- calc_area(lonlat$lat,0.5,0.5)
 #fland - to show each grid's land cover percentage
-nc <- read_nc_onefile("/Users/yunpeng/data/fland/global.fland.nc") #Input nc
+nc <- read_nc_onefile("~/data/fland/global.fland.nc") #Input nc
 output_fland <- nc_to_df(nc, varnam = "fland")
 fland <- output_fland$myvar
 #include conversion factor (from g to Pg)

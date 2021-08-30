@@ -44,7 +44,7 @@ r.squaredGLMM(mod_lnpp)
 save(mod_lnpp, file = "~/data/NPP_final/statistical_model/mod_lnpp.RData")
 
 ###2. leaf Nmass basing on a site-species model
-SP_input <- read.csv(file="/Users/yunpeng/data/leaf_traits/combined_leaf_traits_updated.csv") #new one
+SP_input <- read.csv(file="~/data/leaf_traits/combined_leaf_traits_updated.csv") #new one
 summary(SP_input$C_percent)
 #mean of value of leaf C = 0.46 or 46%
 
@@ -92,7 +92,7 @@ r.squaredGLMM(n1)
 save(n1, file = "~/data/NPP_final/statistical_model/nmass.RData")
 
 ###3. NRE model basing site-mean (lm)
-NRE_climate <- read.csv("/Users/yunpeng/data/NPP_final/NRE_statistical_forest.csv")
+NRE_climate <- read.csv("~/data/NPP_final/NRE_statistical_forest.csv")
 nre_a <- log(NRE_climate$nre/(1-NRE_climate$nre))
 Tg_a <- NRE_climate$Tg
 vpd_a <- log(NRE_climate$vpd)
@@ -184,21 +184,21 @@ summary(mod_lnpp)
 # Nmass ~ vcmax25/lma model
 summary(n1)
 # Cmass constant = 46%
-SP_input <- read.csv(file="/Users/yunpeng/data/leaf_traits/combined_leaf_traits_updated.csv") #new one
+SP_input <- read.csv(file="~/data/leaf_traits/combined_leaf_traits_updated.csv") #new one
 mean(SP_input$C_percent,na.rm=TRUE)
 # Root C/N = 94 - as derived from median values of collected samples
-NPP_Forest2 <- read.csv("/Users/yunpeng/data/NPP_final/NPP_validation.csv")
+NPP_Forest2 <- read.csv("~/data/NPP_final/NPP_validation.csv")
 summary(NPP_Forest2$CN_root_final) # using median = 94
 # Wood C/N = 100 - as derived median values of TRY database
 summary(read.csv("~/data/CN_wood/wood_cn.csv")$OrigValueStr)
 
 ##2. For Grassland (as orig. data combind from forst_site_org.R and then grassland_simulation.R)
 #npp/gpp model = 0.435
-NPP_grassland_final4 <- read.csv("/Users/yunpeng/data/NPP_Grassland_final/NPP_grass_validation.csv")
+NPP_grassland_final4 <- read.csv("~/data/NPP_Grassland_final/NPP_grass_validation.csv")
 NPP_grassland_final5_gpp_npp_anpp <- aggregate(NPP_grassland_final4,by=list(NPP_grassland_final4$lon,NPP_grassland_final4$lat,NPP_grassland_final4$z), FUN=mean, na.rm=TRUE)
 tnpp_grass <- (lm((TNPP_1)~-1+(weightedgpp_all),data=NPP_grassland_final5_gpp_npp_anpp)) #0.435 for using weighted gpp (df = 79)
 summary(tnpp_grass)
-save(tnpp_grass, file = "~/data/NPP_grassland_final/statistical_model/tnpp_grass.RData")
+save(tnpp_grass, file = "~/data/NPP_Grassland_final/statistical_model/tnpp_grass.RData")
 
 #anpp/gpp model = 0.228
 anpp_grass <- (lm((ANPP_2)~-1+(weightedgpp_all),data=NPP_grassland_final5_gpp_npp_anpp)) #anpp/gpp = 0.228 (df = 289)

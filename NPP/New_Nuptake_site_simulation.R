@@ -392,9 +392,6 @@ NPP_Forest$pred_bnf <- NPP_Forest$pred_bnpp/94
 #root mean was obtained from median of NPP forest
 
 NPP_Forest$pred_nre <- (1/(1+exp(-(summary(nre_model)$coefficients[1,1] + summary(nre_model)$coefficients[2,1] *NPP_Forest$Tg + summary(nre_model)$coefficients[3,1] * log(NPP_Forest$vpd)))))
-
-hist(NPP_Forest$pred_nre)
-
 NPP_Forest$pred_nuptake <- NPP_Forest$pred_lnf*(1-NPP_Forest$pred_nre) + NPP_Forest$pred_wnf +NPP_Forest$pred_bnf  
 
 
