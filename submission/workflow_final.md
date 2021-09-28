@@ -36,10 +36,15 @@ Already finsished for calculating all predicted c and n uptakes, but I have repe
 output:
 csvfile <- paste("/Users/yunpeng/data/NPP_Grassland_final/NPP_grass_validation.csv")
 
+11. N minerlization simulation: nimpl_sofun_inputs_final/NPP/New_Nuptake_site_simulation.R
+FINISH by line 426!!!
+output:
+csvfile <- paste("/Users/yunpeng/data/NPP_final/Nmin_validation.csv")
+
 ---Now, output figures in manuscript!
 11. Statistical model: /Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/submission/statistical_fig1_tab1.R
 save all statsitical model info in: file = "~/data/NPP_Grassland_final/statistical_model/...RData"
-
+	
 12. valdation figure: /Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/submission/validation_fig2.R
 
 13. Global simulation: /Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/submission/global_figs.R
