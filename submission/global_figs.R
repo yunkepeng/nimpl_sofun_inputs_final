@@ -299,7 +299,7 @@ a1 <- gg$ggmap +
   labs(title = paste("GPP:", total_value, "PgC/yr", sep=" " ))+
   theme_grey(base_size = 12)
 
-a2 <- gg$gglegend+labs(title = ~paste("gC m"^-2,"s"^-1))
+a2 <- gg$gglegend+labs(title = ~paste("gC m"^-2,"yr"^-1))
 
 #2. npp
 npp_f <- (NPP_forest %>% filter(TNPP_1>0) %>% filter(pred_npp>0))[,c("lon","lat")]
@@ -312,10 +312,10 @@ gg <- plot_map3(na.omit(all_maps[,c("lon","lat","npp_pft")]),
 a3 <- gg$ggmap +
   geom_point(data=npp_f,aes(lon,lat),col="red",size=1.5)+
   geom_point(data=npp_g,aes(lon,lat),col="blue",size=1.5)+
-  labs(title = paste("NPP:", total_value, "PgC/yr", sep=" " ))+
+  labs(title = paste("BP:", total_value, "PgC/yr", sep=" " ))+
   theme_grey(base_size = 12)
 
-a4 <- gg$gglegend+labs(title = ~paste("gC m"^-2,"s"^-1))
+a4 <- gg$gglegend+labs(title = ~paste("gC m"^-2,"yr"^-1))
 
 #3.anpp
 anpp_f <- (NPP_forest %>% filter(ANPP_2>0) %>% filter(pred_anpp>0))[,c("lon","lat")]
@@ -331,7 +331,7 @@ a5 <- gg$ggmap +
   labs(title = paste("ANPP:", total_value, "PgC/yr", sep=" " ))+
   theme_grey(base_size = 12)
 
-a6 <- gg$gglegend+labs(title = ~paste("gC m"^-2,"s"^-1))
+a6 <- gg$gglegend+labs(title = ~paste("gC m"^-2,"yr"^-1))
 
 #4. leaf c/n
 SP_input <- read.csv(file="~/data/leaf_traits/combined_leaf_traits_updated.csv") #new one 
@@ -383,7 +383,7 @@ a11 <- gg$ggmap +
   labs(title = paste("N uptake: ", total_value, "TgN/yr", sep=" " ))+
   theme_grey(base_size = 12)
 
-a12 <- gg$gglegend+labs(title = ~paste("gN m"^-2,"s"^-1))
+a12 <- gg$gglegend+labs(title = ~paste("gN m"^-2,"yr"^-1))
 
 
 
@@ -406,7 +406,7 @@ gg <- plot_map3(na.omit(all_maps[,c("lon","lat","CUE")]),
                 breaks = seq(0.25,0.6,0.05))
 
 b1 <- gg$ggmap +
-  labs(title = paste("CUE: ", total_value_CUE))+
+  labs(title = paste("BPE: ", total_value_CUE))+
   theme_grey(base_size = 15)
 
 b2 <- gg$gglegend
@@ -416,7 +416,7 @@ gg <- plot_map3(na.omit(all_maps[,c("lon","lat","NUE")]),
                 breaks = seq(45,85,5))
 
 b3 <- gg$ggmap +
-  labs(title = paste("NUE: ", total_value_NUE))+
+  labs(title = paste("NUE: ", total_value_NUE,"gC/gN"))+
   theme_grey(base_size = 15)
 
 b4 <- gg$gglegend
@@ -427,13 +427,16 @@ b5 <- ggplot(data=all_maps, aes(x=CUE, y=NUE)) +
   scale_color_viridis(discrete=FALSE,direction= -1)+theme_classic()+theme(axis.title = element_text(size = 30),
                                                                           axis.text = element_text(size = 20),
                                                                           legend.title = element_text(size = 14))+
-  xlab("CUE")+ylab("NUE")+labs(color= ~paste("N uptake", " (gN m"^-2,"s"^-1,")"))
+  xlab("BPE")+ylab("NUE (gC/gN)")+labs(color= ~paste("N uptake", " (gN m"^-2,"yr"^-1,")"))
 
 plot_grid(b1,b2,b3,b4,b5,
           labels = c('(a)',' ','(b)',' ','(c)'), rel_widths = c(3/12, 1/21,3/12,1/12,4/12),
           nrow=1,label_size = 20)
 
 ggsave(paste("~/data/output/fig5.jpg",sep=""),width = 20, height = 5)
+#computating correltion coefficient r
+cor(na.omit(all_maps$CUE), na.omit(all_maps$NUE),
+    method = c("pearson", "kendall", "spearman"))
 
 #Fig. S3 N uptake and NUE in forest and grassland
 #Nuptake
@@ -442,14 +445,14 @@ gg <- plot_map3(na.omit(all_maps[,c("lon","lat","nuptake_pft")]),
 
 c1 <- gg$ggmap +labs(title = "N uptake")+theme_grey(base_size = 20)
 
-c2 <- gg$gglegend+labs(title = ~paste("gN m"^-2,"s"^-1))
+c2 <- gg$gglegend+labs(title = ~paste("gN m"^-2,"yr"^-1))
 
 gg <- plot_map3(na.omit(all_maps[,c("lon","lat","nuptake_forest")]),
                 varnam = "nuptake_forest",latmin = -65, latmax = 85,combine=FALSE)
 
 c3 <- gg$ggmap +labs(title = "Forest N uptake")+theme_grey(base_size = 20)
 
-c4 <- gg$gglegend+labs(title = ~paste("gN m"^-2,"s"^-1))
+c4 <- gg$gglegend+labs(title = ~paste("gN m"^-2,"yr"^-1))
 
 c5 <- ggplot(data=all_maps, aes(all_maps$nuptake_pft)) + 
   geom_histogram()+
@@ -459,7 +462,7 @@ c5 <- ggplot(data=all_maps, aes(all_maps$nuptake_pft)) +
         legend.title = element_text(size = 20),
         legend.text = element_text(size = 20))+
   theme(legend.title = element_blank())+
-  labs(x = ~paste("Total N uptake (","gN m"^-2,"s"^-1, ")"))
+  labs(x = ~paste("Total N uptake (","gN m"^-2,"yr"^-1, ")"))
 
 #NUE
 all_maps$NUE_forest <- all_maps$npp_forest/all_maps$nuptake_forest
@@ -469,7 +472,7 @@ gg <- plot_map3(na.omit(all_maps[,c("lon","lat","NUE")]),
                 varnam = "NUE",latmin = -65, latmax = 85,combine=FALSE,
                 breaks = seq(45,90,5))
 
-c6 <- gg$ggmap +labs(title = "NUE")+theme_grey(base_size = 20)
+c6 <- gg$ggmap +labs(title = "NUE (gC/gN)")+theme_grey(base_size = 20)
 
 c7 <- gg$gglegend
 
@@ -477,7 +480,7 @@ gg <- plot_map3(na.omit(all_maps[,c("lon","lat","NUE_forest")]),
                 varnam = "NUE_forest",latmin = -65, latmax = 85,combine=FALSE,
                 breaks = seq(45,90,5))
 
-c8 <- gg$ggmap +labs(title = "Forest NUE")+theme_grey(base_size = 20)
+c8 <- gg$ggmap +labs(title = "Forest NUE (gC/gN)")+theme_grey(base_size = 20)
 
 c9 <- gg$gglegend
 
@@ -489,7 +492,7 @@ c10 <- ggplot(data=all_maps, aes(all_maps$NUE)) +
         legend.title = element_text(size = 20),
         legend.text = element_text(size = 20))+
   theme(legend.title = element_blank())+
-  labs(x = ~paste("NUE"))
+  labs(x = ~paste("NUE (gC/gN)"))
 
 plot_grid(c1,c2,c3,c4,c5,
           c6,c7,c8,c9,c10,nrow=2,rel_widths = c(3/11, 1/11,3/11,1/11,3/11),

@@ -105,60 +105,60 @@ save(nre_model, file = "~/data/NPP_final/statistical_model/nre_model_forest.RDat
 ###4. now forming figure 1 (4 models combing into a panel)
 a1 <- ~{
   p1a <- visreg(mod_tnpp,"soilCN_a",type="contrast")
-  plot(p1a,ylab="logit (NPP/GPP)",xlab="ln soil C/N",
-       cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+  plot(p1a,ylab="logit BPE",xlab="ln soil C/N",
+       cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,ylim=c(-1,1.5))}
 
 a2 <- ~{
   p1a <- visreg(mod_tnpp,"age_a",type="contrast")
   plot(p1a,ylab=" ",xlab="ln age (years)",
-       cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+       cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,ylim=c(-1,1.5))}
 
 a3 <- ~{
   p1a <- visreg(mod_tnpp,"observedfAPAR_a",type="contrast")
   plot(p1a,ylab=" ",xlab="fAPAR",
-       cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+       cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,ylim=c(-1,1.5))}
 
 a4 <- ~{
   p1a <- visreg(mod_anpp,"soilCN_a",type="contrast")
   plot(p1a,ylab="logit (ANPP/GPP)",xlab="ln soil C/N",
-       cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+       cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,ylim=c(-1.5,1.5))}
 
 a5 <- ~{
   p1a <- visreg(mod_anpp,"age_a",type="contrast")
   plot(p1a,ylab=" ",xlab="ln age (years)",
-       cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+       cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,ylim=c(-1.5,1.5))}
 
 a6 <- ~{
   p1a <- visreg(mod_anpp,"observedfAPAR_a",type="contrast")
   plot(p1a,ylab=" ",xlab="fAPAR",
-       cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+       cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,ylim=c(-1.5,1.5))}
 
 a7 <- ~{
   p1a <- visreg(mod_lnpp,"PPFD_c",type="contrast")
   plot(p1a,ylab="logit (leaf-NPP/ANPP)",xlab=(~paste("ln PPFD (", mu, "mol m"^-2,"s"^-1, ")")),
-       cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)
+       cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,ylim=c(-1,1.5))
   }
 
 a8 <- ~{
   p1a <- visreg(mod_lnpp,"Tg_c",type="contrast")
   plot(p1a,ylab=" ",xlab=(~paste(T[g], " (\u00B0C)")),
-       cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)
+       cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,ylim=c(-1,1.5))
   }
 
 a9 <- ~{
   p1a <- visreg(mod_lnpp,"vpd_c",type="contrast")
   plot(p1a,ylab=" ",xlab="ln D (kPa)",
-       cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+       cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,ylim=c(-1,1.5))}
 
 a10 <- ~{
   p1a <- visreg(nre_model,"Tg_a",type="contrast")
   plot(p1a,ylab="logit (NRE)",xlab=(~paste(T[g], " (\u00B0C)")),
-       cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+       cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,ylim=c(-2,2))}
 
 a11 <- ~{
   p1a <- visreg(nre_model,"vpd_a",type="contrast")
   plot(p1a,ylab=" ",xlab="ln D (kPa)",
-       cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+       cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,ylim=c(-2,2))}
 
 
 plot_grid(a1, a2,a3,
@@ -193,22 +193,23 @@ summary(NPP_Forest2$CN_root_final) # using median = 94
 summary(read.csv("~/data/CN_wood/wood_cn.csv")$OrigValueStr)
 
 ##2. For Grassland (as orig. data combind from forst_site_org.R and then grassland_simulation.R)
-#npp/gpp model = 0.435
+#npp/gpp model = 0.435. site = 81
 NPP_grassland_final4 <- read.csv("~/data/NPP_Grassland_final/NPP_grass_validation.csv")
 NPP_grassland_final5_gpp_npp_anpp <- aggregate(NPP_grassland_final4,by=list(NPP_grassland_final4$lon,NPP_grassland_final4$lat,NPP_grassland_final4$z), FUN=mean, na.rm=TRUE)
 tnpp_grass <- (lm((TNPP_1)~-1+(weightedgpp_all),data=NPP_grassland_final5_gpp_npp_anpp)) #0.435 for using weighted gpp (df = 79)
 summary(tnpp_grass)
 save(tnpp_grass, file = "~/data/NPP_Grassland_final/statistical_model/tnpp_grass.RData")
 
-#anpp/gpp model = 0.228
+#anpp/gpp model = 0.228. site = 291
 anpp_grass <- (lm((ANPP_2)~-1+(weightedgpp_all),data=NPP_grassland_final5_gpp_npp_anpp)) #anpp/gpp = 0.228 (df = 289)
 summary(anpp_grass)
 
-#leaf c/n model. median = 18
+#leaf c/n model. median = 18. site  =215
 summary(NPP_grassland_final5_gpp_npp_anpp$CN_leaf_final)
-
-#root c/n model median = 41
+dim(subset(NPP_grassland_final5_gpp_npp_anpp,CN_leaf_final>0))
+#root c/n model median = 41. site = 71.
 summary(NPP_grassland_final5_gpp_npp_anpp$CN_root_final)
+dim(subset(NPP_grassland_final5_gpp_npp_anpp,CN_root_final>0))
 
 #NRE = 69%
 NRE_Du <- read.csv(file="~/data/NRE_various/NRE_Du/NRE_Du.csv")
@@ -239,4 +240,5 @@ NRE_Dong_df$source <- "Dong"
 NRE_Du_df$source <- "Du"
 NRE_df <- rbind(NRE_Du_df,NRE_Dong_df)
 summary(NRE_df$NRE)
-#median of NRE in grassland is 0.69
+length(NRE_df$NRE)
+#median of NRE in grassland is 0.69, site  =26
