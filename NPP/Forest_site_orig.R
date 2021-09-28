@@ -1,4 +1,4 @@
-rm(list=ls)
+rm(list=ls())
 ##1.Sara Vicca
 #1.1 NPP
 Sara_NPP <- read.csv("/Users/yunpeng/data/NPP_Yunke/NPP_Vicca/orig/Forests_Colin_NPP.csv")
