@@ -42,13 +42,13 @@ output:
 csvfile <- paste("/Users/yunpeng/data/NPP_final/Nmin_validation.csv")
 
 ---Now, output figures in manuscript!
-11. Statistical model: /Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/submission/statistical_fig1_tab1.R
+12. Statistical model: /Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/submission/statistical_fig1_tab1.R
 save all statsitical model info in: file = "~/data/NPP_Grassland_final/statistical_model/...RData"
 	
-12. valdation figure: /Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/submission/validation_fig2.R
+13. valdation figure: /Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/submission/validation_fig2.R
 
-13. Global simulation: /Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/submission/global_figs.R
+14. Global simulation: /Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/submission/global_figs.R
 
-14: Uncertainty: /Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/submission/uncertainty_table_s1.R
+15: Uncertainty: /Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/submission/uncertainty_table_s1.R
 
-15: AIC for model selection: 
+16: AIC for model selection: 
