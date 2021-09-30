@@ -9,12 +9,14 @@
 All saved in: ~/data/nimpl_sofun_inputs/map/Final_ncfile/eg.nc
 
 ---Prepare Validation data for forest and grassland
+
 7. write final dataset of forest + grassland csv (including finally checked sitename for forcing and rep info):
 /Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/NPP/Forest_site_orig.R
 
 output two csv in ("/Users/yunpeng/data/NPP_final/NPP_Forest.csv") and ("/Users/yunpeng/data/NPP_Grassland_final/NPP_grassland.csv") and 
 
 ---Prepare Training data for forest
+
 8. prepare training data for forest statistical model: /Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/NPP/NPP_statistical_model.Rmd
 output: 
 csvfile <- paste("/Users/yunpeng/data/NPP_final/NPP_statistical_forest.csv")
@@ -22,6 +24,7 @@ csvfile <- paste("/Users/yunpeng/data/NPP_final/NRE_statistical_forest.csv")
 
 
 ---Forcing and p-model 
+
 9. Forest simulation: nimpl_sofun_inputs_final/NPP/Forest_simulation.Rmd 
 
 Already finsished for calculating all predicted c and n uptakes, but I have repeated again in validation file
