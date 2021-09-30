@@ -45,6 +45,7 @@ output:
 csvfile <- paste("/Users/yunpeng/data/NPP_final/Nmin_validation.csv")
 
 ---Now, output figures in manuscript!
+
 12. Statistical model: /Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/submission/statistical_fig1_tab1.R
 save all statsitical model info in: file = "~/data/NPP_Grassland_final/statistical_model/...RData"
 	
