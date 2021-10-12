@@ -33,11 +33,16 @@ csvfile <- paste("/Users/yunpeng/data/NPP_final/NPP_validation.csv")
 csvfile <- paste("/Users/yunpeng/data/NPP_final/Nmass_validation.csv")
 csvfile <- paste("/Users/yunpeng/data/NPP_final/NRE_validation.csv")
 
+Also output siteinfo in "/Users/yunpeng/data/NPP_final/fpar_name/forest_fpar_name.csv" (just note to myself!)
+
 10. Grassland simulation: nimpl_sofun_inputs_final/NPP/Grassland_simulation.Rmd 
 FINISH by line 577!!!
 Already finsished for calculating all predicted c and n uptakes, but I have repeated again in validation file
 output:
 csvfile <- paste("/Users/yunpeng/data/NPP_Grassland_final/NPP_grass_validation.csv")
+
+Also output siteinfo in "/Users/yunpeng/data/NPP_final/fpar_name/grassland_fpar_name.csv" (just note to myself!)
+
 
 11. N minerlization simulation: nimpl_sofun_inputs_final/NPP/New_Nuptake_site_simulation.R
 FINISH by line 426!!!

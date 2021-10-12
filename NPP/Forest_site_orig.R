@@ -552,7 +552,7 @@ test2 <- subset(test_new,CN_SaraVicca_old>0)
 test2 <- test2[,c("site","CN_SaraVicca_old")]
 dim(test2)
 test2 <- aggregate(test2, by=list(test2$site), mean,na.rm=TRUE)
-dim(test2)
+dim(test2) # these are new merged data - 35 overall, when only additionally merging with ForC and Sara Vicca
 test2 <- test2[,c(1,3)]
 names(test2) <- c("site","CN_SaraVicca_old")
 
