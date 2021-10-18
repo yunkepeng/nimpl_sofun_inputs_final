@@ -25,7 +25,7 @@ csvfile <- paste("/Users/yunpeng/data/NPP_final/NRE_statistical_forest.csv")
 
 ---Forcing and p-model 
 
-9. Forest simulation: nimpl_sofun_inputs_final/NPP/Forest_simulation.Rmd 
+9. Forest simulation: nimpl_sofun_inputs_final/NPP/Forest_simulation.R 
 
 Already finsished for calculating all predicted c and n uptakes, but I have repeated again in validation file
 output:
@@ -35,7 +35,7 @@ csvfile <- paste("/Users/yunpeng/data/NPP_final/NRE_validation.csv")
 
 Also output siteinfo in "/Users/yunpeng/data/NPP_final/fpar_name/forest_fpar_name.csv" (just note to myself!)
 
-10. Grassland simulation: nimpl_sofun_inputs_final/NPP/Grassland_simulation.Rmd 
+10. Grassland simulation: nimpl_sofun_inputs_final/NPP/Grassland_simulation.R
 FINISH by line 577!!!
 Already finsished for calculating all predicted c and n uptakes, but I have repeated again in validation file
 output:
