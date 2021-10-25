@@ -141,7 +141,7 @@ NPP_grassland_final4$pred_bnf <- NPP_grassland_final4$pred_bnpp/41
 
 #validation results for figure 2 and table s2 (plots, R2, RMSE in percentage)
 p1 <- ggplot(data=NPP_Forest2, aes(x=pred_gpp_c3, y=GPP)) +
-  geom_point()+geom_abline(intercept=0,slope=1, linetype=3)+geom_smooth(method = "lm", se = TRUE)+
+  geom_point()+geom_abline(intercept=0,slope=1, linetype=3)+geom_smooth(method = "lm", se = F,size=2)+
   My_Theme+labs(y = ~paste("Forest ", GPP[pred.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest ", GPP[obs.], " (gC m"^-2,"yr"^-1,")")) +
   stat_cor(
     aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
@@ -153,7 +153,7 @@ sqrt(mean(a1$residuals^2))/mean_value
 sqrt(mean(a1$residuals^2))
 
 p2 <- ggplot(data=NPP_Forest2, aes(x=pred_npp, y=TNPP_1)) +
-  geom_point()+geom_abline(intercept=0,slope=1, linetype=3)+geom_smooth(method = "lm", se = TRUE)+
+  geom_point()+geom_abline(intercept=0,slope=1, linetype=3)+geom_smooth(method = "lm", se = F,size=2)+
   My_Theme+labs(y = ~paste("Forest ", BP[pred.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest ", BP[obs.], " (gC m"^-2,"yr"^-1,")")) +
   stat_cor(
     aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
@@ -166,7 +166,7 @@ sqrt(mean(a2$residuals^2))/mean_value
 sqrt(mean(a2$residuals^2))
 
 p3 <-ggplot(data=NPP_Forest2, aes(x=pred_anpp, y=ANPP_2)) +
-  geom_point()+geom_abline(intercept=0,slope=1, linetype=3)+geom_smooth(method = "lm", se = TRUE)+
+  geom_point()+geom_abline(intercept=0,slope=1, linetype=3)+geom_smooth(method = "lm", se = F,size=2)+
   My_Theme+labs(y = ~paste("Forest ", ANPP[pred.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest ", ANPP[obs.], " (gC m"^-2,"yr"^-1,")")) +
   stat_cor(
     aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
@@ -178,7 +178,7 @@ sqrt(mean(a3$residuals^2))/mean_value
 sqrt(mean(a3$residuals^2))
 
 p4 <-ggplot(data=NPP_Forest2, aes(x=pred_lnpp, y=NPP.foliage)) +
-  geom_point()+geom_abline(intercept=0,slope=1, linetype=3)+geom_smooth(method = "lm", se = TRUE)+
+  geom_point()+geom_abline(intercept=0,slope=1, linetype=3)+geom_smooth(method = "lm", se = F,size=2)+
   My_Theme+labs(y = ~paste("Forest leaf ", NPP[pred.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest leaf ", NPP[obs.], " (gC m"^-2,"yr"^-1,")")) +
   stat_cor(
     aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
@@ -191,7 +191,7 @@ sqrt(mean(a4$residuals^2))/mean_value
 sqrt(mean(a4$residuals^2))
 
 p5 <-ggplot(data=NPP_Forest2, aes(x=pred_wnpp, y=NPP.wood)) +
-  geom_point()+geom_abline(intercept=0,slope=1, linetype=3)+geom_smooth(method = "lm", se = TRUE)+
+  geom_point()+geom_abline(intercept=0,slope=1, linetype=3)+geom_smooth(method = "lm", se = F,size=2)+
   My_Theme+labs(y = ~paste("Forest wood ", NPP[pred.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest wood ", NPP[obs.], " (gC m"^-2,"yr"^-1,")")) +
   stat_cor(
     aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
@@ -204,7 +204,7 @@ sqrt(mean(a5$residuals^2))/mean_value
 sqrt(mean(a5$residuals^2))
 
 p6 <-ggplot(data=NPP_Forest2, aes(x=pred_bnpp, y=BNPP_1)) +
-  geom_point()+geom_abline(intercept=0,slope=1, linetype=3)+geom_smooth(method = "lm", se = TRUE)+
+  geom_point()+geom_abline(intercept=0,slope=1, linetype=3)+geom_smooth(method = "lm", se = F,size=2)+
   My_Theme+labs(y = ~paste("Forest ", BNPP[pred.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest ", BNPP[obs.], " (gC m"^-2,"yr"^-1,")")) +
   stat_cor(
     aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
@@ -216,7 +216,7 @@ sqrt(mean(a6$residuals^2))/mean_value
 sqrt(mean(a6$residuals^2))
 
 p7 <-ggplot(data=NPP_Forest2, aes(x=pred_lnf, y=lnf_obs_org)) +
-  geom_point()+geom_abline(intercept=0,slope=1, linetype=3)+geom_smooth(method = "lm", se = TRUE)+
+  geom_point()+geom_abline(intercept=0,slope=1, linetype=3)+geom_smooth(method = "lm", se = F,size=2)+
   My_Theme+labs(y = ~paste("Forest leaf N ", flux[pred.], " (gN m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest leaf N ", flux[obs.], " (gN m"^-2,"yr"^-1,")")) +
   stat_cor(
     aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
@@ -228,7 +228,7 @@ sqrt(mean(a7$residuals^2))/mean_value
 sqrt(mean(a7$residuals^2))
 
 p8 <- ggplot(data=sitemean, aes(x=pred_leafn, y=obs_leafn)) +
-  geom_point()+geom_abline(intercept=0,slope=1, linetype=3)+geom_smooth(method = "lm", se = TRUE)+
+  geom_point()+geom_abline(intercept=0,slope=1, linetype=3)+geom_smooth(method = "lm", se = F,size=2)+
   My_Theme+labs(y = ~paste("Forest leaf ", N[pred.], " (g g"^-1,")")) +labs(x = ~paste("Forest leaf ", N[obs.], " (g g"^-1,")")) +
   stat_cor(
     aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+xlim(0,0.06)+ylim(0,0.06)
@@ -239,7 +239,7 @@ sqrt(mean(a8$residuals^2))/mean_value
 sqrt(mean(a8$residuals^2))
 
 p9 <- ggplot(data=NRE_climate, aes(x=pred_nre, y=nre)) + #xlim(c(0.25,1))+ylim(c(0.25,1))+
-  geom_point()+geom_abline(intercept=0,slope=1, linetype=3)+geom_smooth(method = "lm", se = TRUE)+
+  geom_point()+geom_abline(intercept=0,slope=1, linetype=3)+geom_smooth(method = "lm", se = F,size=2)+
   My_Theme+labs(y = ~paste("Forest ", NRE[pred.])) +labs(x = ~paste("Forest ", NRE[obs.]))+
   stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+xlim(0,1)+ylim(0,1)
 a9 <- (lm(nre~pred_nre,NRE_climate))
@@ -250,7 +250,7 @@ sqrt(mean(a9$residuals^2))
 #take care about Nmin - might be cancelling range of Nmin?
 #there are 9 samples (within 3 plots) having Nmin >25. But these points are not be able to get to pred Nmin - perhaps because coord are wrong!
 p10 <- ggplot(data=Nmin_forest, aes(x=pred_nuptake, y=Nmin)) +
-  geom_point()+geom_abline(intercept=0,slope=1, linetype=3)+geom_smooth(method = "lm", se = TRUE)+
+  geom_point()+geom_abline(intercept=0,slope=1, linetype=3)+geom_smooth(method = "lm", se = F,size=2)+
   My_Theme+labs(y = ~paste("Forest N ", uptake[pred.], " (gN m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest N ", uptake[obs.], " (gN m"^-2,"yr"^-1,")"))+
   stat_cor(
     aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+xlim(0,25)+ylim(0,25)+theme(  panel.border = element_rect(colour = "black", fill=NA, size=5))
@@ -274,7 +274,7 @@ plot(newmap, xlim = c(-180, 180), ylim = c(-75, 75), asp = 1)
 points(Nmin_forest$lon,Nmin_forest$lat, col="red", pch=16,cex=1)
 
 p11 <- ggplot(NPP_grassland_final4, aes(x=weightedgpp_all, y=GPP)) +
-  geom_point()+geom_abline(intercept=0,slope=1, linetype=3)+geom_smooth(method = "lm", se = TRUE)+
+  geom_point()+geom_abline(intercept=0,slope=1, linetype=3)+geom_smooth(method = "lm", se = F,size=2)+
   My_Theme+labs(y = ~paste("Grassland ", GPP[pred.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Grassland ", GPP[obs.], " (gC m"^-2,"yr"^-1,")")) +
   stat_cor(
     aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
@@ -286,7 +286,7 @@ sqrt(mean(a11$residuals^2))/mean_value
 sqrt(mean(a11$residuals^2))
 
 p12 <-ggplot(NPP_grassland_final4, aes(x=pred_npp, y=TNPP_1)) +
-  geom_point()+geom_abline(intercept=0,slope=1, linetype=3)+geom_smooth(method = "lm", se = TRUE)+
+  geom_point()+geom_abline(intercept=0,slope=1, linetype=3)+geom_smooth(method = "lm", se = F,size=2)+
   My_Theme+labs(y = ~paste("Grassland ", BP[pred.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Grassland ", BP[obs.], " (gC m"^-2,"yr"^-1,")")) +
   stat_cor(
     aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
@@ -298,7 +298,7 @@ sqrt(mean(a12$residuals^2))/mean_value
 sqrt(mean(a12$residuals^2))
 
 p13 <-ggplot(NPP_grassland_final4, aes(x=pred_anpp, y=ANPP_2)) +
-  geom_point()+geom_abline(intercept=0,slope=1, linetype=3)+geom_smooth(method = "lm", se = TRUE)+
+  geom_point()+geom_abline(intercept=0,slope=1, linetype=3)+geom_smooth(method = "lm", se = F,size=2)+
   My_Theme+labs(y = ~paste("Grassland ", ANPP[pred.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Grassland ", ANPP[obs.], " (gC m"^-2,"yr"^-1,")")) +
   stat_cor(
     aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
@@ -310,7 +310,7 @@ sqrt(mean(a13$residuals^2))/mean_value
 sqrt(mean(a13$residuals^2))
 
 p14 <-ggplot(NPP_grassland_final4, aes(x=pred_lnf, y=lnf_obs_final)) +
-  geom_point()+geom_abline(intercept=0,slope=1, linetype=3)+geom_smooth(method = "lm", se = TRUE)+ #xlim(c(0,10))+
+  geom_point()+geom_abline(intercept=0,slope=1, linetype=3)+geom_smooth(method = "lm", se = F,size=2)+ #xlim(c(0,10))+
   My_Theme+labs(y = ~paste("Grassland leaf N ", flux[pred.], " (gN m"^-2,"yr"^-1,")")) +labs(x = ~paste("Grassland leaf N ", flux[obs.], " (gN m"^-2,"yr"^-1,")")) +
   stat_cor(
     aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
@@ -330,3 +330,84 @@ plot_grid(p1,p2,p3,
           label_x = 0.9,label_y=0.92)
 
 ggsave(paste("~/data/output/fig2.jpg",sep=""),width = 15, height = 20)
+
+NPP_Forest2$BPE_obs <- NPP_Forest2$TNPP_1/NPP_Forest2$GPP
+NPP_Forest2$BPE_pred <- NPP_Forest2$pred_npp/NPP_Forest2$pred_gpp_c3
+
+ggplot(data=NPP_Forest2, aes(x=BPE_pred, y=BPE_obs,color=lat)) +geom_point()+
+  scale_color_gradient2(midpoint=0, low="blue", mid="white", high="red", space ="Lab" )
+ggplot(data=NPP_Forest2, aes(x=lat, y=BPE_obs)) +geom_point()+geom_smooth()
+ggplot(data=NPP_Forest2, aes(x=lat, y=BPE_pred)) +geom_point()+geom_smooth()
+
+  
+ggplot(data=NPP_Forest2, aes(x=pred_npp, y=TNPP_1)) +geom_point()+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
+    label.x = 3)
+ggplot(data=NPP_Forest2, aes(x=pred_gpp_c3, y=GPP)) +geom_point()+
+  stat_cor(
+    aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
+    label.x = 3)
+
+#additional soil P collection analysis suggested by sara vicca, metteo and beni
+#dim(NPP_Forest2)
+#NPP_Forest2_sm <- aggregate(NPP_Forest2,by=list(NPP_Forest2$lon,NPP_Forest2$lat), mean,na.rm=TRUE)
+#NPP_input <- NPP_Forest2_sm[,c("lon","lat")]
+#NPP_input$sitename <- paste("a",1:nrow(NPP_input),sep="")
+#now, doing soil P collection in desktop (takes time commented out here)
+#devtools::load_all("/Users/yunpeng/yunkepeng/gcme/pmodel/ingestr/")
+#df_layers <- tibble(layer = 1:8, bottom = c(4.5, 9.1, 16.6, 28.9, 49.3, 82.9, 138.3, 229.6)) %>% mutate(top = lag(bottom)) %>% mutate(top = ifelse(is.na(top), 0, top))
+#settings_gsde <- list(varnam = c("PBR"), layer = 1:3)
+#NPP_input$soil_P <- NA
+#for (i in 1:nrow(NPP_input)){
+#  df_gsde <- ingest_bysite(sitename  = NPP_input$sitename[i],source = "gsde",lon = NPP_input$lon[i],lat= NPP_input$lat[i],settings  = settings_gsde,dir = "/Volumes/My Passport/data/soil/shangguan")
+#  value <- as.numeric(as.data.frame(df_gsde$data[[1]]))
+#  NPP_input[i,"soil_P"] <- value
+#  print(i)}
+#csvfile <- paste("~/data/NPP_final/soilP.csv")
+#write.csv(NPP_input, csvfile, row.names = TRUE)
+soilP <- read.csv("~/data/NPP_final/soilP.csv")
+
+NPP_Forest2_soilP <- merge(NPP_Forest2,soilP,by=c("lon","lat"),all.x=TRUE)
+NPP_Forest2_soilP$bias_bpe <- NPP_Forest2_soilP$TNPP_1/NPP_Forest2_soilP$GPP - NPP_Forest2_soilP$pred_npp/NPP_Forest2_soilP$pred_gpp_c3
+
+ggplot(data=NPP_Forest2_soilP, aes(x=soil_P, y=bias_bpe)) +geom_point()+
+  stat_cor(
+    aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
+    label.x = 3)
+
+#add a few measured soil P data?
+#add site-level soil C/N
+Sara_CN <- read.csv(file="/Users/yunpeng/data/NPP_Yunke/NPP_Vicca/orig/References_Yunke_soilCN.csv")
+Sara_CN <- Sara_CN[,c("Plot.name","Total.P..mg.P.kg.1.")]
+Sara_CN$soilP <- (as.numeric(gsub(",",".",Sara_CN[,2])))
+hist(Sara_CN$soilP)
+Sara_CN_site <- aggregate(Sara_CN,by=list(Sara_CN$Plot.name), FUN=mean, na.rm=TRUE)
+Sara_CN_site <- subset(Sara_CN_site,soilP>0)
+Sara_CN_site$Plot <- Sara_CN_site$Group.1
+Sara_CN_site <- Sara_CN_site[,c("Plot","soilP")]
+names(Sara_CN_site) <- c("site","soilP_measured")
+NPP_Forest2_soilP_measured <- merge(NPP_Forest2_soilP,Sara_CN_site,by=c("site"),all.x=TRUE)
+summary(NPP_Forest2_soilP_measured)
+dim(NPP_Forest2_soilP_measured) #21 sites available
+plot(NPP_Forest2_soilP_measured$soilP_measured~NPP_Forest2_soilP_measured$soil_P)
+
+ggplot(data=NPP_Forest2_soilP_measured, aes(x=soilP_measured, y=bias_bpe)) +geom_point()+
+  stat_cor(
+    aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
+    label.x = 3)
+summary(lm(NPP_Forest2_soilP_measured$bias_bpe~NPP_Forest2_soilP_measured$soilP_measured))
+
+NPP_statistical <- read.csv("~/data/NPP_final/NPP_statistical_forest.csv")
+NPP_statistical <- merge(NPP_statistical,Sara_CN_site,by=c("site"),all.x=TRUE)
+tnpp_gpp_a <- log((NPP_statistical$TNPP_1/NPP_statistical$GPP)/(1-(NPP_statistical$TNPP_1/NPP_statistical$GPP)))
+soilCN_a <- log(NPP_statistical$soilCN)
+age_a <- log(NPP_statistical$age)
+observedfAPAR_a <- NPP_statistical$observedfAPAR
+site_a <- NPP_statistical$site
+P_a <- log(NPP_statistical$soilP_measured)
+
+geom_hex()
+
+mod_tnpp <- lmer( tnpp_gpp_a ~ soilCN_a + age_a + observedfAPAR_a + (1|site_a))
+summary(mod_tnpp)
+mod_tnpp <- lmer( tnpp_gpp_a ~ P_a  + (1|site_a))

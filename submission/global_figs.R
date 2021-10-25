@@ -421,13 +421,13 @@ b3 <- gg$ggmap +
 
 b4 <- gg$gglegend
 #CUE~NUE
-
 b5 <- ggplot(data=all_maps, aes(x=CUE, y=NUE)) +
   geom_point(aes(color=nuptake_pft),alpha=0.3,size=0.3)+geom_smooth(method = "lm", se = TRUE)+ 
   scale_color_viridis(discrete=FALSE,direction= -1)+theme_classic()+theme(axis.title = element_text(size = 30),
                                                                           axis.text = element_text(size = 20),
                                                                           legend.title = element_text(size = 14))+
   xlab("BPE")+ylab("NUE (gC/gN)")+labs(color= ~paste("N uptake", " (gN m"^-2,"yr"^-1,")"))
+summary(lm(all_maps$NUE~all_maps$CUE))
 
 plot_grid(b1,b2,b3,b4,b5,
           labels = c('(a)',' ','(b)',' ','(c)'), rel_widths = c(3/12, 1/21,3/12,1/12,4/12),
