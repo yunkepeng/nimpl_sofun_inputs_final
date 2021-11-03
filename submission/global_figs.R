@@ -434,6 +434,18 @@ plot_grid(b1,b2,b3,b4,b5,
           nrow=1,label_size = 20)
 
 ggsave(paste("~/data/output/fig5.jpg",sep=""),width = 20, height = 5)
+#variation calculation
+#calculate nup = gpp * bpe /nue, about variation of each component
+a1 <- log((all_maps$gpp * all_maps$CUE * all_maps$NUE)/(mean(all_maps$gpp,na.rm = TRUE) * all_maps$CUE * all_maps$NUE)) #gpp
+a2 <- log((all_maps$gpp * all_maps$CUE * all_maps$NUE)/(all_maps$gpp* mean(all_maps$CUE,na.rm = TRUE) * all_maps$NUE)) #cue
+a3 <- log((all_maps$gpp * all_maps$CUE * all_maps$NUE)/(all_maps$gpp* all_maps$CUE * mean(all_maps$NUE,na.rm = TRUE))) #nue
+a_all <- as.data.frame(cbind(a1,a2,a3))
+total_sum <- sum(abs((a_all)*conversion),na.rm=TRUE)
+sum(abs((a1)*conversion),na.rm=TRUE)/total_sum
+sum(abs((a2)*conversion),na.rm=TRUE)/total_sum
+sum(abs((a3)*conversion),na.rm=TRUE)/total_sum
+
+
 #computating correltion coefficient r
 cor(na.omit(all_maps$CUE), na.omit(all_maps$NUE),
     method = c("pearson", "kendall", "spearman"))
