@@ -11,6 +11,7 @@ library(dplyr)
 library(gplots)
 library(tidyselect)
 library(extrafont)
+devtools::load_all("/Users/yunpeng/yunkepeng/rbeni/")
 library(rbeni)
 library(raster)
 library(maps)
@@ -282,6 +283,11 @@ fland <- output_fland$myvar
 conversion <- area_m2 * fland /1e+15
 
 #now, produce results
+#now, produce results --> not used  plot_map4 at the end since its width is too larger shwon in map - not looks nice - if used then see comments below for example:
+#devtools::load_all("/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/vhs/")
+#devtools::load_all("/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/rbeni/")
+# plot_map4(na.omit(all_maps[,c("lon","lat","gpp")]),varnam = "gpp")
+
 #Figure 3 - map output along with validated sites in forest (red) and grassland (blue)
 #1. gpp
 NPP_forest <- read.csv("~/data/NPP_final/NPP_validation.csv")
@@ -625,11 +631,11 @@ cal_nuptake <- function(Tg_pred,PPFD_pred,vpd_pred,fAPAR_pred,age_pred,CNrt_pred
   leafcn_pft <- 1/(available_grid2*(leafnc_f*forest_percent +leafnc_g*grass_percent))
   leafcn_forest <- 1/available_grid2*leafnc_f*forest_percent
   leafcn_grassland <- 1/available_grid2*leafnc_g*grass_percent
-
+  
   nre_pft <- available_grid2*(nre_f*forest_percent +nre_g*grass_percent)
   nre_forest <-  available_grid2*nre_f*forest_percent
   nre_grassland <- available_grid2*nre_g*grass_percent
-
+  
   lnf_pft <- available_grid2*(lnf_f*forest_percent +lnf_g*grass_percent)
   lnf_forest <- available_grid2* (lnf_f*forest_percent)
   lnf_grass <- available_grid2* (lnf_g*grass_percent)
@@ -733,7 +739,7 @@ cal_cue <- function(fAPAR_pred,age_pred,CNrt_pred){
                                         summary(mod_tnpp)$coef[4,1]* fAPAR_pred))))
   #grass
   npp_g <- gpp_df$gpp * summary(mod_tnpp_grass)$coef[1,1]
-
+  
   #pft
   npp_pft <- available_grid2* (npp_f*forest_percent +npp_g*grass_percent)
   cue_pft <- npp_pft/gpp_df$gpp
@@ -940,4 +946,3 @@ for (i in 4:31){
   print(varname)
   print(total_value)
 }
-
