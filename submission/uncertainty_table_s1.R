@@ -12,7 +12,7 @@ library(dplyr)
 library(gplots)
 library(tidyselect)
 library(extrafont)
-library(rbeni)
+devtools::load_all("/Users/yunpeng/yunkepeng/rbeni/")
 library(raster)
 library(maps)
 library(rworldmap)
@@ -484,3 +484,10 @@ sqrt(sum(uncertainty_lnf*(forest_percent *conversion)*available_grid2,na.rm=TRUE
 sqrt(sum(uncertainty_bnf*(forest_percent *conversion)*available_grid2,na.rm=TRUE)^2 + sum(uncertainty_grass_bnf*(grass_percent *conversion)*available_grid2,na.rm=TRUE)^2)
 # n uptake
 sqrt(sum(uncertainty_nuptake*(forest_percent *conversion)*available_grid2,na.rm=TRUE)^2 + sum(uncertainty_grass_nuptake*(grass_percent *conversion)*available_grid2,na.rm=TRUE)^2)
+
+#forest, grass, and final nue
+uncertainty_nue_f <- (npp_f/nuptake_f) * sqrt( (uncertainty_npp/npp_f)^2 +
+                                   (uncertainty_nuptake/nuptake_f)^2)
+uncertainty_nue_g <- (npp_g/nuptake_g) * sqrt( (uncertainty_grass_npp/npp_g)^2 +
+                                                 (uncertainty_grass_nuptake/nuptake_g)^2)
+sqrt(sum(uncertainty_nue_f*(forest_percent *conversion)*available_grid2,na.rm=TRUE)^2 + sum(uncertainty_nue_g*(grass_percent *conversion)*available_grid2,na.rm=TRUE)^2)
