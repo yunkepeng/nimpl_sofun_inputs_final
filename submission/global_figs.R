@@ -12,7 +12,7 @@ library(gplots)
 library(tidyselect)
 library(extrafont)
 devtools::load_all("/Users/yunpeng/yunkepeng/rbeni/")
-library(rbeni)
+#library(rbeni)
 library(raster)
 library(maps)
 library(rworldmap)
@@ -290,6 +290,8 @@ conversion <- area_m2 * fland /1e+15
 
 #Figure 3 - map output along with validated sites in forest (red) and grassland (blue)
 #1. gpp
+white <- theme(plot.background=element_rect(fill="white", color="white"))
+
 NPP_forest <- read.csv("~/data/NPP_final/NPP_validation.csv")
 NPP_grassland <- read.csv("~/data/NPP_Grassland_final/NPP_grass_validation.csv")
 
@@ -303,9 +305,9 @@ a1 <- gg$ggmap +
   geom_point(data=gpp_f,aes(lon,lat),col="red",size=1.5)+
   geom_point(data=gpp_g,aes(lon,lat),col="blue",size=1.5)+
   labs(title = paste("GPP:", total_value, "PgC/yr", sep=" " ))+
-  theme_grey(base_size = 12)
+  theme_grey(base_size = 12) + white
 
-a2 <- gg$gglegend+labs(title = ~paste("gC m"^-2,"yr"^-1))
+a2 <- gg$gglegend+labs(title = ~paste("gC m"^-2,"yr"^-1))+ white
 
 #2. npp
 npp_f <- (NPP_forest %>% filter(TNPP_1>0) %>% filter(pred_npp>0))[,c("lon","lat")]
@@ -319,9 +321,9 @@ a3 <- gg$ggmap +
   geom_point(data=npp_f,aes(lon,lat),col="red",size=1.5)+
   geom_point(data=npp_g,aes(lon,lat),col="blue",size=1.5)+
   labs(title = paste("BP:", total_value, "PgC/yr", sep=" " ))+
-  theme_grey(base_size = 12)
+  theme_grey(base_size = 12)+ white
 
-a4 <- gg$gglegend+labs(title = ~paste("gC m"^-2,"yr"^-1))
+a4 <- gg$gglegend+labs(title = ~paste("gC m"^-2,"yr"^-1))+ white
 
 #3.anpp
 anpp_f <- (NPP_forest %>% filter(ANPP_2>0) %>% filter(pred_anpp>0))[,c("lon","lat")]
@@ -335,9 +337,9 @@ a5 <- gg$ggmap +
   geom_point(data=anpp_f,aes(lon,lat),col="red",size=1.5)+
   geom_point(data=anpp_g,aes(lon,lat),col="blue",size=1.5)+
   labs(title = paste("ANPP:", total_value, "PgC/yr", sep=" " ))+
-  theme_grey(base_size = 12)
+  theme_grey(base_size = 12)+ white
 
-a6 <- gg$gglegend+labs(title = ~paste("gC m"^-2,"yr"^-1))
+a6 <- gg$gglegend+labs(title = ~paste("gC m"^-2,"yr"^-1))+ white
 
 #4. leaf c/n
 SP_input <- read.csv(file="~/data/leaf_traits/combined_leaf_traits_updated.csv") #new one 
@@ -355,9 +357,9 @@ total_value <- round(mean(leafcn_pft,na.rm=TRUE),2)
 a7 <- gg$ggmap +
   geom_point(data=laefcn,aes(lon,lat),col="red",size=1.5)+
   labs(title = paste("Leaf C/N: ", total_value))+
-  theme_grey(base_size = 12)
+  theme_grey(base_size = 12)+ white
 
-a8 <- gg$gglegend
+a8 <- gg$gglegend+ white
 
 #5. NRE
 NRE_validation <- read.csv(file="~/data/NPP_final/NRE_validation.csv") 
@@ -371,9 +373,9 @@ total_value <- round(mean(nre_pft,na.rm=TRUE),2)
 a9 <- gg$ggmap +
   geom_point(data=nre_site,aes(lon,lat),col="red",size=1.5)+
   labs(title = paste("NRE: ", total_value))+
-  theme_grey(base_size = 12)
+  theme_grey(base_size = 12)+ white
 
-a10 <- gg$gglegend
+a10 <- gg$gglegend+ white
 
 #6. nuptake
 Nmin_validation <- read.csv("~/data/NPP_final/Nmin_validation.csv")
@@ -387,9 +389,9 @@ gg <- plot_map3(na.omit(all_maps[,c("lon","lat","nuptake_pft")]),
 a11 <- gg$ggmap +
   geom_point(data=nuptake_f,aes(lon,lat),col="red",size=1.5)+
   labs(title = paste("N uptake: ", total_value, "TgN/yr", sep=" " ))+
-  theme_grey(base_size = 12)
+  theme_grey(base_size = 12)+ white
 
-a12 <- gg$gglegend+labs(title = ~paste("gN m"^-2,"yr"^-1))
+a12 <- gg$gglegend+labs(title = ~paste("gN m"^-2,"yr"^-1))+ white
 
 
 
@@ -413,9 +415,9 @@ gg <- plot_map3(na.omit(all_maps[,c("lon","lat","CUE")]),
 
 b1 <- gg$ggmap +
   labs(title = paste("BPE: ", total_value_CUE))+
-  theme_grey(base_size = 15)
+  theme_grey(base_size = 15)+ white
 
-b2 <- gg$gglegend
+b2 <- gg$gglegend+ white
 #NUE
 gg <- plot_map3(na.omit(all_maps[,c("lon","lat","NUE")]),
                 varnam = "NUE",latmin = -65, latmax = 85,combine=FALSE,
@@ -423,9 +425,9 @@ gg <- plot_map3(na.omit(all_maps[,c("lon","lat","NUE")]),
 
 b3 <- gg$ggmap +
   labs(title = paste("NUE: ", total_value_NUE,"gC/gN"))+
-  theme_grey(base_size = 15)
+  theme_grey(base_size = 15)+ white
 
-b4 <- gg$gglegend
+b4 <- gg$gglegend+ white
 #CUE~NUE
 b5 <- ggplot(data=all_maps, aes(x=CUE, y=NUE)) +
   geom_point(aes(color=nuptake_pft),alpha=0.3,size=0.3)+geom_smooth(method = "lm", se = TRUE)+ 
@@ -433,7 +435,7 @@ b5 <- ggplot(data=all_maps, aes(x=CUE, y=NUE)) +
                                                                           axis.text = element_text(size = 20),
                                                                           legend.title = element_text(size = 14))+
   xlab("BPE")+ylab("NUE (gC/gN)")+labs(color= ~paste("N uptake", " (gN m"^-2,"yr"^-1,")"))
-summary(lm(all_maps$NUE~all_maps$CUE))
+summary(lm(all_maps$NUE~all_maps$CUE))+ white
 
 plot_grid(b1,b2,b3,b4,b5,
           labels = c('(a)',' ','(b)',' ','(c)'), rel_widths = c(3/12, 1/21,3/12,1/12,4/12),
@@ -461,16 +463,16 @@ cor(na.omit(all_maps$CUE), na.omit(all_maps$NUE),
 gg <- plot_map3(na.omit(all_maps[,c("lon","lat","nuptake_pft")]),
                 varnam = "nuptake_pft",latmin = -65, latmax = 85,combine=FALSE)
 
-c1 <- gg$ggmap +labs(title = "N uptake")+theme_grey(base_size = 20)
+c1 <- gg$ggmap +labs(title = "N uptake")+theme_grey(base_size = 20)+ white
 
-c2 <- gg$gglegend+labs(title = ~paste("gN m"^-2,"yr"^-1))
+c2 <- gg$gglegend+labs(title = ~paste("gN m"^-2,"yr"^-1))+ white
 
 gg <- plot_map3(na.omit(all_maps[,c("lon","lat","nuptake_forest")]),
                 varnam = "nuptake_forest",latmin = -65, latmax = 85,combine=FALSE)
 
-c3 <- gg$ggmap +labs(title = "Forest N uptake")+theme_grey(base_size = 20)
+c3 <- gg$ggmap +labs(title = "Forest N uptake")+theme_grey(base_size = 20)+ white
 
-c4 <- gg$gglegend+labs(title = ~paste("gN m"^-2,"yr"^-1))
+c4 <- gg$gglegend+labs(title = ~paste("gN m"^-2,"yr"^-1))+ white
 
 c5 <- ggplot(data=all_maps, aes(all_maps$nuptake_pft)) + 
   geom_histogram()+
@@ -480,7 +482,7 @@ c5 <- ggplot(data=all_maps, aes(all_maps$nuptake_pft)) +
         legend.title = element_text(size = 20),
         legend.text = element_text(size = 20))+
   theme(legend.title = element_blank())+
-  labs(x = ~paste("Total N uptake (","gN m"^-2,"yr"^-1, ")"))
+  labs(x = ~paste("Total N uptake (","gN m"^-2,"yr"^-1, ")"))+ white
 
 #NUE
 all_maps$NUE_forest <- all_maps$npp_forest/all_maps$nuptake_forest
@@ -490,17 +492,17 @@ gg <- plot_map3(na.omit(all_maps[,c("lon","lat","NUE")]),
                 varnam = "NUE",latmin = -65, latmax = 85,combine=FALSE,
                 breaks = seq(45,90,5))
 
-c6 <- gg$ggmap +labs(title = "NUE (gC/gN)")+theme_grey(base_size = 20)
+c6 <- gg$ggmap +labs(title = "NUE (gC/gN)")+theme_grey(base_size = 20)+ white
 
-c7 <- gg$gglegend
+c7 <- gg$gglegend+ white
 
 gg <- plot_map3(na.omit(all_maps[,c("lon","lat","NUE_forest")]),
                 varnam = "NUE_forest",latmin = -65, latmax = 85,combine=FALSE,
                 breaks = seq(45,90,5))
 
-c8 <- gg$ggmap +labs(title = "Forest NUE (gC/gN)")+theme_grey(base_size = 20)
+c8 <- gg$ggmap +labs(title = "Forest NUE (gC/gN)")+theme_grey(base_size = 20)+ white
 
-c9 <- gg$gglegend
+c9 <- gg$gglegend+ white
 
 c10 <- ggplot(data=all_maps, aes(all_maps$NUE)) + 
   geom_histogram()+
@@ -510,7 +512,7 @@ c10 <- ggplot(data=all_maps, aes(all_maps$NUE)) +
         legend.title = element_text(size = 20),
         legend.text = element_text(size = 20))+
   theme(legend.title = element_blank())+
-  labs(x = ~paste("NUE (gC/gN)"))
+  labs(x = ~paste("NUE (gC/gN)"))+ white
 
 plot_grid(c1,c2,c3,c4,c5,
           c6,c7,c8,c9,c10,nrow=2,rel_widths = c(3/11, 1/11,3/11,1/11,3/11),
@@ -521,28 +523,28 @@ ggsave(paste("~/data/output/figS3.jpg",sep=""),width = 20, height = 10)
 
 #fig.s4 - representing all predictors
 gg <- plot_map3(na.omit(CNrt[,c("lon","lat","myvar")]),varnam = "myvar",latmin = -65, latmax = 85,combine=FALSE)
-d1 <- gg$ggmap +labs(title = "Soil C/N")+theme_grey(base_size = 15);d2 <- gg$gglegend
+d1 <- gg$ggmap +labs(title = "Soil C/N")+theme_grey(base_size = 15)+ white;d2 <- gg$gglegend+ white
 
 gg <- plot_map3(na.omit(age[,c("lon","lat","myvar")]),varnam = "myvar",latmin = -65, latmax = 85,combine=FALSE)
-d3 <- gg$ggmap +labs(title = "Age")+theme_grey(base_size = 15);d4 <- gg$gglegend+labs(title = ~paste("years"))
+d3 <- gg$ggmap +labs(title = "Age")+theme_grey(base_size = 15)+ white;d4 <- gg$gglegend+labs(title = ~paste("years"))+ white
 
 gg <- plot_map3(na.omit(fAPAR[,c("lon","lat","myvar")]),varnam = "myvar",latmin = -65, latmax = 85,combine=FALSE)
-d5 <- gg$ggmap +labs(title = "fAPAR")+theme_grey(base_size = 15);d6 <- gg$gglegend
+d5 <- gg$ggmap +labs(title = "fAPAR")+theme_grey(base_size = 15)+ white;d6 <- gg$gglegend+ white
 
 gg <- plot_map3(na.omit(PPFD[,c("lon","lat","myvar")]),varnam = "myvar",latmin = -65, latmax = 85,combine=FALSE,breaks = seq(100,800,100))
-d7 <- gg$ggmap +labs(title = "PPFD")+theme_grey(base_size = 15);d8 <- gg$gglegend + labs(title =~paste(mu, "mol m"^-2,"s"^-1))
+d7 <- gg$ggmap +labs(title = "PPFD")+theme_grey(base_size = 15)+ white;d8 <- gg$gglegend + labs(title =~paste(mu, "mol m"^-2,"s"^-1))+ white
 
 gg <- plot_map3(na.omit(Tg[,c("lon","lat","myvar")]),varnam = "myvar",latmin = -65, latmax = 85,combine=FALSE)
-d9 <- gg$ggmap +labs(title =~paste(T[g]))+theme_grey(base_size = 15);d10 <- gg$gglegend + labs(title =~paste("\u00B0C"))
+d9 <- gg$ggmap +labs(title =~paste(T[g]))+theme_grey(base_size = 15)+ white;d10 <- gg$gglegend + labs(title =~paste("\u00B0C"))+ white
 
 gg <- plot_map3(na.omit(vpd[,c("lon","lat","myvar")]),varnam = "myvar",latmin = -65, latmax = 85,combine=FALSE)
-d11 <- gg$ggmap +labs(title = "D")+theme_grey(base_size = 15);d12 <- gg$gglegend+ labs(title =~paste("kPa"))
+d11 <- gg$ggmap +labs(title = "D")+theme_grey(base_size = 15)+ white;d12 <- gg$gglegend+ labs(title =~paste("kPa"))+ white
 
 gg <- plot_map3(na.omit(vcmax25_df[,c("lon","lat","vcmax25")]), varnam = "vcmax25",latmin = -65, latmax = 85,combine=FALSE)
-d13 <- gg$ggmap +labs(title =~paste(V[cmax25]))+theme_grey(base_size = 15);d14 <- gg$gglegend+ labs(title =~paste(mu, "mol m"^-2,"s"^-1))
+d13 <- gg$ggmap +labs(title =~paste(V[cmax25]))+theme_grey(base_size = 15)+ white;d14 <- gg$gglegend+ labs(title =~paste(mu, "mol m"^-2,"s"^-1))+ white
 
 gg <- plot_map3(na.omit(LMA[,c("lon","lat","myvar")]),varnam = "myvar",latmin = -65, latmax = 85,combine=FALSE)
-d15 <- gg$ggmap +labs(title = "LMA")+theme_grey(base_size = 15);d16 <- gg$gglegend+ labs(title =~paste("g ","m"^-2))
+d15 <- gg$ggmap +labs(title = "LMA")+theme_grey(base_size = 15)+ white;d16 <- gg$gglegend+ labs(title =~paste("g ","m"^-2))+ white
 
 plot_grid(d1,d2,d3,d4,d5,d6,
           d7,d8,d9,d10,d11,d12,
@@ -550,7 +552,7 @@ plot_grid(d1,d2,d3,d4,d5,d6,
           nrow=3,rel_widths = c(3/12, 1/12,3/12,1/12,3/12,1/12),
           labels = c('(a)',' ','(b)',' ','(c)',' ',
                      '(d)',' ','(e)',' ','(f)',' ',
-                     '(g)',' ','(h)',' '),label_size = 15)
+                     '(g)',' ','(h)',' '),label_size = 15)+ white
 
 ggsave(paste("~/data/output/figS4.jpg",sep=""),width = 20, height = 10)
 
@@ -725,7 +727,7 @@ plot_grid(e1,e2,e3,e4,e5,e6,
           nrow=3,rel_widths = c(3/12, 1/12,3/12,1/12,3/12,1/12),
           labels = c('(a)',' ','(b)',' ','(c)',' ',
                      '(d)',' ','(e)',' ','(f)',' ',
-                     '(g)',' ','(h)',' '),label_size = 15)
+                     '(g)',' ','(h)',' '),label_size = 15)+ white
 
 ggsave(paste("~/data/output/fig4.jpg",sep=""),width = 20, height = 10)
 
@@ -771,7 +773,7 @@ f5 <- gg$ggmap +labs(title = "fAPAR")+theme_grey(base_size = 15);f6 <- gg$gglege
 
 plot_grid(f1,f2,f3,f4,f5,f6,
           nrow=1,rel_widths = c(3/12, 1/12,3/12,1/12,3/12,1/12),
-          labels = c('(a)',' ','(b)',' ','(c)',' '),label_size = 15)
+          labels = c('(a)',' ','(b)',' ','(c)',' '),label_size = 15)+ white
 
 ggsave(paste("~/data/output/figS1.jpg",sep=""),width = 20, height = 5)
 
@@ -933,7 +935,7 @@ plot_grid(g1,g2,g3,g4,g5,g6,
           nrow=3,rel_widths = c(3/12, 1/12,3/12,1/12,3/12,1/12),
           labels = c('(a)',' ','(b)',' ','(c)',' ',
                      '(d)',' ','(e)',' ','(f)',' ',
-                     '(g)',' ','(h)',' '),label_size = 15)
+                     '(g)',' ','(h)',' '),label_size = 15)+white
 
 ggsave(paste("~/data/output/figS2.jpg",sep=""),width = 20, height = 10)
 

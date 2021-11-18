@@ -321,13 +321,14 @@ mean_value <- mean(subset(NPP_grassland_final4,pred_lnf>0 & lnf_obs_final>0)$lnf
 sqrt(mean(a14$residuals^2))/mean_value
 sqrt(mean(a14$residuals^2))
 
+white <- theme(plot.background=element_rect(fill="white", color="white"))
 plot_grid(p1,p2,p3,
           p11,p12,p13,
           p4,p5,p6,
           p7,p8,p9,
           p14,p10, labels = c('(a)','(b)','(c)','(d)','(e)','(f)','(g)','(h)','(i)','(j)','(k)','(l)','(m)','(n)'),
           nrow=5,ncol=3,
-          label_x = 0.9,label_y=0.92)
+          label_x = 0.9,label_y=0.92)+white
 
 ggsave(paste("~/data/output/fig2.jpg",sep=""),width = 15, height = 20)
 

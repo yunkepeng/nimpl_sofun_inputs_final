@@ -160,6 +160,7 @@ a11 <- ~{
   plot(p1a,ylab=" ",xlab="ln D (kPa)",
        cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,ylim=c(-2,2))}
 
+white <- theme(plot.background=element_rect(fill="white", color="white"))
 
 plot_grid(a1, a2,a3,
           a4, a5,a6,
@@ -169,7 +170,7 @@ plot_grid(a1, a2,a3,
                      '(d)','(e)','(f)',
                      '(g)','(h)', '(i)',
                      '(j)','(k)'),
-          nrow=4,label_x = 0.8, label_y = 0.8)
+          nrow=4,label_x = 0.8, label_y = 0.8)+white
 
 ggsave(paste("~/data/output/fig1.jpg",sep=""), width = 14, height = 16)
 
