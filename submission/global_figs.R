@@ -394,13 +394,13 @@ a11 <- gg$ggmap +
 a12 <- gg$gglegend+labs(title = ~paste("gN m"^-2,"yr"^-1))+ white
 
 
-
 plot_grid(a1,a2,a3,a4,a5,a6,
-          a7,a8,a9,a10,a11,a12,nrow=2,rel_widths = c(3/16, 1/16,3/16,1/16,3/16,1/16),
+          a7,a8,a9,a10,a11,a12,nrow=2,
+          rel_widths = c(3/12, 1/12,3/12,1/12,3/12,1/12),
           labels = c('(a)',' ','(b)',' ','(c)',' ',
                      '(d)',' ','(e)',' ','(f)',' '))
 
-ggsave(paste("~/data/output/fig3.jpg",sep=""),width = 20, height = 10)
+ggsave(paste("~/data/output/fig3.jpg",sep=""),width = 20, height = 10*(2/3))
 
 ###Figure 5: CUE, NUE, Nuptake and its relation
 all_maps$CUE <- all_maps$npp_pft/all_maps$gpp
@@ -431,17 +431,18 @@ b4 <- gg$gglegend+ white
 #CUE~NUE
 b5 <- ggplot(data=all_maps, aes(x=CUE, y=NUE)) +
   geom_point(aes(color=nuptake_pft),alpha=0.3,size=0.3)+geom_smooth(method = "lm", se = TRUE)+ 
-  scale_color_viridis(discrete=FALSE,direction= -1)+theme_classic()+theme(axis.title = element_text(size = 30),
-                                                                          axis.text = element_text(size = 20),
+  scale_color_viridis(discrete=FALSE,direction= -1)+theme_classic()+theme(axis.title = element_text(size = 20),
+                                                                          axis.text = element_text(size = 15),
                                                                           legend.title = element_text(size = 14))+
   xlab("BPE")+ylab("NUE (gC/gN)")+labs(color= ~paste("N uptake", " (gN m"^-2,"yr"^-1,")"))
 summary(lm(all_maps$NUE~all_maps$CUE))+ white
 
 plot_grid(b1,b2,b3,b4,b5,
-          labels = c('(a)',' ','(b)',' ','(c)'), rel_widths = c(3/12, 1/21,3/12,1/12,4/12),
+          labels = c('(a)',' ','(b)',' ','(c)'), 
+          rel_widths = c(3/12, 1/12,3/12,1/12,4/12),
           nrow=1,label_size = 20)
 
-ggsave(paste("~/data/output/fig5.jpg",sep=""),width = 20, height = 5)
+ggsave(paste("~/data/output/fig5.jpg",sep=""),width = 20, height = 10*(1/3))
 #variation calculation
 #calculate nup = gpp * bpe /nue, about variation of each component
 a1 <- log((all_maps$gpp * all_maps$CUE * all_maps$NUE)/(mean(all_maps$gpp,na.rm = TRUE) * all_maps$CUE * all_maps$NUE)) #gpp
@@ -519,7 +520,7 @@ plot_grid(c1,c2,c3,c4,c5,
           labels = c('(a)',' ','(b)',' ','(c)',
                      '(d)',' ','(e)',' ','(f)'),label_size = 20)
 
-ggsave(paste("~/data/output/figS3.jpg",sep=""),width = 20, height = 10)
+ggsave(paste("~/data/output/figS5.jpg",sep=""),width = 20, height = 10*(2/3))
 
 #fig.s4 - representing all predictors
 gg <- plot_map3(na.omit(CNrt[,c("lon","lat","myvar")]),varnam = "myvar",latmin = -65, latmax = 85,combine=FALSE)
@@ -554,7 +555,7 @@ plot_grid(d1,d2,d3,d4,d5,d6,
                      '(d)',' ','(e)',' ','(f)',' ',
                      '(g)',' ','(h)',' '),label_size = 15)+ white
 
-ggsave(paste("~/data/output/figS4.jpg",sep=""),width = 20, height = 10)
+ggsave(paste("~/data/output/figS1.jpg",sep=""),width = 20, height = 10)
 
 #now - moving to final part - environmental factors on CUE/NUE (Fig.4), CUE(Fig.S1) and NUE(Fig.S2)
 
@@ -731,7 +732,7 @@ plot_grid(e1,e2,e3,e4,e5,e6,
 
 ggsave(paste("~/data/output/fig4.jpg",sep=""),width = 20, height = 10)
 
-#now, work on environmental factors on CUE (fig.s1)
+#now, work on environmental factors on CUE
 cue_final <- all_maps$CUE # by default
 cal_cue <- function(fAPAR_pred,age_pred,CNrt_pred){
   #forest
@@ -775,9 +776,9 @@ plot_grid(f1,f2,f3,f4,f5,f6,
           nrow=1,rel_widths = c(3/12, 1/12,3/12,1/12,3/12,1/12),
           labels = c('(a)',' ','(b)',' ','(c)',' '),label_size = 15)+ white
 
-ggsave(paste("~/data/output/figS1.jpg",sep=""),width = 20, height = 5)
+ggsave(paste("~/data/output/figS3.jpg",sep=""),width = 20, height = 10*(1/3))
 
-#now, work on nue
+#now, work on NUE
 nue_final <- all_maps$NUE # by default
 cal_nue <- function(Tg_pred,PPFD_pred,vpd_pred,fAPAR_pred,age_pred,CNrt_pred,LMA_pred,vcmax25_pred){
   npp_f <- gpp_df$gpp * (1/(1 + exp(-(summary(mod_tnpp)$coef[1,1]+
@@ -937,7 +938,7 @@ plot_grid(g1,g2,g3,g4,g5,g6,
                      '(d)',' ','(e)',' ','(f)',' ',
                      '(g)',' ','(h)',' '),label_size = 15)+white
 
-ggsave(paste("~/data/output/figS2.jpg",sep=""),width = 20, height = 10)
+ggsave(paste("~/data/output/figS4.jpg",sep=""),width = 20, height = 10)
 
 #table S1 - global estimations and uncertainty evaluation
 #####Table S1
