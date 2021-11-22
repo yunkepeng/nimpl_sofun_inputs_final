@@ -323,6 +323,7 @@ tnpp_b <- summary(mod_tnpp)$coefficients[1,1] + summary(mod_tnpp)$coefficients[2
   summary(mod_tnpp)$coefficients[3,1] * log(age$myvar) + summary(mod_tnpp)$coefficients[4,1] * fAPAR$myvar
 #therefore, the uncertainty of npp / gpp (defined as a here) = uncertainty b * (deriative a / deriative b)
 mod_tnpp_uncertainty <- mod_tnpp_uncertainty *  exp(-tnpp_b) / ( (1 + exp(-tnpp_b)) ^2)
+mean(mod_tnpp_uncertainty,na.rm=TRUE) #0.07
 
 ## Uncertainty of ANPP/GPP
 mod_anpp_uncertainty <- summary(mod_anpp)$sigma
@@ -490,4 +491,5 @@ uncertainty_nue_f <- (npp_f/nuptake_f) * sqrt( (uncertainty_npp/npp_f)^2 +
                                    (uncertainty_nuptake/nuptake_f)^2)
 uncertainty_nue_g <- (npp_g/nuptake_g) * sqrt( (uncertainty_grass_npp/npp_g)^2 +
                                                  (uncertainty_grass_nuptake/nuptake_g)^2)
-sqrt(sum(uncertainty_nue_f*(forest_percent *conversion)*available_grid2,na.rm=TRUE)^2 + sum(uncertainty_nue_g*(grass_percent *conversion)*available_grid2,na.rm=TRUE)^2)
+
+mean(uncertainty_nue_f*forest_percent*available_grid2+uncertainty_nue_g*(1-forest_percent)*available_grid2,na.rm=TRUE)
