@@ -172,7 +172,7 @@ plot_grid(a1, a2,a3,
                      '(j)','(k)'),
           nrow=4,label_x = 0.8, label_y = 0.8)+white
 
-ggsave(paste("~/data/output/figsS2.jpg",sep=""), width = 14, height = 16)
+ggsave(paste("~/data/output/figsS1.jpg",sep=""), width = 14, height = 16)
 
 #now, prepare table 1
 ##1. For forst

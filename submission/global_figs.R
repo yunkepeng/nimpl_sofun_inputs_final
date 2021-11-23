@@ -435,7 +435,7 @@ b5 <- ggplot(data=all_maps, aes(x=CUE, y=NUE)) +
                                                                           axis.text = element_text(size = 15),
                                                                           legend.title = element_text(size = 14))+
   xlab("BPE")+ylab("NUE (gC/gN)")+labs(color= ~paste("N uptake", " (gN m"^-2,"yr"^-1,")"))
-summary(lm(all_maps$NUE~all_maps$CUE))+ white
+summary(lm(all_maps$NUE~all_maps$CUE))
 
 plot_grid(b1,b2,b3,b4,b5,
           labels = c('(a)',' ','(b)',' ','(c)'), 
@@ -555,7 +555,7 @@ plot_grid(d1,d2,d3,d4,d5,d6,
                      '(d)',' ','(e)',' ','(f)',' ',
                      '(g)',' ','(h)',' '),label_size = 15)+ white
 
-ggsave(paste("~/data/output/figS1.jpg",sep=""),width = 20, height = 10)
+ggsave(paste("~/data/output/figS2.jpg",sep=""),width = 20, height = 10)
 
 #now - moving to final part - environmental factors on CUE/NUE (Fig.4), CUE(Fig.S1) and NUE(Fig.S2)
 
