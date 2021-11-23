@@ -330,7 +330,7 @@ mod_anpp_uncertainty <- summary(mod_anpp)$sigma
 anpp_b <- summary(mod_anpp)$coefficients[1,1] + summary(mod_anpp)$coefficients[2,1] * log(CNrt$myvar)  +
   summary(mod_anpp)$coefficients[3,1] * log(age$myvar) + summary(mod_anpp)$coefficients[4,1] * fAPAR$myvar
 mod_anpp_uncertainty <- mod_anpp_uncertainty *  exp(-anpp_b) / ( (1 + exp(-anpp_b)) ^2)
-
+summary(mod_anpp_uncertainty)
 
 ## Uncertainty of LNPP/ANPP
 mod_lnpp_uncertainty <- summary(mod_lnpp)$sigma
@@ -339,11 +339,11 @@ lnpp_b <- summary(mod_lnpp)$coefficients[1,1] + summary(mod_lnpp)$coefficients[2
 mod_lnpp_uncertainty <- mod_lnpp_uncertainty *  exp(-lnpp_b) / ( (1 + exp(-lnpp_b)) ^2)
 
 #leaf n/c - ALREADY checked that inputted vcmax25_df + LMA calculated from (1) fortran and (2) R for predicting leaf n/c, could output the same prediction for leaf n/c Please note! using a.vcmax25.nc rather than annualvcmax25.nc. See difference in: https://www.notion.so/computationales/annualvcmax25-vs-a-vcmax25-282bddd63bba4d7b9cfcc75805b45964
-mod_leafnc_uncertainty <-summary(n1)$sigma
+mod_leafnc_uncertainty <-summary(n1)$sigma/0.46
 #now we need to calculate deriative a / deriative b, based on a = 1/(1+exp(-b)). After calculation it is: exp(-b) / ( (1 + exp(-b)) ^2)
-lnpp_b <- summary(n1)$coefficients[1,1]/0.46 + summary(n1)$coefficients[2,1]*(vcmax25_df$vcmax25/LMA$myvar)
+#lnpp_b <- summary(n1)$coefficients[1,1]/0.46 + summary(n1)$coefficients[2,1]*(vcmax25_df$vcmax25/LMA$myvar)
 #therefore, the uncertainty of npp / gpp (defined as a here) = uncertainty b * (deriative a / deriative b)
-mod_leafnc_uncertainty <- mod_leafnc_uncertainty *  exp(-lnpp_b) / ( (1 + exp(-lnpp_b)) ^2)
+#mod_leafnc_uncertainty <- mod_leafnc_uncertainty *  exp(-lnpp_b) / ( (1 + exp(-lnpp_b)) ^2)
 
 #NRE
 mod_nre_uncertainty <- summary(nre_model)$sigma
@@ -467,9 +467,6 @@ sum(uncertainty_grass_nuptake*(grass_percent *conversion)*available_grid2,na.rm=
 #uncertainty of two pfts (forest + grassland)
 # gpp
 uncertainty_gpp
-# npp/gpp
-sqrt(sum(mod_tnpp_uncertainty*(forest_percent *conversion)*available_grid2,na.rm=TRUE)^2 + 
-       sum(uncertainty_grass_npp_gpp*(grass_percent *conversion)*available_grid2,na.rm=TRUE)^2)
 # npp
 sqrt(sum(uncertainty_npp*(forest_percent *conversion)*available_grid2,na.rm=TRUE)^2 + sum(uncertainty_grass_npp*(grass_percent *conversion)*available_grid2,na.rm=TRUE)^2)
 # anpp/gpp
