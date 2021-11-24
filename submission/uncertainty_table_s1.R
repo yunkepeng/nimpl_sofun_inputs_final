@@ -311,7 +311,7 @@ uncertainty_gpp
 #this is uncertainty of gpp
 mean_gpp <- mean(obs_pred$pred,na.rm=TRUE)
 uncertainty_gpp/mean_gpp # 34%
-#therefore 124 * 0.34 = 42
+#therefore 124.3 * 0.3417392 = 42
 
 # Uncertainty of TNPP/GPP
 #using standard error method to calculate uncertainty of whole regression
