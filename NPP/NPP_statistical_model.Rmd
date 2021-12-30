@@ -31,6 +31,7 @@ library(lmerTest)
 library("PerformanceAnalytics")
 library(MuMIn)
 library(tidyverse)
+devtools::load_all("/Users/yunpeng/yunkepeng/rbeni/")
 
 #For how to collect them. see L1-714 of "/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/NPP/Forest_site_orig.R"
 NPP_Forest <- read.csv("/Users/yunpeng/data/NPP_final/NPP_Forest.csv")

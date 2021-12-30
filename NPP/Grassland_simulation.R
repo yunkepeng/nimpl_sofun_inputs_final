@@ -1,5 +1,7 @@
 #re-processing fapar; input sites firstly
 rm(list=ls())
+devtools::load_all("/Users/yunpeng/yunkepeng/rbeni/")
+
 library(dplyr)
 library(tidyverse)  # depends
 library(ncmeta)

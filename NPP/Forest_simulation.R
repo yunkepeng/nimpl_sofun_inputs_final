@@ -1,6 +1,7 @@
 rm(list=ls())
 
 #load(file = "/Users/yunpeng/data/NPP_final/Forest_site_simulation.Rdata")
+devtools::load_all("/Users/yunpeng/yunkepeng/rbeni/")
 
 devtools::load_all("/Users/yunpeng/yunkepeng/Grassland_new_ingestr_rsofun_20210326/rsofun/")
 library(dplyr)
