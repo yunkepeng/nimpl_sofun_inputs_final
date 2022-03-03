@@ -721,6 +721,8 @@ NPP_Forest$file[NPP_Forest$z!=NPP_old$z |
                   NPP_Forest$Begin_year!=NPP_old$Begin_year|
                   NPP_Forest$End_year!=NPP_old$End_year]
 
+NPP_Forest$rep_info[is.na(NPP_Forest$rep_info==TRUE)] <- ""
+
 csvfile <- paste("/Users/yunpeng/data/NPP_final/NPP_Forest.csv")
 write_csv(NPP_Forest, path = csvfile)
 

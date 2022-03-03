@@ -130,7 +130,7 @@ gwr_sites <- gwr_sites[,!(names(gwr_sites) %in% c("year_start","year_end"))]
 
 
 NPP_Forest_gwr <- merge(NPP_Forest,gwr_sites,by=c("lon","lat","z","Begin_year","End_year"),all.x=TRUE)
-NPP_statistical <- subset(NPP_Forest_gwr,rep_info!="rep" &rep_info!="rep2")
+NPP_statistical <- subset(NPP_Forest_gwr,rep_info!="rep" &rep_info!="rep2"&file!="NPP_Schulze")
 
 NPP_statistical$age[NPP_statistical$age==999] <- NA
 hist(NPP_statistical$age)

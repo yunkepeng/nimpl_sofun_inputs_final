@@ -29,6 +29,9 @@ library(cowplot)
 
 #For how to collect them. see L1-714 of "/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/NPP/Forest_site_orig.R" - sitename and sitename_fapar already been well checked
 NPP_Forest <- read.csv("/Users/yunpeng/data/NPP_final/NPP_Forest.csv")
+NPP_Forest$obs_age <-NPP_Forest$age
+NPP_Forest$age <- NA
+
 NPP_Forest$year_start <-NPP_Forest$Begin_year
 NPP_Forest$year_end <-NPP_Forest$End_year
 
