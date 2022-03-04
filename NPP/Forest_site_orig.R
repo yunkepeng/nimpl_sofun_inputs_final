@@ -683,6 +683,7 @@ dim(NPP_Forest)
 NPP_Forest <- NPP_Forest[order(NPP_Forest$site,NPP_Forest$lon,NPP_Forest$lat,NPP_Forest$ANPP_2,NPP_Forest$NPP.foliage,NPP_Forest$Begin_year,NPP_Forest$End_year), ]
 
 #read old one 
+#think about a better code to merge with forcing data from here: /Users/yunpeng/data/NPP_final/fpar_name/forest_fpar_name.csv
 NPP_old <- read.csv("/Users/yunpeng/data/forest_npp/NPP_Forest_corrected_Malhi_coord.csv")
 NPP_old <- subset(NPP_old,file!="Sara Vicca_stand level")
 #NPP_old <- NPP_old[,c("lon","lat","z","Begin_year","End_year","sitename","sitename_fpar")]
@@ -728,6 +729,7 @@ write_csv(NPP_Forest, path = csvfile)
 
 ### Grassland: collect unchanged climate forcing data, based on same lon+lat+z+Begin_year+End_year, 
 #old
+##think about a better code to merge with forcing data just from here: /Users/yunpeng/data/NPP_final/fpar_name/forest_fpar_name.csv
 NPP_grassland  <- read.csv("/Users/yunpeng/data/grassland_npp/NPP_grassland.csv")
 #create an old_no to make sure it can be best ordered
 NPP_grassland$old_no <- c(1:nrow(NPP_grassland))
