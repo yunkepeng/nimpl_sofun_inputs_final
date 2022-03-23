@@ -11,6 +11,8 @@ library(dplyr)
 library(gplots)
 library(tidyselect)
 library(extrafont)
+library(caret)
+library(recipes)
 devtools::load_all("/Users/yunpeng/yunkepeng/rbeni/")
 #library(rbeni)
 library(raster)
@@ -19,18 +21,368 @@ library(rworldmap)
 library(cowplot)
 library(ncdf4)
 library(scales)
-NPP_statistical <- read.csv("~/data/NPP_final/NPP_validation.csv")
+library(lme4)
+library(lmerTest)
+library("PerformanceAnalytics")
+library(MuMIn)
+library(tidyverse)
+library(ggplot2)
+library(lme4)
+library(visreg)
+rm(list=ls())
+#stepwise function, where site_a is a random factor
+stepwise <- function(df_input,target_var){
+  #-----------------------------------------------------------------------
+  # Input:  whole dataframe and target variable
+  #assume that site_a is the only random factor
+  #-----------------------------------------------------------------------
+  target <- target_var
+  df <- df_input
+  
+  preds <- df %>% dplyr::select(-c(target,site_a)) %>% 
+    names()
+  
+  r_list <- c()
+  #For loop functions, include all predictor's r2 at the end
+  for (var in preds){
+    forml <- paste( 'lmer(', target, '~', var, '+(1|site_a), data = df)')
+    fit_lin <- eval(parse(text = forml)) 
+    rsq <- r.squaredGLMM(fit_lin)[1]
+    r_list <- c(r_list,rsq)
+  }
+  
+  #convert to a dataframe, including all r2
+  All_rsquare <- data.frame (
+    preds = factor(preds,levels=preds), 
+    rsq = r_list)
+  
+  #select max r2 in all predictors
+  max(r_list)
+  
+  new_All_rsquare <- All_rsquare %>% 
+    # desc orders from largest to smallest
+    arrange(desc(rsq))
+  
+  #2. stepwise regression selection
+  
+  ## list
+  list_aic <- list()
+  list_bic <- list()
+  list_R <- list()
+  list_variable <- list()
+  
+  # predictors retained in the model firstly
+  preds_retained <- as.character(new_All_rsquare[1,1])
+  preds_candidate <- preds[-which(preds == preds_retained)] 
+  
+  
+  for (a in 1:(length(preds)-1)){
+    rsq_candidates <- c()
+    linmod_candidates <- list()
+    for (i in 1:length(preds_candidate)){
+      pred_add <- c(preds_retained, preds_candidate[i])
+      forml  <- paste( 'lmer(', target, '~', paste(pred_add, collapse = '+'), '+(1|site_a), data = df)')
+      # create a function and make its format available to output in for loop
+      fit_lin <- eval(parse(text = forml))
+      linmod_candidates[[ i ]] <- fit_lin
+      # obtain multiple r2 at each selection, and find the best one at the end
+      rsq <- r.squaredGLMM(fit_lin)[1]
+      rsq_candidates[i] <- rsq
+    }
+    pred_max <- preds_candidate[ which.max(rsq_candidates) ]
+    # include best factors in retained factor
+    preds_retained <- c(preds_retained, pred_max)
+    list_variable[[a]] <- pred_max 
+    # include AIC, BIC, adjusted R2, R2, cross-validated R2 and RMSE at each k 
+    list_aic[[  a ]] <- AIC(eval(parse(text = paste( 'lmer(', target, '~', paste(preds_retained, collapse = '+'),  '+(1|site_a), data = df)'))))
+    
+    list_bic[[ a ]] <- BIC(eval(parse(text = paste( 'lmer(', target, '~', paste(preds_retained, collapse = '+'),  '+(1|site_a), data = df)'))))
+    
+    list_R[[ a ]] <- r.squaredGLMM(eval(parse(text = paste( 'lmer(', target, '~', paste(preds_retained, collapse = '+'),  '+(1|site_a), data = df)'))))[1]
+    preds_candidate <- preds_candidate[-which(preds_candidate == pred_max)]
+  }
+  
+  
+  R_null <- r.squaredGLMM(eval(parse(text = paste( 'lmer(', target, '~', paste(preds_retained[1], collapse = '+'),  '+(1|site_a), data = df)'))))[1]
+  AIC_null <- AIC(eval(parse(text = paste( 'lmer(', target, '~', paste(preds_retained[1], collapse = '+'),  '+(1|site_a), data = df)'))))
+  BIC_null <- BIC(eval(parse(text = paste( 'lmer(', target, '~', paste(preds_retained[1], collapse = '+'),  '+(1|site_a), data = df)'))))
+  variable_null <- preds_retained[1]
+  
+  R_all <- round(as.numeric(c(R_null,list_R)),2)
+  AIC_all <- round(as.numeric(c(AIC_null,list_aic)),2)
+  BIC_all <- round(as.numeric(c(BIC_null,list_bic)),2)
+  variable_all <- (as.character(c(variable_null,list_variable)))
+  
+  df1 <- as.data.frame(cbind(variable_all,R_all,AIC_all,BIC_all))
+  
+  #Adjusted-R
+  p1 <- ggplot() + 
+    geom_point(data = df1, aes(x = factor(variable_all,level = variable_all), y = R_all)) 
+  #AIC
+  p2 <- ggplot() + 
+    geom_point(data = df1, aes(x = factor(variable_all,level = variable_all), y = AIC_all)) 
+  #BIC
+  p3 <- ggplot() + 
+    geom_point(data = df1, aes(x = factor(variable_all,level = variable_all), y = BIC_all))
+  
+  output_list <- list(p1,p2,p3)
+  
+  return(output_list)
+  #-----------------------------------------------------------------------
+  # Output: four figures 
+  #-----------------------------------------------------------------------
+}
+
+#stepwise lm
+stepwise_lm <- function(df_input,target_var){
+  #-----------------------------------------------------------------------
+  # Input:  whole dataframe and target variable
+  #-----------------------------------------------------------------------
+  target <- target_var
+  df <- df_input
+  
+  preds <- df %>% dplyr::select(-c(target)) %>% 
+    names()
+  
+  r_list <- c()
+  #For loop functions, include all predictor's r2 at the end
+  for (var in preds){
+    forml <- paste( 'lm(', target, '~', var, ', data = df)')
+    fit_lin <- eval(parse(text = forml)) 
+    rsq <- r.squaredGLMM(fit_lin)[1]
+    r_list <- c(r_list,rsq)
+  }
+  
+  #convert to a dataframe, including all r2
+  All_rsquare <- data.frame (
+    preds = factor(preds,levels=preds), 
+    rsq = r_list)
+  
+  #select max r2 in all predictors
+  max(r_list)
+  
+  new_All_rsquare <- All_rsquare %>% 
+    # desc orders from largest to smallest
+    arrange(desc(rsq))
+  
+  #2. stepwise regression selection
+  
+  ## list
+  list_aic <- list()
+  list_bic <- list()
+  list_R <- list()
+  list_variable <- list()
+  
+  # predictors retained in the model firstly
+  preds_retained <- as.character(new_All_rsquare[1,1])
+  preds_candidate <- preds[-which(preds == preds_retained)] 
+  
+  
+  for (a in 1:(length(preds)-1)){
+    rsq_candidates <- c()
+    linmod_candidates <- list()
+    for (i in 1:length(preds_candidate)){
+      pred_add <- c(preds_retained, preds_candidate[i])
+      forml  <- paste( 'lm(', target, '~', paste(pred_add, collapse = '+'), ', data = df)')
+      # create a function and make its format available to output in for loop
+      fit_lin <- eval(parse(text = forml))
+      linmod_candidates[[ i ]] <- fit_lin
+      # obtain multiple r2 at each selection, and find the best one at the end
+      rsq <- r.squaredGLMM(fit_lin)[1]
+      rsq_candidates[i] <- rsq
+    }
+    pred_max <- preds_candidate[ which.max(rsq_candidates) ]
+    # include best factors in retained factor
+    preds_retained <- c(preds_retained, pred_max)
+    list_variable[[a]] <- pred_max 
+    # include AIC, BIC, adjusted R2, R2, cross-validated R2 and RMSE at each k 
+    list_aic[[  a ]] <- AIC(eval(parse(text = paste( 'lm(', target, '~', paste(preds_retained, collapse = '+'),  ', data = df)'))))
+    
+    list_bic[[ a ]] <- BIC(eval(parse(text = paste( 'lm(', target, '~', paste(preds_retained, collapse = '+'),  ', data = df)'))))
+    
+    list_R[[ a ]] <- r.squaredGLMM(eval(parse(text = paste( 'lm(', target, '~', paste(preds_retained, collapse = '+'),  ', data = df)'))))[1]
+    preds_candidate <- preds_candidate[-which(preds_candidate == pred_max)]
+  }
+  
+  
+  R_null <- r.squaredGLMM(eval(parse(text = paste( 'lm(', target, '~', paste(preds_retained[1], collapse = '+'),  ', data = df)'))))[1]
+  AIC_null <- AIC(eval(parse(text = paste( 'lm(', target, '~', paste(preds_retained[1], collapse = '+'),  ', data = df)'))))
+  BIC_null <- BIC(eval(parse(text = paste( 'lm(', target, '~', paste(preds_retained[1], collapse = '+'),  ', data = df)'))))
+  variable_null <- preds_retained[1]
+  
+  R_all <- round(as.numeric(c(R_null,list_R)),2)
+  AIC_all <- round(as.numeric(c(AIC_null,list_aic)),2)
+  BIC_all <- round(as.numeric(c(BIC_null,list_bic)),2)
+  variable_all <- (as.character(c(variable_null,list_variable)))
+  
+  df1 <- as.data.frame(cbind(variable_all,R_all,AIC_all,BIC_all))
+  
+  #Adjusted-R
+  p1 <- ggplot() + 
+    geom_point(data = df1, aes(x = factor(variable_all,level = variable_all), y = R_all)) 
+  #AIC
+  p2 <- ggplot() + 
+    geom_point(data = df1, aes(x = factor(variable_all,level = variable_all), y = AIC_all)) 
+  #BIC
+  p3 <- ggplot() + 
+    geom_point(data = df1, aes(x = factor(variable_all,level = variable_all), y = BIC_all))
+  
+  output_list <- list(p1,p2,p3)
+  
+  return(output_list)
+  #-----------------------------------------------------------------------
+  # Output: four figures 
+  #-----------------------------------------------------------------------
+}
+#1. trendy model output
+
+
+#model output
+#CABLE-POP
+CABLE_GPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/CABLE-POP_S2_gpp_ANN_mean.nc"), varnam = "gpp"))
+CABLE_NPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/CABLE-POP_S2_npp_ANN_mean.nc"), varnam = "npp"))
+
+#CABLE-POP
+CLASS_GPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/CLASS-CTEM_S2_gpp_ANN_mean.nc"), varnam = "gpp"))
+CLASS_NPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/CLASS-CTEM_S2_npp_ANN_mean.nc"), varnam = "npp"))
+
+#CLM
+#CLM_fNup <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/CLM5.0_S2_fNup_ANN_mean.nc"), varnam = "fNup")) 
+#this product is confusing (1) unit needs /1000 to get gn/m2/year? (2)still many values very high
+CLM_GPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/CLM5.0_S2_gpp_ANN_mean.nc"), varnam = "gpp"))
+CLM_GPP$lon[CLM_GPP$lon>180] <- CLM_GPP$lon[CLM_GPP$lon>180]-360
+CLM_NPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/CLM5.0_S2_npp_ANN_mean.nc"), varnam = "npp"))
+CLM_NPP$lon[CLM_NPP$lon>180] <- CLM_NPP$lon[CLM_NPP$lon>180]-360
+
+#ISAM
+#(given in kgC m-2 month-1 - they might not need to multiply with 12
+#cdo seltimestep,127/156 ISAM_S2_fNup.nc a1.nc
+#cdo -O timmean a1.nc ISAM_S2_fNup_ANN_mean.nc
+
+ISAM_fNup <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/ISAM_S2_fNup_ANN_mean.nc"), varnam = "fNup"))
+ISAM_fNup$myvar<- ISAM_fNup$myvar*1000*31556952
+
+ISAM_gpp <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/ISAM_S2_gpp_ANN_mean.nc"), varnam = "gpp"))
+ISAM_gpp$myvar<- ISAM_gpp$myvar*1000*31556952
+
+ISAM_npp <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/ISAM_S2_npp_ANN_mean.nc"), varnam = "npp"))
+ISAM_npp$myvar<- ISAM_npp$myvar*1000*31556952
+
+#ISBA
+ncin <- nc_open("/Users/yunpeng/data/trendy/v8/ISBA-CTRIP_S2_gpp_ANN_mean.nc")
+lon <- ncvar_get(ncin,"lon_FULL");nlon <- dim(lon) 
+lat <- ncvar_get(ncin,"lat_FULL");nlat <- dim(lat) 
+ISBA_GPP <- ncvar_get(ncin,"gpp")
+nc_close(ncin)
+ISBA_GPP <- as.vector(ISBA_GPP)
+lonlat <- expand.grid(lon,lat)
+ISBA_GPP <- as.data.frame(cbind(lonlat,ISBA_GPP))
+names(ISBA_GPP) <- c("lon","lat","GPP")
+
+ncin <- nc_open("/Users/yunpeng/data/trendy/v8/ISBA-CTRIP_S2_npp_ANN_mean.nc")
+ISBA_NPP <- ncvar_get(ncin,"npp")
+nc_close(ncin)
+ISBA_NPP <- as.vector(ISBA_NPP)
+ISBA_NPP <- as.data.frame(cbind(lonlat,ISBA_NPP))
+names(ISBA_NPP) <- c("lon","lat","NPP")
+
+#JSBACH
+JSBACH_fNup <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/JSBACH_S2_fNup_ANN_mean.nc"), varnam = "fNup"))
+JSBACH_GPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/JSBACH_S2_gpp_ANN_mean.nc"), varnam = "gpp"))
+JSBACH_NPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/JSBACH_S2_npp_ANN_mean.nc"), varnam = "npp"))
+plot_map3(na.omit(JSBACH_fNup[,c("lon","lat","myvar")]),varnam = "myvar",latmin = -65, latmax = 85)
+
+#JULES
+# data from output/JULES-ES-1.0/JULES-ES.1p0.vn5.4.50.CRUJRA2.TRENDYv8.365.S2_Monthly_npp.nc
+JULES_GPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/jule_gpp.nc"), varnam = "gpp"))
+JULES_GPP$lon[JULES_GPP$lon>180] <- JULES_GPP$lon[JULES_GPP$lon>180]-360
+JULES_NPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/jule_npp.nc"), varnam = "npp"))
+JULES_NPP$lon[JULES_NPP$lon>180] <- JULES_NPP$lon[JULES_NPP$lon>180]-360
+#looks ok 
+plot_map3(na.omit(JULES_GPP[,c("lon","lat","myvar")]),varnam = "myvar",latmin = -65, latmax = 85)
+
+#LPJ
+LPJ_GPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/LPJ-GUESS_S2_gpp_ANN_mean.nc"), varnam = "gpp"))
+LPJ_NPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/LPJ-GUESS_S2_npp_ANN_mean.nc"), varnam = "npp"))
+
+#ORCHIDEE
+ORCHIDEE_GPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/ORCHIDEE_S2_gpp_ANN_mean.nc"), varnam = "gpp"))
+ORCHIDEE_NPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/ORCHIDEE_S2_npp_ANN_mean.nc"), varnam = "npp"))
+
+#ORCHIDEE-CNP
+nc_flip_lat <- function(nc){
+  
+  nc$lat <- rev(nc$lat)
+  
+  # nlat <- length(nc$lat)
+  # nc$vars[[1]] <- nc$vars[[1]][,nlat:1]
+  
+  arr_flip_lat <- function(arr){
+    nlat <- dim(arr)[2]
+    arr <- arr[,nlat:1]
+    return(arr)
+  }
+  nc$vars <- purrr::map(nc$vars[1], ~arr_flip_lat(.))
+  
+  return(nc)
+}
+ORCHICNP_fNup <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/ORCHIDEE-CNP_S2_fNup_ANN_mean.nc"), varnam = "fNup"))
+ORCHICNP_GPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/ORCHIDEE-CNP_S2_gpp_ANN_mean.nc"), varnam = "gpp"))
+ORCHICNP_NPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/ORCHIDEE-CNP_S2_npp_ANN_mean.nc"), varnam = "npp"))
+
+#SDGVM
+SDGVM_GPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/SDGVM_S2_gpp_ANN_mean.nc"), varnam = "gpp"))
+SDGVM_NPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/SDGVM_S2_npp_ANN_mean.nc"), varnam = "npp"))
+
+#all_maps
+not_used <- list(CLASS_GPP,CLASS_NPP,CLM_GPP,CLM_NPP,JSBACH_fNup,JSBACH_GPP,JSBACH_NPP)
+allmaps<- list(CABLE_GPP,CABLE_NPP,ISAM_fNup,ISAM_gpp,ISAM_npp,ISBA_GPP,ISBA_NPP,
+               JULES_GPP,JULES_NPP,LPJ_GPP,LPJ_NPP,ORCHIDEE_GPP,ORCHIDEE_NPP,
+               ORCHICNP_fNup,ORCHICNP_GPP,ORCHICNP_NPP,SDGVM_GPP,SDGVM_NPP)
+obj_name <- c("CABLE_GPP","CABLE_NPP","ISAM_fNup","ISAM_gpp","ISAM_npp","ISBA_GPP","ISBA_NPP",
+              "JULES_GPP","JULES_NPP","LPJ_GPP","LPJ_NPP","ORCHIDEE_GPP","ORCHIDEE_NPP",
+              "ORCHICNP_fNup","ORCHICNP_GPP","ORCHICNP_NPP","SDGVM_GPP","SDGVM_NPP")
+#aggregate based on lon and lat firstly
+sitemean <- unique(read.csv("~/data/NPP_final/NPP_validation.csv")[,c("lon","lat")])
+sp_sites <- SpatialPoints(sitemean) # only select lon and lat
+
+sitemean_final <- unique(read.csv("~/data/NPP_final/NPP_validation.csv")[,c("lon","lat")])
+
+for (i in c(1:length(allmaps))){
+  df1 <- allmaps[[i]]
+  names(df1) <- c("lon","lat",obj_name[i])
+  coordinates(df1) <- ~lon+lat 
+  gridded(df1) <- TRUE
+  df1_global <- raster(df1, obj_name[i]) 
+  
+  sp_sites_new <- raster::extract(df1_global, sp_sites, sp = TRUE) %>% as_tibble() %>% 
+    right_join(sitemean, by = c("lon", "lat"))
+  sitemean_final[,i+2] <- sp_sites_new[,1]
+}
+
+#
+summary(sitemean_final) #convert 0 to NA
+sitemean_final$CABLE_NPP[sitemean_final$CABLE_NPP==0] <- NA
+sitemean_final$ISAM_fNup[sitemean_final$ISAM_fNup==0] <- NA
+sitemean_final$ISAM_gpp[sitemean_final$ISAM_gpp==0] <- NA
+sitemean_final$ISAM_npp[sitemean_final$ISAM_npp==0] <- NA
+sitemean_final$JULES_GPP[sitemean_final$JULES_GPP==0] <- NA
+sitemean_final$JULES_NPP[sitemean_final$JULES_NPP==0] <- NA
+summary(sitemean_final) 
+
+validation <- read.csv("~/data/NPP_final/NPP_validation.csv")
+NPP_statistical <- merge(validation,sitemean_final,by=c("lon","lat"),all.x=TRUE)
+
 NPP_statistical$obs_age[NPP_statistical$obs_age==999] <- NA
-NPP_statistical <- subset(NPP_statistical,TNPP_1>0)
 
 NPP_statistical$tnpp_a <- NPP_statistical$TNPP_1
 
 NPP_statistical$soilCN_a <- log(NPP_statistical$soilCN)
 NPP_statistical$observedfAPAR_a <- NPP_statistical$observedfAPAR
-NPP_statistical$obs_age_a <- NPP_statistical$obs_age
+NPP_statistical$obs_age_a <- log(NPP_statistical$obs_age)
 
 NPP_statistical$age_a <- log(NPP_statistical$age)
-NPP_statistical$alpha_a <- log(NPP_statistical$alpha)
+NPP_statistical$alpha_a <- (NPP_statistical$alpha)
 NPP_statistical$Tg_a <- NPP_statistical$Tg
 NPP_statistical$PPFD_a <- log(NPP_statistical$PPFD)
 NPP_statistical$vpd_a <- log(NPP_statistical$vpd)
@@ -40,143 +392,205 @@ NPP_statistical$LMA_a <- log(NPP_statistical$LMA)
 NPP_statistical$vcmax25_a <- log(NPP_statistical$max_vcmax25_c3)
 NPP_statistical$site_a <- NPP_statistical$site
 
-#if all -->suggesting npp ~ vcmax25 only is best
-NPP_statistical_large <- NPP_statistical[,c("tnpp_a","age_a","alpha_a","Tg_a","PPFD_a","vpd_a","fAPAR_a",
-                                            "CNrt_a","LMA_a","site_a")]
+#two dataset
+#1. large - all mapping data
+NPP_statistical_large <- na.omit(NPP_statistical[,c("tnpp_a","age_a","alpha_a","Tg_a","PPFD_a","vpd_a","fAPAR_a","CNrt_a","site_a")])
 
-NPP_statistical_middle <- NPP_statistical[,c("tnpp_a","alpha_a","Tg_a","PPFD_a","vpd_a",
-                                            "LMA_a","site_a")]
-
-NPP_statistical_small <- NPP_statistical[,c("tnpp_a","alpha_a","Tg_a","PPFD_a","vpd_a",
-                                             "LMA_a","site_a","soilCN_a","observedfAPAR_a","obs_age_a")]
-
-NPP_statistical_final <- na.omit(NPP_statistical_small)
+#2. small - observed data
+NPP_statistical_small <- na.omit(NPP_statistical[,c("tnpp_a","alpha_a","Tg_a","PPFD_a","vpd_a","site_a","soilCN_a","observedfAPAR_a","obs_age_a")])
 
 # r2 =0.44 at large dataset 
+a1<- stepwise(NPP_statistical_large,"tnpp_a")
+a1[[1]]
 summary(lmer(tnpp_a~Tg_a+fAPAR_a+age_a+CNrt_a+PPFD_a+(1|site_a),data=NPP_statistical_large))
-
-# r2 =0.34 at middle 
-summary(lmer(tnpp_a~PPFD_a+Tg_a+(1|site_a),data=NPP_statistical_middle))
+r.squaredGLMM(lmer(tnpp_a~Tg_a+fAPAR_a+age_a+CNrt_a+PPFD_a+(1|site_a),data=NPP_statistical_large))
 
 # r2 =0.69 at small 
-summary(lmer(tnpp_a~Tg_a+observedfAPAR_a+LMA_a+alpha_a+PPFD_a+obs_age_a+soilCN_a+(1|site_a),data=NPP_statistical_small))
+a3<- stepwise(NPP_statistical_small,"tnpp_a")
+a3[[1]]
+summary(lmer(tnpp_a~Tg_a+observedfAPAR_a+obs_age_a+PPFD_a+alpha_a+soilCN_a+(1|site_a),data=NPP_statistical_small))
+r.squaredGLMM(lmer(tnpp_a~Tg_a+observedfAPAR_a+obs_age_a+PPFD_a+alpha_a+soilCN_a+(1|site_a),data=NPP_statistical_small))
+
+####1. Large dataset
+#trendy's larger dataset - using lm! Because response BNPP are at site-level. It also has higher R2
+#Large dataset age_a,alpha_a,Tg_a,PPFD_a,vpd_a,fAPAR_a,CNrt_a
+d1 <- na.omit(NPP_statistical[,c("lon","lat","CABLE_NPP","age_a","alpha_a","Tg_a","PPFD_a","vpd_a","fAPAR_a","CNrt_a","site_a")])
+d1<- aggregate(d1,by=list(d1$lon,d1$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
+t1 <- stepwise_lm(d1,"CABLE_NPP")
+t1[[1]]
+summary(lm(CABLE_NPP~fAPAR_a+age_a+Tg_a+alpha_a+CNrt_a+PPFD_a,data=d1))
+
+d2 <- na.omit(NPP_statistical[,c("lon","lat","ISAM_npp","age_a","alpha_a","Tg_a","PPFD_a","vpd_a","fAPAR_a","CNrt_a","site_a")])
+d2<- aggregate(d2,by=list(d2$lon,d2$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
+t2 <- stepwise_lm(d2,"ISAM_npp")
+t2[[1]]
+summary(lm(ISAM_npp~fAPAR_a+Tg_a+CNrt_a+PPFD_a,data=d2))
+
+d3 <- na.omit(NPP_statistical[,c("lon","lat","ISBA_NPP","age_a","alpha_a","Tg_a","PPFD_a","vpd_a","fAPAR_a","CNrt_a","site_a")])
+d3<- aggregate(d3,by=list(d3$lon,d3$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
+t3 <- stepwise_lm(d3,"ISBA_NPP")
+t3[[1]]
+summary(lm(ISBA_NPP~fAPAR_a+age_a+alpha_a+Tg_a+CNrt_a,data=d3))
+
+d4 <- na.omit(NPP_statistical[,c("lon","lat","JULES_NPP","age_a","alpha_a","Tg_a","PPFD_a","vpd_a","fAPAR_a","CNrt_a","site_a")])
+d4<- aggregate(d4,by=list(d4$lon,d4$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
+t4 <- stepwise_lm(d4,"JULES_NPP")
+t4[[1]]
+summary(lm(JULES_NPP~fAPAR_a+age_a+CNrt_a+Tg_a,data=d4))
+
+d5 <- na.omit(NPP_statistical[,c("lon","lat","LPJ_NPP","age_a","alpha_a","Tg_a","PPFD_a","vpd_a","fAPAR_a","CNrt_a","site_a")])
+d5<- aggregate(d5,by=list(d5$lon,d5$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
+t5 <- stepwise_lm(d5,"LPJ_NPP")
+t5[[1]]
+summary(lm(LPJ_NPP~fAPAR_a+age_a+Tg_a,data=d5))
+
+d6 <- na.omit(NPP_statistical[,c("lon","lat","ORCHIDEE_NPP","age_a","alpha_a","Tg_a","PPFD_a","vpd_a","fAPAR_a","CNrt_a","site_a")])
+d6<- aggregate(d6,by=list(d6$lon,d6$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
+t6 <- stepwise_lm(d6,"ORCHIDEE_NPP")
+t6[[2]]
+summary(lm(ORCHIDEE_NPP~fAPAR_a+age_a+alpha_a+Tg_a,data=d6))
+
+d7 <- na.omit(NPP_statistical[,c("lon","lat","ORCHICNP_NPP","age_a","alpha_a","Tg_a","PPFD_a","vpd_a","fAPAR_a","CNrt_a","site_a")])
+d7<- aggregate(d7,by=list(d7$lon,d7$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
+t7 <- stepwise_lm(d7,"ORCHICNP_NPP")
+t7[[1]]
+summary(lm(ORCHICNP_NPP~fAPAR_a+Tg_a+vpd_a,data=d7))
+
+d8 <- na.omit(NPP_statistical[,c("lon","lat","SDGVM_NPP","age_a","alpha_a","Tg_a","PPFD_a","vpd_a","fAPAR_a","CNrt_a","site_a")])
+d8<- aggregate(d8,by=list(d8$lon,d8$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
+t8 <- stepwise_lm(d8,"SDGVM_NPP")
+t8[[2]]
+summary(lm(SDGVM_NPP~Tg_a+alpha_a+CNrt_a+PPFD_a+age_a+fAPAR_a,data=d8))
+
+####2. Small dataset
+d1a <- na.omit(NPP_statistical[,c("lon","lat","CABLE_NPP","alpha_a","Tg_a","PPFD_a","vpd_a","site_a","soilCN_a","observedfAPAR_a","obs_age_a")])
+d1a<- aggregate(d1a,by=list(d1a$lon,d1a$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
+t1a <- stepwise_lm(d1a,"CABLE_NPP")
+t1a[[2]]
+summary(lm(CABLE_NPP~soilCN_a+Tg_a+PPFD_a,data=d1a))
+
+d2a <- na.omit(NPP_statistical[,c("lon","lat","ISAM_npp","alpha_a","Tg_a","PPFD_a","vpd_a","site_a","soilCN_a","observedfAPAR_a","obs_age_a")])
+d2a<- aggregate(d2a,by=list(d2a$lon,d2a$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
+t2a <- stepwise_lm(d2a,"ISAM_npp")
+t2a[[2]]
+summary(lm(ISAM_npp~Tg_a+PPFD_a+observedfAPAR_a,data=d2a))
+
+d3a <- na.omit(NPP_statistical[,c("lon","lat","ISBA_NPP","alpha_a","Tg_a","PPFD_a","vpd_a","site_a","soilCN_a","observedfAPAR_a","obs_age_a")])
+d3a<- aggregate(d3a,by=list(d3a$lon,d3a$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
+t3a <- stepwise_lm(d3a,"ISBA_NPP")
+t3a[[2]]
+summary(lm(ISBA_NPP~Tg_a+alpha_a+observedfAPAR_a,data=d3a))
+
+d4a <- na.omit(NPP_statistical[,c("lon","lat","JULES_NPP","alpha_a","Tg_a","PPFD_a","vpd_a","site_a","soilCN_a","observedfAPAR_a","obs_age_a")])
+d4a <- aggregate(d4a,by=list(d4a$lon,d4a$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
+t4a <- stepwise_lm(d4a,"JULES_NPP")
+t4a[[2]]
+summary(lm(JULES_NPP~Tg_a+observedfAPAR_a+soilCN_a,data=d4a))
+
+d5a <- na.omit(NPP_statistical[,c("lon","lat","LPJ_NPP","alpha_a","Tg_a","PPFD_a","vpd_a","site_a","soilCN_a","observedfAPAR_a","obs_age_a")])
+d5a <- aggregate(d5a,by=list(d5a$lon,d5a$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
+t5a <- stepwise_lm(d5a,"LPJ_NPP")
+t5a[[2]]
+summary(lm(LPJ_NPP~Tg_a+vpd_a+soilCN_a,data=d5a))
+
+d6a <- na.omit(NPP_statistical[,c("lon","lat","ORCHIDEE_NPP","alpha_a","Tg_a","PPFD_a","vpd_a","site_a","soilCN_a","observedfAPAR_a","obs_age_a")])
+d6a<- aggregate(d6a,by=list(d6a$lon,d6a$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
+t6a <- stepwise_lm(d6a,"ORCHIDEE_NPP")
+t6a[[2]]
+summary(lm(ORCHIDEE_NPP~Tg_a+PPFD_a+observedfAPAR_a+vpd_a,data=d6a))
+
+d7a <- na.omit(NPP_statistical[,c("lon","lat","ORCHICNP_NPP","alpha_a","Tg_a","PPFD_a","vpd_a","site_a","soilCN_a","observedfAPAR_a","obs_age_a")])
+d7a <- aggregate(d7a,by=list(d7a$lon,d7a$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
+t7a <- stepwise_lm(d7a,"ORCHICNP_NPP")
+t7a[[2]]
+summary(lm(ORCHICNP_NPP~PPFD_a+observedfAPAR_a+alpha_a+Tg_a+soilCN_a,data=d7a))
+
+d8a <- na.omit(NPP_statistical[,c("lon","lat","SDGVM_NPP","alpha_a","Tg_a","PPFD_a","vpd_a","site_a","soilCN_a","observedfAPAR_a","obs_age_a")])
+d8a <- aggregate(d8a,by=list(d8a$lon,d8a$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
+t8a <- stepwise_lm(d8a,"SDGVM_NPP")
+t8a[[2]]
+summary(lm(SDGVM_NPP~Tg_a+PPFD_a+vpd_a,data=d8a))
+
+#1st additional figure - fig6
+#model 1 - bp fitted by mapped predictors]
+white <- theme(plot.background=element_rect(fill="white", color="white"))
+
+mod_bp1 <- (lmer(tnpp_a~Tg_a+fAPAR_a+age_a+CNrt_a+PPFD_a+(1|site_a),data=NPP_statistical_large))
+f1 <- ~{p1a <- visreg(mod_bp1,"Tg_a",type="contrast");plot(p1a,ylab="BP(map.)",xlab="Tg", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+f2 <- ~{p1a <- visreg(mod_bp1,"fAPAR_a",type="contrast");plot(p1a,ylab=" ",xlab="fAPAR", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+f3 <- ~{p1a <- visreg(mod_bp1,"age_a",type="contrast");plot(p1a,ylab=" ",xlab="ln Age", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+f4 <- ~{p1a <- visreg(mod_bp1,"CNrt_a",type="contrast");plot(p1a,ylab=" ",xlab="ln soil C/N", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+f5 <- ~{p1a <- visreg(mod_bp1,"PPFD_a",type="contrast");plot(p1a,ylab=" ",xlab="ln PPFD", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+r.squaredGLMM(mod_bp1)
+
+#2nd additional figure - fig6
+#model 2 - bp fitted measured predcitors
+mod_bp2 <- (lmer(tnpp_a~Tg_a+observedfAPAR_a+obs_age_a+PPFD_a+alpha_a+soilCN_a+(1|site_a),data=NPP_statistical_small))
+f1a <- ~{p1a <- visreg(mod_bp2,"Tg_a",type="contrast");plot(p1a,ylab="BP(obs.)",xlab="Tg", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+f2a <- ~{p1a <- visreg(mod_bp2,"observedfAPAR_a",type="contrast");plot(p1a,ylab=" ",xlab="fAPAR", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+f3a <- ~{p1a <- visreg(mod_bp2,"obs_age_a",type="contrast");plot(p1a,ylab=" ",xlab="ln Age", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+f4a <- ~{p1a <- visreg(mod_bp2,"soilCN_a",type="contrast");plot(p1a,ylab=" ",xlab="ln soil C/N", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+f5a <- ~{p1a <- visreg(mod_bp2,"PPFD_a",type="contrast");plot(p1a,ylab=" ",xlab="ln PPFD", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+f6a <- ~{p1a <- visreg(mod_bp2,"alpha_a",type="contrast");plot(p1a,ylab=" ",xlab="alpha", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+r.squaredGLMM(mod_bp2)
+
+#3rd additional figure - fig
+#model 3 - trendy BP fitted by mapped predictors
+mod_bp3 <- (lm(ISBA_NPP~fAPAR_a+age_a+alpha_a+Tg_a+CNrt_a,data=d3))
+f1b <- ~{p1a <- visreg(mod_bp3,"Tg_a",type="contrast");plot(p1a,ylab="TRENDY-BP (map.)",xlab="Tg", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+f2b <- ~{p1a <- visreg(mod_bp3,"fAPAR_a",type="contrast");plot(p1a,ylab=" ",xlab="fAPAR", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+f3b <- ~{p1a <- visreg(mod_bp3,"age_a",type="contrast");plot(p1a,ylab=" ",xlab="ln Age", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+f4b <- ~{p1a <- visreg(mod_bp3,"CNrt_a",type="contrast");plot(p1a,ylab=" ",xlab="ln soil C/N", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+f5b <- ~{p1a <- visreg(mod_bp3,"alpha_a",type="contrast");plot(p1a,ylab=" ",xlab="alpha", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+
+mod_bp4 <- lm(ISBA_NPP~Tg_a+alpha_a+observedfAPAR_a,data=d3a)
+f1c <- ~{p1a <- visreg(mod_bp4,"Tg_a",type="contrast");plot(p1a,ylab="TRENDY-BP (obs.)",xlab="Tg", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+f2c <- ~{p1a <- visreg(mod_bp4,"observedfAPAR_a",type="contrast");plot(p1a,ylab=" ",xlab="fAPAR", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+f3c <- ~{p1a <- visreg(mod_bp4,"alpha_a",type="contrast");plot(p1a,ylab=" ",xlab="alpha", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
 
 
+plot_grid(f1,f2,f3,f4,f5,white,
+          f1a,f2a,f3a,f4a,f5a,f6a,
+          f1b,f2b,f3b,f4b,white,f5b,
+          f1c,f2c,white,white,white,f3c,
+          nrow=4,label_x = 0.8, label_y = 0.8)+white
 
-#################################
-#1. Now, prepare Stepwise regression for NPP/GPP
-#################################
-library(tidyverse)
-library(ggplot2)
-
-#1. select the most important predictor 
-summary(NPP_statistical_final)
-#determine targets and preds.
-target <- 'tnpp_a'
-
-preds <- NPP_statistical_final %>% select(-c(tnpp_a,site_a)) %>% 
-  names()
-
-r_list <- c()
-library(lme4)
-#For loop functions, include all predictor's r2 at the end
-for (var in preds){
-  forml <- paste( 'lmer(', target, '~', var, '+(1|site_a), data = NPP_statistical_final)')
-  fit_lin <- eval(parse(text = forml)) 
-  rsq <- r.squaredGLMM(fit_lin)[1]
-  r_list <- c(r_list,rsq)
-}
-
-#convert to a dataframe, including all r2
-All_rsquare <- data.frame (
-  preds = factor(preds,levels=preds), 
-  rsq = r_list)
-
-#select max r2 in all predictors
-max(r_list)
-
-new_All_rsquare <- All_rsquare %>% 
-  # desc orders from largest to smallest
-  arrange(desc(rsq))
-
-ggplot(All_rsquare, aes(x = reorder(preds, -rsq), y = rsq)) + geom_point() + theme(axis.text.x = element_text(angle = 60, hjust = 1))
-
-#2. stepwise regression selection
-library(caret)
-library(recipes)
-## list
-list_aic <- list()
-list_bic <- list()
-list_R <- list()
-list_variable <- list()
-
-# predictors retained in the model firstly
-preds_retained <- as.character(new_All_rsquare[1,1])
-preds_candidate <- preds[-which(preds == preds_retained)] 
+ggsave(paste("~/data/output/figs_new1.jpg",sep=""), width = 20, height = 16)
 
 
-for (a in 1:(length(preds)-1)){
-  rsq_candidates <- c()
-  linmod_candidates <- list()
-  for (i in 1:length(preds_candidate)){
-    pred_add <- c(preds_retained, preds_candidate[i])
-    forml  <- paste( 'lmer(', target, '~', paste(pred_add, collapse = '+'), '+(1|site_a), data = NPP_statistical_final)')
-    # create a function and make its format available to output in for loop
-    fit_lin <- eval(parse(text = forml))
-    linmod_candidates[[ i ]] <- fit_lin
-    # obtain multiple r2 at each selection, and find the best one at the end
-    rsq <- r.squaredGLMM(fit_lin)[1]
-    rsq_candidates[i] <- rsq
-  }
-  pred_max <- preds_candidate[ which.max(rsq_candidates) ]
-  # include best factors in retained factor
-  preds_retained <- c(preds_retained, pred_max)
-  list_variable[[a]] <- pred_max 
-  # include AIC, BIC, adjusted R2, R2, cross-validated R2 and RMSE at each k 
-  list_aic[[  a ]] <- AIC(eval(parse(text = paste( 'lmer(', target, '~', paste(preds_retained, collapse = '+'),  '+(1|site_a), data = NPP_statistical_final)'))))
-  
-  list_bic[[ a ]] <- BIC(eval(parse(text = paste( 'lmer(', target, '~', paste(preds_retained, collapse = '+'),  '+(1|site_a), data = NPP_statistical_final)'))))
-  
-  list_R[[ a ]] <- r.squaredGLMM(eval(parse(text = paste( 'lmer(', target, '~', paste(preds_retained, collapse = '+'),  '+(1|site_a), data = NPP_statistical_final)'))))[1]
-  preds_candidate <- preds_candidate[-which(preds_candidate == pred_max)]
-}
-
-
-R_null <- r.squaredGLMM(eval(parse(text = paste( 'lmer(', target, '~', paste(preds_retained[1], collapse = '+'),  '+(1|site_a), data = NPP_statistical_final)'))))[1]
-AIC_null <- AIC(eval(parse(text = paste( 'lmer(', target, '~', paste(preds_retained[1], collapse = '+'),  '+(1|site_a), data = NPP_statistical_final)'))))
-BIC_null <- BIC(eval(parse(text = paste( 'lmer(', target, '~', paste(preds_retained[1], collapse = '+'),  '+(1|site_a), data = NPP_statistical_final)'))))
-variable_null <- preds_retained[1]
-
-R_all <- round(as.numeric(c(R_null,list_R)),2)
-AIC_all <- round(as.numeric(c(AIC_null,list_aic)),2)
-BIC_all <- round(as.numeric(c(BIC_null,list_bic)),2)
-variable_all <- (as.character(c(variable_null,list_variable)))
-
-df1 <- as.data.frame(cbind(variable_all,R_all,AIC_all,BIC_all))
-
-#Adjusted-R
-p1 <- ggplot() + 
-  geom_point(data = df1, aes(x = factor(variable_all,level = variable_all), y = R_all)) 
-#AIC
-p2 <- ggplot() + 
-  geom_point(data = df1, aes(x = factor(variable_all,level = variable_all), y = AIC_all)) 
-#BIC
-p3 <- ggplot() + 
-  geom_point(data = df1, aes(x = factor(variable_all,level = variable_all), y = BIC_all))
-
-# the lowest AIC and BIC occurs at three factors (soil C/N + age + fAPAR)
-p1;p2;p3
-#####
-
-
-#secondly
+#N minerlization
 Nmin_statistical <- read.csv("/Users/yunpeng/data/NPP_final/Nmin_validation.csv")
 Nmin_statistical <- subset(Nmin_statistical,Nmin>0)
+
+sitemean2 <- unique(read.csv("/Users/yunpeng/data/NPP_final/Nmin_validation.csv")[,c("lon","lat")])
+sp_sites2 <- SpatialPoints(sitemean2) # only select lon and lat
+
+sitemean2_final <- unique(read.csv("/Users/yunpeng/data/NPP_final/Nmin_validation.csv")[,c("lon","lat")])
+
+allmaps2 <- list(ORCHICNP_fNup,ISAM_fNup)
+obs_name2 <- c("ORCHICNP_fNup","ISAM_fNup")
+
+for (i in c(1:length(allmaps2))){
+  df1 <- allmaps2[[i]]
+  names(df1) <- c("lon","lat",obs_name2[i])
+  coordinates(df1) <- ~lon+lat 
+  gridded(df1) <- TRUE
+  df1_global <- raster(df1, obs_name2[i]) 
+  
+  sp_sites_new <- raster::extract(df1_global, sp_sites2, sp = TRUE) %>% as_tibble() %>% 
+    right_join(sitemean2, by = c("lon", "lat"))
+  sitemean2_final[,i+2] <- sp_sites_new[,1]
+}
+
+sitemean2_final$ORCHICNP_fNup[sitemean2_final$ORCHICNP_fNup==0] <- NA
+sitemean2_final$ORCHICNP_fNup[sitemean2_final$ORCHICNP_fNup==0] <- NA
+
+Nmin_statistical <- merge(Nmin_statistical,sitemean2_final,by=c("lon","lat"),all.x=TRUE)
 
 Nmin_statistical$Nmin_a <- Nmin_statistical$Nmin
 
 Nmin_statistical$age_a <- log(Nmin_statistical$age)
-Nmin_statistical$alpha_a <- log(Nmin_statistical$alpha)
+Nmin_statistical$alpha_a <- (Nmin_statistical$alpha)
 Nmin_statistical$Tg_a <- Nmin_statistical$Tg
 Nmin_statistical$PPFD_a <- log(Nmin_statistical$PPFD)
 Nmin_statistical$vpd_a <- log(Nmin_statistical$vpd)
@@ -186,163 +600,127 @@ Nmin_statistical$LMA_a <- log(Nmin_statistical$LMA)
 Nmin_statistical$vcmax25_a <- log(Nmin_statistical$max_vcmax25_c3)
 Nmin_statistical$site_a <- Nmin_statistical$sitename
 
-Nmin_statistical_large <- Nmin_statistical[,c("Nmin_a","age_a","alpha_a","Tg_a","PPFD_a","vpd_a","fAPAR_a",
-                                            "CNrt_a","LMA_a","site_a")]
+Nmin_statistical_final <- na.omit(Nmin_statistical[,c("Nmin_a","age_a","alpha_a","Tg_a","PPFD_a","vpd_a","fAPAR_a",
+                                            "CNrt_a","LMA_a","site_a")])
 
-Nmin_statistical_final <- na.omit(Nmin_statistical_large)
-
-#r2 = 0.66
+#Nup model
+n1 <- stepwise(Nmin_statistical_final,"Nmin_a")
+n1[[2]]
 summary(lmer(Nmin_a~Tg_a+alpha_a+(1|site_a),data=Nmin_statistical_final))
+r.squaredGLMM(lmer(Nmin_a~Tg_a+alpha_a+(1|site_a),data=Nmin_statistical_final))
+
+#TRENDY1
+m1 <- na.omit(Nmin_statistical[,c("lon","lat","ORCHICNP_fNup","age_a","alpha_a","Tg_a","PPFD_a","vpd_a","fAPAR_a","CNrt_a","LMA_a","vcmax25_a","site_a")])
+m1<- aggregate(m1,by=list(m1$lon,m1$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
+q1 <- stepwise_lm(m1,"ORCHICNP_fNup")
+q1[[2]]
+summary(lm(ORCHICNP_fNup~fAPAR_a+CNrt_a,data=m1))
+
+m2 <- na.omit(Nmin_statistical[,c("lon","lat","ISAM_fNup","age_a","alpha_a","Tg_a","PPFD_a","vpd_a","fAPAR_a","CNrt_a","LMA_a","vcmax25_a","site_a")])
+m2<- aggregate(m2,by=list(m2$lon,m2$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
+q2 <- stepwise_lm(m2,"ISAM_fNup")
+q2[[2]]
+summary(lm(ISAM_fNup~age_a+fAPAR_a,data=m2))
+
+#final figure for Nup
+mod_n1 <- (lmer(Nmin_a~Tg_a+alpha_a+(1|site_a),data=Nmin_statistical_final))
+ff1 <- ~{p1a <- visreg(mod_n1,"Tg_a",type="contrast");plot(p1a,ylab="N minerlization[obs.]",xlab="Tg", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+ff2 <- ~{p1a <- visreg(mod_n1,"alpha_a",type="contrast");plot(p1a,ylab=" ",xlab="alpha", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+
+mod_n2 <- lm(ORCHICNP_fNup~fAPAR_a+CNrt_a,data=m1)
+ff3 <- ~{p1a <- visreg(mod_n2,"fAPAR_a",type="contrast");plot(p1a,ylab="ORCHICNP_Nup",xlab="fAPAR", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+ff4 <- ~{p1a <- visreg(mod_n2,"CNrt_a",type="contrast");plot(p1a,ylab=" ",xlab="ln soil C/N", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+
+mod_n3 <- lm(ISAM_fNup~age_a+fAPAR_a+vpd_a,data=m2)
+ff5 <- ~{p1a <- visreg(mod_n3,"fAPAR_a",type="contrast");plot(p1a,ylab="ISAM_Nup",xlab="fAPAR", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+ff6 <- ~{p1a <- visreg(mod_n3,"age_a",type="contrast");plot(p1a,ylab=" ",xlab="ln age", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+
+plot_grid(ff1,ff2,
+          ff3,ff4,
+          ff5,ff6,
+          nrow=3,label_x = 0.8, label_y = 0.8)+white
+
+ggsave(paste("~/data/output/figs_new2.jpg",sep=""), width = 15, height = 16)
+
+#validation - BP
+NPP_statistical$pred_npp
+NPP_statistical$pred_npp_model1 <- 
+  summary(mod_bp1)$coef[1,1]+summary(mod_bp1)$coef[2,1]*NPP_statistical$Tg_a+summary(mod_bp1)$coef[3,1]*NPP_statistical$fAPAR_a+
+  summary(mod_bp1)$coef[4,1]*NPP_statistical$age_a+summary(mod_bp1)$coef[5,1]*NPP_statistical$CNrt_a+summary(mod_bp1)$coef[6,1]*NPP_statistical$PPFD_a
+NPP_statistical$pred_npp_model2 <- 
+  summary(mod_bp2)$coef[1,1]+summary(mod_bp2)$coef[2,1]*NPP_statistical$Tg_a+summary(mod_bp2)$coef[3,1]*NPP_statistical$fAPAR_a+
+  summary(mod_bp2)$coef[4,1]*NPP_statistical$age_a+summary(mod_bp2)$coef[5,1]*NPP_statistical$PPFD_a+summary(mod_bp2)$coef[6,1]*NPP_statistical$alpha_a+
+  summary(mod_bp2)$coef[7,1]*NPP_statistical$soilCN_a
+
+obj_name
+p1 <- analyse_modobs2(NPP_statistical,"pred_npp","TNPP_1", type = "points")
+p2 <- analyse_modobs2(NPP_statistical,"pred_npp_model1","TNPP_1", type = "points")
+p3 <- analyse_modobs2(NPP_statistical,"pred_npp_model2","TNPP_1", type = "points")
+p4 <- analyse_modobs2(NPP_statistical,"CABLE_NPP","TNPP_1", type = "points")
+p5 <- analyse_modobs2(NPP_statistical,"ISAM_npp","TNPP_1", type = "points")
+p6 <- analyse_modobs2(NPP_statistical,"ISBA_NPP","TNPP_1", type = "points")
+p7 <- analyse_modobs2(NPP_statistical,"JULES_NPP","TNPP_1", type = "points")
+p8 <- analyse_modobs2(NPP_statistical,"LPJ_NPP","TNPP_1", type = "points")
+p9 <- analyse_modobs2(NPP_statistical,"ORCHIDEE_NPP","TNPP_1", type = "points")
+p10 <- analyse_modobs2(NPP_statistical,"ORCHICNP_NPP","TNPP_1", type = "points")
+p11 <- analyse_modobs2(NPP_statistical,"SDGVM_NPP","TNPP_1", type = "points")
+
+plot_grid(p1$gg,p2$gg,p3$gg,p4$gg,p5$gg,p6$gg,p7$gg,p8$gg,p9$gg,p10$gg,p11$gg,
+          nrow=4,label_x = 0.8, label_y = 0.8)+white
+
+ggsave(paste("~/data/output/figs_new3.jpg",sep=""), width = 15, height = 16)
+
+#bpe
+NPP_statistical$pred_bpe <- NPP_statistical$pred_npp/NPP_statistical$pred_gpp_c3
+NPP_statistical$pred_bpe_model1 <- NPP_statistical$pred_npp_model1/NPP_statistical$pred_gpp_c3
+NPP_statistical$pred_bpe_model2 <- NPP_statistical$pred_npp_model2/NPP_statistical$pred_gpp_c3
+
+NPP_statistical$CABLE <- NPP_statistical$CABLE_NPP/NPP_statistical$CABLE_GPP
+NPP_statistical$ISAM <- NPP_statistical$ISAM_npp/NPP_statistical$ISAM_gpp
+NPP_statistical$ISBA <- NPP_statistical$ISBA_NPP/NPP_statistical$ISBA_GPP
+NPP_statistical$JULES <- NPP_statistical$JULES_NPP/NPP_statistical$JULES_GPP
+NPP_statistical$LPJ <- NPP_statistical$LPJ_NPP/NPP_statistical$LPJ_GPP
+NPP_statistical$ORCHIDEE <- NPP_statistical$ORCHIDEE_NPP/NPP_statistical$ORCHIDEE_GPP
+NPP_statistical$ORCHICNP <- NPP_statistical$ORCHICNP_NPP/NPP_statistical$ORCHICNP_GPP
+NPP_statistical$SDGVM <- NPP_statistical$SDGVM_NPP/NPP_statistical$SDGVM_GPP
+NPP_statistical$obs_bpe <- NPP_statistical$TNPP_1/NPP_statistical$GPP
+
+p1a <- analyse_modobs2(NPP_statistical,"pred_bpe","obs_bpe", type = "points")
+p2a <- analyse_modobs2(NPP_statistical,"pred_bpe_model1","obs_bpe", type = "points")
+p3a <- analyse_modobs2(NPP_statistical,"pred_bpe_model2","obs_bpe", type = "points")
+p4a <- analyse_modobs2(NPP_statistical,"CABLE","obs_bpe", type = "points")
+p5a <- analyse_modobs2(NPP_statistical,"ISAM","obs_bpe", type = "points")
+p6a <- analyse_modobs2(NPP_statistical,"ISBA","obs_bpe", type = "points")
+p7a <- analyse_modobs2(NPP_statistical,"JULES","obs_bpe", type = "points")
+p8a <- analyse_modobs2(NPP_statistical,"LPJ","obs_bpe", type = "points")
+p9a <- analyse_modobs2(NPP_statistical,"ORCHIDEE","obs_bpe", type = "points")
+p10a <- analyse_modobs2(NPP_statistical,"ORCHICNP","obs_bpe", type = "points")
+p11a <- analyse_modobs2(NPP_statistical,"SDGVM","obs_bpe", type = "points")
+
+plot_grid(p1a$gg,p2a$gg,p3a$gg,p4a$gg,p5a$gg,p6a$gg,p7a$gg,p8a$gg,p9a$gg,p10a$gg,p11a$gg,
+          nrow=4,label_x = 0.8, label_y = 0.8)+white
+
+ggsave(paste("~/data/output/figs_new3a.jpg",sep=""), width = 15, height = 16)
+
+#validation - N uptake
+Nmin_statistical$pred_nuptake
+summary(mod_n1)$coef
+
+Nmin_statistical$pred_nuptake_model1 <- summary(mod_n1)$coef[1,1]+ summary(mod_n1)$coef[2,1]*Nmin_statistical$Tg_a+
+  summary(mod_n1)$coef[3,1]*Nmin_statistical$alpha_a
+
+pp1 <- analyse_modobs2(Nmin_statistical,"pred_nuptake","Nmin", type = "points")
+pp2 <- analyse_modobs2(Nmin_statistical,"pred_nuptake_model1","Nmin", type = "points")
+pp3 <- analyse_modobs2(Nmin_statistical,"ORCHICNP_fNup","Nmin", type = "points")
+pp4 <- analyse_modobs2(Nmin_statistical,"ISAM_fNup","Nmin", type = "points")
+
+plot_grid(pp1$gg,pp2$gg,pp3$gg,pp4$gg,
+          nrow=2,label_x = 0.8, label_y = 0.8)+white
+
+ggsave(paste("~/data/output/figs_new4.jpg",sep=""), width = 10, height = 10)
 
 
-library(tidyverse)
-library(ggplot2)
-
-#1. select the most important predictor 
-summary(Nmin_statistical_final)
-#determine targets and preds.
-target <- 'Nmin_a'
-
-preds <- Nmin_statistical_final %>% select(-c(Nmin_a,site_a)) %>% 
-  names()
-
-r_list <- c()
-library(lme4)
-#For loop functions, include all predictor's r2 at the end
-for (var in preds){
-  forml <- paste( 'lmer(', target, '~', var, '+(1|site_a), data = Nmin_statistical_final)')
-  fit_lin <- eval(parse(text = forml)) 
-  rsq <- r.squaredGLMM(fit_lin)[1]
-  r_list <- c(r_list,rsq)
-}
-
-#convert to a dataframe, including all r2
-All_rsquare <- data.frame (
-  preds = factor(preds,levels=preds), 
-  rsq = r_list)
-
-#select max r2 in all predictors
-max(r_list)
-
-new_All_rsquare <- All_rsquare %>% 
-  # desc orders from largest to smallest
-  arrange(desc(rsq))
-
-ggplot(All_rsquare, aes(x = reorder(preds, -rsq), y = rsq)) + geom_point() + theme(axis.text.x = element_text(angle = 60, hjust = 1))
-
-#2. stepwise regression selection
-library(caret)
-library(recipes)
-## list
-list_aic <- list()
-list_bic <- list()
-list_R <- list()
-list_variable <- list()
-
-# predictors retained in the model firstly
-preds_retained <- as.character(new_All_rsquare[1,1])
-preds_candidate <- preds[-which(preds == preds_retained)] 
-
-
-for (a in 1:(length(preds)-1)){
-  rsq_candidates <- c()
-  linmod_candidates <- list()
-  for (i in 1:length(preds_candidate)){
-    pred_add <- c(preds_retained, preds_candidate[i])
-    forml  <- paste( 'lmer(', target, '~', paste(pred_add, collapse = '+'), '+(1|site_a), data = Nmin_statistical_final)')
-    # create a function and make its format available to output in for loop
-    fit_lin <- eval(parse(text = forml))
-    linmod_candidates[[ i ]] <- fit_lin
-    # obtain multiple r2 at each selection, and find the best one at the end
-    rsq <- r.squaredGLMM(fit_lin)[1]
-    rsq_candidates[i] <- rsq
-  }
-  pred_max <- preds_candidate[ which.max(rsq_candidates) ]
-  # include best factors in retained factor
-  preds_retained <- c(preds_retained, pred_max)
-  list_variable[[a]] <- pred_max 
-  # include AIC, BIC, adjusted R2, R2, cross-validated R2 and RMSE at each k 
-  list_aic[[  a ]] <- AIC(eval(parse(text = paste( 'lmer(', target, '~', paste(preds_retained, collapse = '+'),  '+(1|site_a), data = Nmin_statistical_final)'))))
-  
-  list_bic[[ a ]] <- BIC(eval(parse(text = paste( 'lmer(', target, '~', paste(preds_retained, collapse = '+'),  '+(1|site_a), data = Nmin_statistical_final)'))))
-  
-  list_R[[ a ]] <- r.squaredGLMM(eval(parse(text = paste( 'lmer(', target, '~', paste(preds_retained, collapse = '+'),  '+(1|site_a), data = Nmin_statistical_final)'))))[1]
-  preds_candidate <- preds_candidate[-which(preds_candidate == pred_max)]
-}
-
-
-R_null <- r.squaredGLMM(eval(parse(text = paste( 'lmer(', target, '~', paste(preds_retained[1], collapse = '+'),  '+(1|site_a), data = Nmin_statistical_final)'))))[1]
-AIC_null <- AIC(eval(parse(text = paste( 'lmer(', target, '~', paste(preds_retained[1], collapse = '+'),  '+(1|site_a), data = Nmin_statistical_final)'))))
-BIC_null <- BIC(eval(parse(text = paste( 'lmer(', target, '~', paste(preds_retained[1], collapse = '+'),  '+(1|site_a), data = Nmin_statistical_final)'))))
-variable_null <- preds_retained[1]
-
-R_all <- round(as.numeric(c(R_null,list_R)),2)
-AIC_all <- round(as.numeric(c(AIC_null,list_aic)),2)
-BIC_all <- round(as.numeric(c(BIC_null,list_bic)),2)
-variable_all <- (as.character(c(variable_null,list_variable)))
-
-df1 <- as.data.frame(cbind(variable_all,R_all,AIC_all,BIC_all))
-
-#Adjusted-R
-p1 <- ggplot() + 
-  geom_point(data = df1, aes(x = factor(variable_all,level = variable_all), y = R_all)) 
-#AIC
-p2 <- ggplot() + 
-  geom_point(data = df1, aes(x = factor(variable_all,level = variable_all), y = AIC_all)) 
-#BIC
-p3 <- ggplot() + 
-  geom_point(data = df1, aes(x = factor(variable_all,level = variable_all), y = BIC_all))
-
-# the lowest AIC and BIC occurs at three factors (soil C/N + age + fAPAR)
-p1;p2;p3
-
-
-#now add additional map data
-#check nc (unit: kg m-2 month-1) 1000*31556952/12
-devtools::load_all("/Users/yunpeng/yunkepeng/rbeni/")
-
-#CABLE-POP
-CABLE_POP_GPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/CABLE-POP_S2_gpp_ANN_mean.nc"), varnam = "gpp"))
-CABLE_POP_NPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/CABLE-POP_S2_npp_ANN_mean.nc"), varnam = "npp"))
-
-#CABLE-POP
-CABLE_POP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/CABLE-POP_S2_gpp_ANN_mean.nc"), varnam = "gpp"))
-CABLE_POP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/CABLE-POP_S2_npp_ANN_mean.nc"), varnam = "npp"))
-
-
-CABLE_POP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/CABLE-POP_S2_npp_ANN_mean.nc"), varnam = "npp"))
-CABLE_POP$myvar <- CABLE_POP$myvar#*1000*31556952/12
-
-CLASS_CTEM <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/CLASS-CTEM_S1_npp_ANN_mean.nc"), varnam = "npp"))
-CLASS_CTEM$myvar <- CLASS_CTEM$myvar*1000*31556952/12
-
-CLM5 <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/CLM5.0_S1_npp_ANN_mean.nc"), varnam = "npp"))
-CLM5$myvar <- CLM5$myvar*1000*31556952/12
-CLM5$lon[CLM5$lon>180] <- CLM5$lon[CLM5$lon>180]-360
-
-ISAM <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/ISAM_S1_npp_ANN_mean.nc"), varnam = "npp"))
-ISAM$myvar <- ISAM$myvar*1000*31556952/12
-
-JSBACH <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/JSBACH_S1_npp_ANN_mean.nc"), varnam = "npp"))
-JSBACH$myvar <- JSBACH$myvar*1000*31556952/12
-
-LPJ_GUESS <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/LPJ-GUESS_S1_npp_ANN_mean.nc"), varnam = "npp"))
-LPJ_GUESS$myvar <- LPJ_GUESS$myvar*1000*31556952/12
-
-ORCHIDEE <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/ORCHIDEE_S1_npp_ANN_mean.nc"), varnam = "npp"))
-ORCHIDEE$myvar <- ORCHIDEE$myvar*1000*31556952/12
-
-#ORCHIDEE_CNP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/ORCHIDEE-CNP_S1_npp_ANN_mean.nc"), varnam = "npp"))
-#ORCHIDEE_CNP$myvar <- ORCHIDEE_CNP$myvar*1000*31556952/12
-
-SDGVM <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/SDGVM_S1_npp_ANN_mean.nc"), varnam = "npp"))
-SDGVM$myvar <- SDGVM$myvar*1000*31556952/12
-
-
-#
-validation <- read.csv("~/data/NPP_final/NPP_validation.csv")
-final_bnpp <- na.omit(validation[,c("lon","lat","TNPP_1")])
-
+#global!
 ####copied from global_figs.R
 #add existing files
 ###1. load all prediction fields map (details in ~/yunkepeng/nimpl_sofun_inputs_final/Prediction_field), gpp and vcmax25 (derived from SOFUN/yunkebranch).
@@ -594,207 +972,54 @@ all_maps <- as.data.frame(cbind(gpp_df,npp_pft,npp_forest,npp_grass,
 
 summary(all_maps)
 
+all_maps$CUE <- all_maps$npp_pft/all_maps$gpp
+all_maps$NUE <- all_maps$npp_pft/all_maps$nuptake_pft
 
-#resample --> small resolution
-elev_nc <- read_nc_onefile("~/data/watch_wfdei/WFDEI-elevation.nc")
-elev <- as.data.frame(nc_to_df(elev_nc, varnam = "elevation"))
-names(elev) <- c("lon","lat","z")
-coordinates(elev) <- ~lon+lat 
-gridded(elev) <- TRUE
-raster_half <- raster(elev, "z") 
-bounding_box <- extent(-180, 180, -90, 90)
-raster_half <- crop(raster_half, bounding_box)
-raster_half
+b5 <- ggplot(data=all_maps, aes(x=CUE, y=NUE)) +
+  geom_point(aes(color=nuptake_pft),alpha=0.3,size=0.3)+geom_smooth(method = "lm", se = TRUE)+ 
+  scale_color_viridis(discrete=FALSE,direction= -1)+theme_classic()+theme(axis.title = element_text(size = 20),
+                                                                          axis.text = element_text(size = 15),
+                                                                          legend.title = element_text(size = 14))+
+  xlab("BPE")+ylab("NUE (gC/gN)")+labs(color= ~paste("N uptake", " (gN m"^-2,"yr"^-1,")"))
 
-#resample --> big resolution --> only CABLE work
-dim(na.omit(CABLE_POP))
-dim(na.omit(CLASS_CTEM))
-dim(na.omit(CLM5))
-dim(na.omit(JSBACH))
+summary(lm(all_maps$NUE~all_maps$CUE))
 
-CABLE_POP_df <- CABLE_POP
-names(CABLE_POP_df) <- c("lon","lat","CABLE_POP")
-coordinates(CABLE_POP_df) <- ~lon+lat 
-gridded(CABLE_POP_df) <- TRUE
-CABLE_POP_res <- raster(CABLE_POP_df, "CABLE_POP") 
-CABLE_POP_res <- crop(CABLE_POP_res, bounding_box)
+#now, trendy
+ORCHICNP_final <- as.data.frame(cbind(ORCHICNP_fNup[,3],ORCHICNP_GPP[,3],ORCHICNP_NPP[,3]))
+names(ORCHICNP_final) <- c("Nuptake","gpp","npp")
+ISAM_final <-as.data.frame(cbind(ISAM_fNup[,3],ISAM_gpp[,3],ISAM_npp[,3]))
+names(ISAM_final) <- c("Nuptake","gpp","npp")
 
-#others are error: > gridded(JSBACH_df) <- TRUE
-#suggested tolerance minimum: 0.00844618 
-#Error in points2grid(points, tolerance, round) : 
-#dimension 2 : coordinate intervals are not constant
+ORCHICNP_final$gpp[ORCHICNP_final$gpp==0] <-NA
+ORCHICNP_final$npp[ORCHICNP_final$npp==0] <-NA
+ORCHICNP_final$Nuptake[ORCHICNP_final$Nuptake==0] <-NA
+ORCHICNP_final$CUE <- ORCHICNP_final$npp/ORCHICNP_final$gpp
+ORCHICNP_final$NUE <- ORCHICNP_final$npp/ORCHICNP_final$Nuptake
 
-resampled_CABLE_POP <- raster::resample(CABLE_POP_res, raster_half, method="ngb")
-CABLE_POP_final <- as.data.frame(stack(resampled_CABLE_POP),xy = TRUE)
-names(CABLE_POP_final) <- c("lon","lat","CABLE_POP")
+ISAM_final$gpp[ISAM_final$gpp==0] <-NA
+ISAM_final$npp[ISAM_final$npp==0] <-NA
+ISAM_final$Nuptake[ISAM_final$Nuptake==0] <-NA
+ISAM_final$CUE <- ISAM_final$npp/ISAM_final$gpp
+ISAM_final$NUE <- ISAM_final$npp/ISAM_final$Nuptake
 
+b6 <- ggplot(data=ORCHICNP_final, aes(x=CUE, y=NUE)) +xlim(c(0,1))+ylim(c(0,200))+
+  geom_point(aes(color=Nuptake),alpha=0.3,size=0.3)+geom_smooth(method = "lm", se = TRUE)+ 
+  scale_color_viridis(discrete=FALSE,direction= -1)+theme_classic()+theme(axis.title = element_text(size = 20),
+                                                                          axis.text = element_text(size = 15),
+                                                                          legend.title = element_text(size = 14))+
+  xlab("ORCHICNP BPE")+ylab("ORCHICNP NUE (gC/gN)")+labs(color= ~paste("N uptake", " (gN m"^-2,"yr"^-1,")"))
 
-all_npp <- Reduce(function(x,y) merge(x = x, y = y, by = c("lon","lat"),all.x=TRUE),
-                 list(na.omit(ORCHIDEE),na.omit(ISAM),na.omit(LPJ_GUESS),na.omit(SDGVM),na.omit(CABLE_POP_final),na.omit(all_maps[,c("lon","lat","npp_pft")])))
+summary(lm(ISAM_final$NUE~ISAM_final$CUE))
 
-names(all_npp) <- c("lon","lat","ORCHIDEE","ISAM","LPJ_GUESS","SDGVM","CABLE_POP","Model")
+b7 <- ggplot(data=ISAM_final, aes(x=CUE, y=NUE)) +xlim(c(0,1))+ylim(c(0,200))+
+  geom_point(aes(color=Nuptake),alpha=0.3,size=0.3)+geom_smooth(method = "lm", se = TRUE)+ 
+  scale_color_viridis(discrete=FALSE,direction= -1)+theme_classic()+theme(axis.title = element_text(size = 20),
+                                                                          axis.text = element_text(size = 15),
+                                                                          legend.title = element_text(size = 14))+
+  xlab("ISAM BPE")+ylab("ISAM NUE (gC/gN)")+labs(color= ~paste("N uptake", " (gN m"^-2,"yr"^-1,")"))
 
-#add alpha
+summary(lm(ISAM_final$NUE~ISAM_final$CUE))
 
-alpha <- as.data.frame(nc_to_df(read_nc_onefile(
-  "~/data/nimpl_sofun_inputs/map/Final_ncfile/alpha.nc"),
-  varnam = "alpha"))
-names(alpha) <- c("lon","lat","alpha")
+plot_grid(b5,b6,b7, nrow=1,label_x = 0.8, label_y = 0.8)+white
 
-final_npp <- Reduce(function(x,y) merge(x = x, y = y, by = c("lon","lat"),all.x=TRUE),
-       list(all_npp,alpha,all_predictors))
-       
-model <- final_npp[,c("ORCHIDEE","ISAM","LPJ_GUESS","SDGVM","CABLE_POP","Model")]
-
-predictors <- final_npp[,c("alpha","Tg","PPFD","vpd","fAPAR","age","CNrt","LMA","vcmax25")]
-
-My_Theme = theme(
-  axis.title.x = element_text(size = 15),
-  axis.text.x = element_text(size = 20),
-  axis.title.y = element_text(size = 15),
-  axis.text.y = element_text(size = 20))
-
-#alpha
-for (a in 1:ncol(model)){
-  gg <- heatscatter(predictors[,1],model[,a],xlab=colnames(predictors)[1],ylab=colnames(model)[a],ggplot=TRUE)+My_Theme+
-    stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=5)+My_Theme+xlim(0,1)#+geom_smooth(method = "lm", se = TRUE,color="blue")
-  assign(paste0(colnames(predictors)[1],a), gg) 
-}
-
-plot_grid(alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,labels = c('(a)','(b)','(c)','(d)','(e)','(f)'),nrow=2,label_x = 0.9,label_y=0.92)
-ggsave(paste("~/data/output/alpha1.jpg",sep=""),width = 20, height = 10)
-
-#others
-for (i in 2:ncol(predictors)){
-  for (a in 1:ncol(model)){
-    gg <- heatscatter(predictors[,i],model[,a],xlab=colnames(predictors)[i],ylab=colnames(model)[a],ggplot=TRUE)+My_Theme+
-      stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),label.x = 3,size=5)+My_Theme#+geom_smooth(method = "lm", se = TRUE,color="red")
-    assign(paste0(colnames(predictors)[i],a), gg) 
-  }
-  print(i)
-}
-
-plot_grid(Tg1,Tg2,Tg3,Tg4,Tg5,Tg6,labels = c('(a)','(b)','(c)','(d)','(e)','(f)'),nrow=2,label_x = 0.9,label_y=0.92)
-ggsave(paste("~/data/output/Tg1.jpg",sep=""),width = 20, height = 10)
-
-plot_grid(CNrt1,CNrt2,CNrt3,CNrt4,CNrt5,CNrt6,labels = c('(a)','(b)','(c)','(d)','(e)','(f)'),nrow=2,label_x = 0.9,label_y=0.92)
-ggsave(paste("~/data/output/CNrt1.jpg",sep=""),width = 20, height = 10)
-
-plot_grid(age1,age2,age3,age4,age5,age6,labels = c('(a)','(b)','(c)','(d)','(e)','(f)'),nrow=2,label_x = 0.9,label_y=0.92)
-ggsave(paste("~/data/output/age1.jpg",sep=""),width = 20, height = 10)
-
-#fapar
-for (a in 1:ncol(model)){
-  gg <- heatscatter(predictors[,5],model[,a],xlab=colnames(predictors)[5],ylab=colnames(model)[a],ggplot=TRUE)+My_Theme+
-    stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),size=5)+My_Theme+xlim(0,1)#+geom_smooth(method = "lm", se = TRUE,color="blue")
-  assign(paste0(colnames(predictors)[5],a), gg) 
-}
-
-plot_grid(fAPAR1,fAPAR2,fAPAR3,fAPAR4,fAPAR5,fAPAR6,labels = c('(a)','(b)','(c)','(d)','(e)','(f)'),nrow=2,label_x = 0.9,label_y=0.92)
-ggsave(paste("~/data/output/fAPAR1.jpg",sep=""),width = 20, height = 10)
-
-
-#finally, validation
-
-validation <- read.csv("~/data/NPP_final/NPP_validation.csv")
-final_bnpp <- na.omit(validation[,c("lon","lat","z","TNPP_1","pred_npp")])
-
-plotinfo <- unique(final_bnpp[,c("lon","lat","z")])
-
-a <- 1.5 # which degree (distance) of grid when interpolating gwr from global grids
-
-model_xy <- final_npp[,c("lon","lat","ORCHIDEE","ISAM","LPJ_GUESS","SDGVM","CABLE_POP","Model")]
-model_xyz <- Reduce(function(x,y) merge(x = x, y = y, by = c("lon","lat"),all.x=TRUE),
-                    list(model_xy,all_maps[,c("lon","lat","z")]))
-
-for (i in 1:nrow(plotinfo)) {
-  tryCatch({
-    #1
-    Tg_global <- na.omit(model_xyz[,c("lon","lat","z","ORCHIDEE")])
-    NRE_part <- subset(Tg_global,lon>(plotinfo[i,"lon"]-a)&lon<(plotinfo[i,"lon"]+a)&
-                         lat>(plotinfo[i,"lat"]-a)&lat<(plotinfo[i,"lat"]+a))
-    coordinates(NRE_part) <- c("lon","lat")
-    gridded(NRE_part) <- TRUE
-    NRE_coord <- plotinfo[i,c("lon","lat","z")]
-    coordinates(NRE_coord) <- c("lon","lat")
-    plotinfo[i,c("ORCHIDEE")] <- (gwr(ORCHIDEE ~ z, NRE_part, bandwidth = 1.06, fit.points =NRE_coord,predictions=TRUE))$SDF$pred
-    #2
-    Tg_global <- na.omit(model_xyz[,c("lon","lat","z","ISAM")])
-    NRE_part <- subset(Tg_global,lon>(plotinfo[i,"lon"]-a)&lon<(plotinfo[i,"lon"]+a)&
-                         lat>(plotinfo[i,"lat"]-a)&lat<(plotinfo[i,"lat"]+a))
-    coordinates(NRE_part) <- c("lon","lat")
-    gridded(NRE_part) <- TRUE
-    NRE_coord <- plotinfo[i,c("lon","lat","z")]
-    coordinates(NRE_coord) <- c("lon","lat")
-    plotinfo[i,c("ISAM")] <- (gwr(ISAM ~ z, NRE_part, bandwidth = 1.06, fit.points =NRE_coord,predictions=TRUE))$SDF$pred
-    #3
-    Tg_global <- na.omit(model_xyz[,c("lon","lat","z","LPJ_GUESS")])
-    NRE_part <- subset(Tg_global,lon>(plotinfo[i,"lon"]-a)&lon<(plotinfo[i,"lon"]+a)&
-                         lat>(plotinfo[i,"lat"]-a)&lat<(plotinfo[i,"lat"]+a))
-    coordinates(NRE_part) <- c("lon","lat")
-    gridded(NRE_part) <- TRUE
-    NRE_coord <- plotinfo[i,c("lon","lat","z")]
-    coordinates(NRE_coord) <- c("lon","lat")
-    plotinfo[i,c("LPJ_GUESS")] <- (gwr(LPJ_GUESS ~ z, NRE_part, bandwidth = 1.06, fit.points =NRE_coord,predictions=TRUE))$SDF$pred
-    #4
-    Tg_global <- na.omit(model_xyz[,c("lon","lat","z","SDGVM")])
-    NRE_part <- subset(Tg_global,lon>(plotinfo[i,"lon"]-a)&lon<(plotinfo[i,"lon"]+a)&
-                         lat>(plotinfo[i,"lat"]-a)&lat<(plotinfo[i,"lat"]+a))
-    coordinates(NRE_part) <- c("lon","lat")
-    gridded(NRE_part) <- TRUE
-    NRE_coord <- plotinfo[i,c("lon","lat","z")]
-    coordinates(NRE_coord) <- c("lon","lat")
-    plotinfo[i,c("SDGVM")] <- (gwr(SDGVM ~ z, NRE_part, bandwidth = 1.06, fit.points =NRE_coord,predictions=TRUE))$SDF$pred
-    #5
-    Tg_global <- na.omit(model_xyz[,c("lon","lat","z","CABLE_POP")])
-    NRE_part <- subset(Tg_global,lon>(plotinfo[i,"lon"]-a)&lon<(plotinfo[i,"lon"]+a)&
-                         lat>(plotinfo[i,"lat"]-a)&lat<(plotinfo[i,"lat"]+a))
-    coordinates(NRE_part) <- c("lon","lat")
-    gridded(NRE_part) <- TRUE
-    NRE_coord <- plotinfo[i,c("lon","lat","z")]
-    coordinates(NRE_coord) <- c("lon","lat")
-    plotinfo[i,c("CABLE_POP")] <- (gwr(CABLE_POP ~ z, NRE_part, bandwidth = 1.06, fit.points =NRE_coord,predictions=TRUE))$SDF$pred
-  }, error=function(e){})} 
-
-summary(plotinfo)
-final_plot <- merge(final_bnpp,plotinfo,by=c("lon","lat","z"),all.x=TRUE)
-names(final_plot)
-
-a1 <- ggplot(data=final_plot, aes(x=pred_npp, y=TNPP_1)) +
-  geom_point(alpha=0.5)+geom_abline(intercept=0,slope=1, linetype=3)+geom_smooth(method = "lm", se = F,size=2)+
-  theme_classic()+My_Theme+labs(y = "Observed BP") +labs(x = "Our Predicted BP") +
-  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
-    label.x = 3)+xlim(0,2000)+ylim(0,2000)
-
-a2 <- ggplot(data=final_plot, aes(x=ORCHIDEE, y=TNPP_1)) +
-  geom_point(alpha=0.5)+geom_abline(intercept=0,slope=1, linetype=3)+geom_smooth(method = "lm", se = F,size=2)+
-  theme_classic()+My_Theme+labs(y = "Observed BP") +labs(x = "ORCHIDEE BP") +
-  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
-           label.x = 3)+xlim(0,2000)+ylim(0,2000)
-
-a3 <- ggplot(data=final_plot, aes(x=ISAM, y=TNPP_1)) +
-  geom_point(alpha=0.5)+geom_abline(intercept=0,slope=1, linetype=3)+geom_smooth(method = "lm", se = F,size=2)+
-  theme_classic()+My_Theme+labs(y = "Observed BP") +labs(x = "ISAM BP") +
-  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
-           label.x = 3)+xlim(0,2000)+ylim(0,2000)
-
-a4 <- ggplot(data=final_plot, aes(x=LPJ_GUESS, y=TNPP_1)) +
-  geom_point(alpha=0.5)+geom_abline(intercept=0,slope=1, linetype=3)+geom_smooth(method = "lm", se = F,size=2)+
-  theme_classic()+My_Theme+labs(y = "Observed BP") +labs(x = "LPJ_GUESS BP") +
-  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
-           label.x = 3)+xlim(0,2000)+ylim(0,2000)
-
-a5 <- ggplot(data=final_plot, aes(x=SDGVM, y=TNPP_1)) +
-  geom_point(alpha=0.5)+geom_abline(intercept=0,slope=1, linetype=3)+geom_smooth(method = "lm", se = F,size=2)+
-  theme_classic()+My_Theme+labs(y = "Observed BP") +labs(x = "SDGVM BP") +
-  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
-           label.x = 3)+xlim(0,2000)+ylim(0,2000)
-
-a6 <- ggplot(data=final_plot, aes(x=CABLE_POP, y=TNPP_1)) +
-  geom_point(alpha=0.5)+geom_abline(intercept=0,slope=1, linetype=3)+geom_smooth(method = "lm", se = F,size=2)+
-  theme_classic()+My_Theme+labs(y = "Observed BP") +labs(x = "CABLE_POP BP") +
-  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
-           label.x = 3)+xlim(0,2000)+ylim(0,2000)
-
-plot_grid(a2,a3,a4,a5,a6,a1,labels = c('(a)','(b)','(c)','(d)','(e)','(f)'),nrow=2,label_x = 0.9,label_y=0.92)
-ggsave(paste("~/data/output/bp_validation.jpg",sep=""),width = 20, height = 10)
+ggsave(paste("~/data/output/figs_new5.jpg",sep=""), width = 20, height = 5)
