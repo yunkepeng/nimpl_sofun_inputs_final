@@ -394,10 +394,10 @@ NPP_statistical$site_a <- NPP_statistical$site
 
 #two dataset
 #1. large - all mapping data
-NPP_statistical_large <- na.omit(NPP_statistical[,c("tnpp_a","age_a","alpha_a","Tg_a","PPFD_a","vpd_a","fAPAR_a","CNrt_a","site_a")])
+NPP_statistical_large <- na.omit(NPP_statistical[,c("tnpp_a","age_a","Tg_a","PPFD_a","vpd_a","fAPAR_a","CNrt_a","site_a")])
 
 #2. small - observed data
-NPP_statistical_small <- na.omit(NPP_statistical[,c("tnpp_a","alpha_a","Tg_a","PPFD_a","vpd_a","site_a","soilCN_a","observedfAPAR_a","obs_age_a")])
+NPP_statistical_small <- na.omit(NPP_statistical[,c("tnpp_a","Tg_a","PPFD_a","vpd_a","site_a","soilCN_a","observedfAPAR_a","obs_age_a")])
 
 # r2 =0.44 at large dataset 
 a1<- stepwise(NPP_statistical_large,"tnpp_a")
@@ -407,60 +407,64 @@ r.squaredGLMM(lmer(tnpp_a~Tg_a+fAPAR_a+age_a+CNrt_a+PPFD_a+(1|site_a),data=NPP_s
 
 # r2 =0.69 at small 
 a3<- stepwise(NPP_statistical_small,"tnpp_a")
-a3[[1]]
-summary(lmer(tnpp_a~Tg_a+observedfAPAR_a+obs_age_a+PPFD_a+alpha_a+soilCN_a+(1|site_a),data=NPP_statistical_small))
+a3[[3]]
+summary(lmer(tnpp_a~Tg_a+observedfAPAR_a+obs_age_a+PPFD_a+(1|site_a),data=NPP_statistical_small))
 r.squaredGLMM(lmer(tnpp_a~Tg_a+observedfAPAR_a+obs_age_a+PPFD_a+alpha_a+soilCN_a+(1|site_a),data=NPP_statistical_small))
 
 ####1. Large dataset
 #trendy's larger dataset - using lm! Because response BNPP are at site-level. It also has higher R2
 #Large dataset age_a,alpha_a,Tg_a,PPFD_a,vpd_a,fAPAR_a,CNrt_a
-d1 <- na.omit(NPP_statistical[,c("lon","lat","CABLE_NPP","age_a","alpha_a","Tg_a","PPFD_a","vpd_a","fAPAR_a","CNrt_a","site_a")])
+
+#only available measured npp points - shall we?
+NPP_statistical <- subset(NPP_statistical,TNPP_1>0)
+
+d1 <- na.omit(NPP_statistical[,c("lon","lat","CABLE_NPP","Tg_a","PPFD_a","vpd_a","fAPAR_a","site_a")])
 d1<- aggregate(d1,by=list(d1$lon,d1$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
 t1 <- stepwise_lm(d1,"CABLE_NPP")
-t1[[1]]
-summary(lm(CABLE_NPP~fAPAR_a+age_a+Tg_a+alpha_a+CNrt_a+PPFD_a,data=d1))
+t1[[2]]
+mod1 <- (lm(CABLE_NPP~fAPAR_a+Tg_a+vpd_a+PPFD_a,data=d1))
 
-d2 <- na.omit(NPP_statistical[,c("lon","lat","ISAM_npp","age_a","alpha_a","Tg_a","PPFD_a","vpd_a","fAPAR_a","CNrt_a","site_a")])
+d2 <- na.omit(NPP_statistical[,c("lon","lat","ISAM_npp","Tg_a","PPFD_a","vpd_a","fAPAR_a","site_a")])
 d2<- aggregate(d2,by=list(d2$lon,d2$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
 t2 <- stepwise_lm(d2,"ISAM_npp")
-t2[[1]]
-summary(lm(ISAM_npp~fAPAR_a+Tg_a+CNrt_a+PPFD_a,data=d2))
+t2[[2]]
+mod2 <- (lm(ISAM_npp~fAPAR_a+Tg_a+PPFD_a,data=d2))
 
-d3 <- na.omit(NPP_statistical[,c("lon","lat","ISBA_NPP","age_a","alpha_a","Tg_a","PPFD_a","vpd_a","fAPAR_a","CNrt_a","site_a")])
+d3 <- na.omit(NPP_statistical[,c("lon","lat","ISBA_NPP","Tg_a","PPFD_a","vpd_a","fAPAR_a","site_a")])
 d3<- aggregate(d3,by=list(d3$lon,d3$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
 t3 <- stepwise_lm(d3,"ISBA_NPP")
-t3[[1]]
-summary(lm(ISBA_NPP~fAPAR_a+age_a+alpha_a+Tg_a+CNrt_a,data=d3))
+t3[[2]]
+mod3 <- (lm(ISBA_NPP~fAPAR_a+Tg_a+vpd_a,data=d3))
 
-d4 <- na.omit(NPP_statistical[,c("lon","lat","JULES_NPP","age_a","alpha_a","Tg_a","PPFD_a","vpd_a","fAPAR_a","CNrt_a","site_a")])
+d4 <- na.omit(NPP_statistical[,c("lon","lat","JULES_NPP","Tg_a","PPFD_a","vpd_a","fAPAR_a","site_a")])
 d4<- aggregate(d4,by=list(d4$lon,d4$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
 t4 <- stepwise_lm(d4,"JULES_NPP")
-t4[[1]]
-summary(lm(JULES_NPP~fAPAR_a+age_a+CNrt_a+Tg_a,data=d4))
+t4[[2]]
+mod4 <- (lm(JULES_NPP~Tg_a+PPFD_a,data=d4))
 
-d5 <- na.omit(NPP_statistical[,c("lon","lat","LPJ_NPP","age_a","alpha_a","Tg_a","PPFD_a","vpd_a","fAPAR_a","CNrt_a","site_a")])
+d5 <- na.omit(NPP_statistical[,c("lon","lat","LPJ_NPP","Tg_a","PPFD_a","vpd_a","fAPAR_a","site_a")])
 d5<- aggregate(d5,by=list(d5$lon,d5$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
 t5 <- stepwise_lm(d5,"LPJ_NPP")
-t5[[1]]
-summary(lm(LPJ_NPP~fAPAR_a+age_a+Tg_a,data=d5))
+t5[[2]]
+mod5<- (lm(LPJ_NPP~fAPAR_a+PPFD_a,data=d5))
 
-d6 <- na.omit(NPP_statistical[,c("lon","lat","ORCHIDEE_NPP","age_a","alpha_a","Tg_a","PPFD_a","vpd_a","fAPAR_a","CNrt_a","site_a")])
+d6 <- na.omit(NPP_statistical[,c("lon","lat","ORCHIDEE_NPP","Tg_a","PPFD_a","vpd_a","fAPAR_a","site_a")])
 d6<- aggregate(d6,by=list(d6$lon,d6$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
 t6 <- stepwise_lm(d6,"ORCHIDEE_NPP")
 t6[[2]]
-summary(lm(ORCHIDEE_NPP~fAPAR_a+age_a+alpha_a+Tg_a,data=d6))
+mod6<- (lm(ORCHIDEE_NPP~fAPAR_a+Tg_a+PPFD_a,data=d6))
 
-d7 <- na.omit(NPP_statistical[,c("lon","lat","ORCHICNP_NPP","age_a","alpha_a","Tg_a","PPFD_a","vpd_a","fAPAR_a","CNrt_a","site_a")])
+d7 <- na.omit(NPP_statistical[,c("lon","lat","ORCHICNP_NPP","Tg_a","PPFD_a","vpd_a","fAPAR_a","site_a")])
 d7<- aggregate(d7,by=list(d7$lon,d7$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
 t7 <- stepwise_lm(d7,"ORCHICNP_NPP")
-t7[[1]]
-summary(lm(ORCHICNP_NPP~fAPAR_a+Tg_a+vpd_a,data=d7))
+t7[[2]]
+mod7 <- (lm(ORCHICNP_NPP~fAPAR_a+Tg_a+vpd_a,data=d7))
 
-d8 <- na.omit(NPP_statistical[,c("lon","lat","SDGVM_NPP","age_a","alpha_a","Tg_a","PPFD_a","vpd_a","fAPAR_a","CNrt_a","site_a")])
+d8 <- na.omit(NPP_statistical[,c("lon","lat","SDGVM_NPP","Tg_a","PPFD_a","vpd_a","fAPAR_a","site_a")])
 d8<- aggregate(d8,by=list(d8$lon,d8$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
 t8 <- stepwise_lm(d8,"SDGVM_NPP")
 t8[[2]]
-summary(lm(SDGVM_NPP~Tg_a+alpha_a+CNrt_a+PPFD_a+age_a+fAPAR_a,data=d8))
+mod8<- (lm(SDGVM_NPP~PPFD_a+Tg_a+vpd_a,data=d8))
 
 ####2. Small dataset
 d1a <- na.omit(NPP_statistical[,c("lon","lat","CABLE_NPP","alpha_a","Tg_a","PPFD_a","vpd_a","site_a","soilCN_a","observedfAPAR_a","obs_age_a")])
@@ -516,7 +520,7 @@ summary(lm(SDGVM_NPP~Tg_a+PPFD_a+vpd_a,data=d8a))
 white <- theme(plot.background=element_rect(fill="white", color="white"))
 
 mod_bp1 <- (lmer(tnpp_a~Tg_a+fAPAR_a+age_a+CNrt_a+PPFD_a+(1|site_a),data=NPP_statistical_large))
-f1 <- ~{p1a <- visreg(mod_bp1,"Tg_a",type="contrast");plot(p1a,ylab="BP(map.)",xlab="Tg", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+f1 <- ~{p1a <- visreg(mod_bp1,"Tg_a",type="contrast");plot(p1a,ylab="BP",xlab="Tg", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
 f2 <- ~{p1a <- visreg(mod_bp1,"fAPAR_a",type="contrast");plot(p1a,ylab=" ",xlab="fAPAR", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
 f3 <- ~{p1a <- visreg(mod_bp1,"age_a",type="contrast");plot(p1a,ylab=" ",xlab="ln Age", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
 f4 <- ~{p1a <- visreg(mod_bp1,"CNrt_a",type="contrast");plot(p1a,ylab=" ",xlab="ln soil C/N", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
@@ -535,27 +539,38 @@ f6a <- ~{p1a <- visreg(mod_bp2,"alpha_a",type="contrast");plot(p1a,ylab=" ",xlab
 r.squaredGLMM(mod_bp2)
 
 #3rd additional figure - fig
-#model 3 - trendy BP fitted by mapped predictors
-mod_bp3 <- (lm(ISBA_NPP~fAPAR_a+age_a+alpha_a+Tg_a+CNrt_a,data=d3))
-f1b <- ~{p1a <- visreg(mod_bp3,"Tg_a",type="contrast");plot(p1a,ylab="TRENDY-BP (map.)",xlab="Tg", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
-f2b <- ~{p1a <- visreg(mod_bp3,"fAPAR_a",type="contrast");plot(p1a,ylab=" ",xlab="fAPAR", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
-f3b <- ~{p1a <- visreg(mod_bp3,"age_a",type="contrast");plot(p1a,ylab=" ",xlab="ln Age", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
-f4b <- ~{p1a <- visreg(mod_bp3,"CNrt_a",type="contrast");plot(p1a,ylab=" ",xlab="ln soil C/N", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
-f5b <- ~{p1a <- visreg(mod_bp3,"alpha_a",type="contrast");plot(p1a,ylab=" ",xlab="alpha", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+#model  trendy BP fitted by mapped predictors
+mod1$coefficients;mod2$coefficients;mod3$coefficients;mod4$coefficients;
+mod5$coefficients;mod6$coefficients;mod7$coefficients;mod8$coefficients
 
-mod_bp4 <- lm(ISBA_NPP~Tg_a+alpha_a+observedfAPAR_a,data=d3a)
-f1c <- ~{p1a <- visreg(mod_bp4,"Tg_a",type="contrast");plot(p1a,ylab="TRENDY-BP (obs.)",xlab="Tg", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
-f2c <- ~{p1a <- visreg(mod_bp4,"observedfAPAR_a",type="contrast");plot(p1a,ylab=" ",xlab="fAPAR", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
-f3c <- ~{p1a <- visreg(mod_bp4,"alpha_a",type="contrast");plot(p1a,ylab=" ",xlab="alpha", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+t1a <- visreg(mod1,"Tg_a",type="contrast");t2a <-visreg(mod2,"Tg_a",type="contrast");t3a <-visreg(mod3,"Tg_a",type="contrast");t4a <- visreg(mod4,"Tg_a",type="contrast");t6a <-visreg(mod6,"Tg_a",type="contrast");t7a <- visreg(mod7,"Tg_a",type="contrast");t8a <-visreg(mod8,"Tg_a",type="contrast")
+f1a <- visreg(mod1,"fAPAR_a",type="contrast");f2a <-visreg(mod2,"fAPAR_a",type="contrast");f3a <-visreg(mod3,"fAPAR_a",type="contrast");f5a <-visreg(mod5,"fAPAR_a",type="contrast");f6a <-visreg(mod6,"fAPAR_a",type="contrast");f7a <- visreg(mod7,"fAPAR_a",type="contrast")
+v1a <- visreg(mod1,"vpd_a",type="contrast");v3a <- visreg(mod3,"vpd_a",type="contrast");v7a <- visreg(mod7,"vpd_a",type="contrast");v8a <- visreg(mod8,"vpd_a",type="contrast")
+p1a <- visreg(mod1,"PPFD_a",type="contrast");p2a <- visreg(mod2,"PPFD_a",type="contrast");p4a <- visreg(mod4,"PPFD_a",type="contrast");p5a <- visreg(mod5,"PPFD_a",type="contrast");p6a <- visreg(mod6,"PPFD_a",type="contrast");p8a <- visreg(mod8,"PPFD_a",type="contrast")
+
+fits_tg <- dplyr::bind_rows(mutate(t1a$fit, plt = "CABLE"),mutate(t2a$fit, plt = "ISAM"),mutate(t3a$fit, plt = "ISBA"),mutate(t4a$fit, plt = "JULES"),mutate(t6a$fit, plt = "ORCHIDEE"),mutate(t7a$fit, plt = "ORCHICNP"),mutate(t8a$fit, plt = "SDGVM"))
+fits_fapar <- dplyr::bind_rows(mutate(f1a$fit, plt = "CABLE"),mutate(f2a$fit, plt = "ISAM"),mutate(f3a$fit, plt = "ISBA"),mutate(f5a$fit, plt = "LPJ"),mutate(f6a$fit, plt = "ORCHIDEE"),mutate(f7a$fit, plt = "ORCHICNP"),mutate(f8a$fit, plt = "SDGVM"))
+fits_vpd <- dplyr::bind_rows(mutate(v1a$fit, plt = "CABLE"),mutate(v3a$fit, plt = "ISBA"),mutate(v7a$fit, plt = "ORCHICNP"),mutate(v8a$fit, plt = "SDGVM"))
+fits_PPFD <- dplyr::bind_rows(mutate(p1a$fit, plt = "CABLE"),mutate(p2a$fit, plt = "ISAM"),mutate(p4a$fit, plt = "JULES"),mutate(p5a$fit, plt = "LPJ"),mutate(p8a$fit, plt = "SDGVM"))
+
+#break down visreg
+visreg(mod1,"Tg_a",type="contrast")
+
+ggplot(data = subset(fits_tg,plt=="CABLE")) +geom_line(aes(Tg_a, visregFit)) + xlab("Tg") + ylab("BP")+
+  geom_point(data=t1a$res,aes(x=Tg_a,y=visregRes))+theme_classic()+
+  geom_ribbon(aes(Tg_a, ymin=visregLwr, ymax=visregUpr),fill="gray",alpha=0.7)
+
+final1 <- ggplot() +geom_line(data = fits_tg, aes(Tg_a, visregFit, group=plt, color=plt)) + xlab("Tg") + ylab("BP")+theme_classic()
+final2 <- ggplot() +geom_line(data = fits_fapar, aes(fAPAR_a, visregFit, group=plt, color=plt)) + xlab("fAPAR") + ylab(" ")+theme_classic()
+final3 <- ggplot() +geom_line(data = fits_vpd, aes(vpd_a, visregFit, group=plt, color=plt))+ xlab("ln D") + ylab(" ") +theme_classic()
+final4 <- ggplot() +geom_line(data = fits_PPFD, aes(PPFD_a, visregFit, group=plt, color=plt)) + xlab("ln PPFD") + ylab(" ")+theme_classic()
 
 
-plot_grid(f1,f2,f3,f4,f5,white,
-          f1a,f2a,f3a,f4a,f5a,f6a,
-          f1b,f2b,f3b,f4b,white,f5b,
-          f1c,f2c,white,white,white,f3c,
-          nrow=4,label_x = 0.8, label_y = 0.8)+white
+plot_grid(f1,f2,f5,f3,f4,
+          final1,final2,final4,final3,white,
+          nrow=2,label_x = 0.8, label_y = 0.8)+white
 
-ggsave(paste("~/data/output/figs_new1.jpg",sep=""), width = 20, height = 16)
+ggsave(paste("~/data/output/figs_new2.jpg",sep=""), width = 15, height = 16)
 
 
 #N minerlization
