@@ -408,7 +408,7 @@ r.squaredGLMM(model_1)
 # r2 =0.68 at small 
 a3<- stepwise(NPP_statistical_small,"tnpp_a")
 a3[[3]]
-model_2 <- (lmer(tnpp_a~Tg_a+observedfAPAR_a+obs_age_a+PPFD_a+vpd_a+(1|site_a),data=NPP_statistical_small))
+model_2 <- (lmer(tnpp_a~Tg_a+observedfAPAR_a+obs_age_a+PPFD_a+(1|site_a),data=NPP_statistical_small))
 r.squaredGLMM(model_2)
 
 #1st additional figure 
@@ -417,21 +417,21 @@ white <- theme(plot.background=element_rect(fill="white", color="white"))
 bp1a <- visreg(model_1,"Tg_a",type="contrast");bp1b <- visreg(model_1,"fAPAR_a",type="contrast");bp1c <- visreg(model_1,"PPFD_a",type="contrast");
 bp1d <- visreg(model_1,"age_a",type="contrast");bp1e <- visreg(model_1,"CNrt_a",type="contrast")
 
-w1 <- ggplot(data = bp1a$fit) +geom_line(aes(Tg_a, visregFit),color="blue",size=2) + xlab("Tg") + ylab("Measured BP")+
-  geom_point(data=bp1a$res,aes(x=Tg_a,y=visregRes))+theme_classic()+theme(text = element_text(size=20))+
-  geom_ribbon(aes(Tg_a, ymin=visregLwr, ymax=visregUpr),fill="gray",alpha=0.5)
-w2 <- ggplot(data = bp1b$fit) +geom_line(aes(fAPAR_a, visregFit),color="blue",size=2) + xlab("fAPAR") + ylab("")+
-  geom_point(data=bp1b$res,aes(x=fAPAR_a,y=visregRes))+theme_classic()+theme(text = element_text(size=20))+
-  geom_ribbon(aes(fAPAR_a, ymin=visregLwr, ymax=visregUpr),fill="gray",alpha=0.5)
-w3 <- ggplot(data = bp1c$fit) +geom_line(aes(PPFD_a, visregFit),color="blue",size=2) + xlab("ln PPFD") + ylab("")+
-  geom_point(data=bp1c$res,aes(x=PPFD_a,y=visregRes))+theme_classic()+theme(text = element_text(size=20))+
-  geom_ribbon(aes(PPFD_a, ymin=visregLwr, ymax=visregUpr),fill="gray",alpha=0.5)
-w4 <- ggplot(data = bp1d$fit) +geom_line(aes(age_a, visregFit),color="blue",size=2) + xlab("ln age") + ylab("")+
-  geom_point(data=bp1d$res,aes(x=age_a,y=visregRes))+theme_classic()+theme(text = element_text(size=20))+
-  geom_ribbon(aes(age_a, ymin=visregLwr, ymax=visregUpr),fill="gray",alpha=0.5)
-w5 <- ggplot(data = bp1e$fit) +geom_line(aes(CNrt_a, visregFit),color="blue",size=2) + xlab("ln soil C/N") + ylab("")+
-  geom_point(data=bp1e$res,aes(x=CNrt_a,y=visregRes))+theme_classic()+theme(text = element_text(size=20))+
-  geom_ribbon(aes(CNrt_a, ymin=visregLwr, ymax=visregUpr),fill="gray",alpha=0.5)
+w1 <- ggplot(data = bp1a$fit) +geom_line(aes(Tg_a, visregFit),color="black",size=2) + xlab("Tg") + ylab("Measured BP")+
+  geom_point(data=bp1a$res,aes(x=Tg_a,y=visregRes),alpha=0.5)+theme_classic()+theme(text = element_text(size=20))+
+  geom_ribbon(aes(Tg_a, ymin=visregLwr, ymax=visregUpr),fill="gray",alpha=0.3)
+w2 <- ggplot(data = bp1b$fit) +geom_line(aes(fAPAR_a, visregFit),color="black",size=2) + xlab("fAPAR") + ylab("")+
+  geom_point(data=bp1b$res,aes(x=fAPAR_a,y=visregRes),alpha=0.5)+theme_classic()+theme(text = element_text(size=20))+
+  geom_ribbon(aes(fAPAR_a, ymin=visregLwr, ymax=visregUpr),fill="gray",alpha=0.3)
+w3 <- ggplot(data = bp1c$fit) +geom_line(aes(PPFD_a, visregFit),color="black",size=2) + xlab("ln PPFD") + ylab("")+
+  geom_point(data=bp1c$res,aes(x=PPFD_a,y=visregRes),alpha=0.5)+theme_classic()+theme(text = element_text(size=20))+
+  geom_ribbon(aes(PPFD_a, ymin=visregLwr, ymax=visregUpr),fill="gray",alpha=0.3)
+w4 <- ggplot(data = bp1d$fit) +geom_line(aes(age_a, visregFit),color="black",size=2) + xlab("ln age") + ylab("")+
+  geom_point(data=bp1d$res,aes(x=age_a,y=visregRes),alpha=0.5)+theme_classic()+theme(text = element_text(size=20))+
+  geom_ribbon(aes(age_a, ymin=visregLwr, ymax=visregUpr),fill="gray",alpha=0.3)
+w5 <- ggplot(data = bp1e$fit) +geom_line(aes(CNrt_a, visregFit),color="black",size=2) + xlab("ln soil C/N") + ylab("")+
+  geom_point(data=bp1e$res,aes(x=CNrt_a,y=visregRes),alpha=0.5)+theme_classic()+theme(text = element_text(size=20))+
+  geom_ribbon(aes(CNrt_a, ymin=visregLwr, ymax=visregUpr),fill="gray",alpha=0.3)
 
 
 ####1. Large dataset
@@ -550,21 +550,21 @@ f1a <- visreg(mod1,"fAPAR_a",type="contrast");f2a <-visreg(mod2,"fAPAR_a",type="
 p1a <- visreg(mod1,"PPFD_a",type="contrast");p2a <- visreg(mod2,"PPFD_a",type="contrast");p4a <- visreg(mod4,"PPFD_a",type="contrast");p5a <- visreg(mod5,"PPFD_a",type="contrast");p6a <- visreg(mod6,"PPFD_a",type="contrast");p8a <- visreg(mod8,"PPFD_a",type="contrast")
 v1a <- visreg(mod1,"vpd_a",type="contrast");v3a <- visreg(mod3,"vpd_a",type="contrast");v7a <- visreg(mod7,"vpd_a",type="contrast");v8a <- visreg(mod8,"vpd_a",type="contrast")
 
-fits_tg <- dplyr::bind_rows(mutate(t1a$fit, plt = "CABLE"),mutate(t2a$fit, plt = "ISAM"),mutate(t3a$fit, plt = "ISBA"),mutate(t4a$fit, plt = "JULES"),mutate(t6a$fit, plt = "ORCHIDEE"),mutate(t7a$fit, plt = "ORCHICNP"),mutate(t8a$fit, plt = "SDGVM"))
+fits_tg <- dplyr::bind_rows(mutate(bp1a$fit, plt = "Measurement"),mutate(t1a$fit, plt = "CABLE"),mutate(t2a$fit, plt = "ISAM"),mutate(t3a$fit, plt = "ISBA"),mutate(t4a$fit, plt = "JULES"),mutate(t6a$fit, plt = "ORCHIDEE"),mutate(t7a$fit, plt = "ORCHICNP"),mutate(t8a$fit, plt = "SDGVM"))
 
-fits_fapar <- dplyr::bind_rows(mutate(f1a$fit, plt = "CABLE"),mutate(f2a$fit, plt = "ISAM"),mutate(f3a$fit, plt = "ISBA"),mutate(f5a$fit, plt = "LPJ"),mutate(f6a$fit, plt = "ORCHIDEE"),mutate(f7a$fit, plt = "ORCHICNP"))
+fits_fapar <- dplyr::bind_rows(mutate(bp1b$fit, plt = "Measurement"),mutate(f1a$fit, plt = "CABLE"),mutate(f2a$fit, plt = "ISAM"),mutate(f3a$fit, plt = "ISBA"),mutate(f5a$fit, plt = "LPJ"),mutate(f6a$fit, plt = "ORCHIDEE"),mutate(f7a$fit, plt = "ORCHICNP"))
 
-fits_PPFD <- dplyr::bind_rows(mutate(p1a$fit, plt = "CABLE"),mutate(p2a$fit, plt = "ISAM"),mutate(p4a$fit, plt = "JULES"),mutate(p5a$fit, plt = "LPJ"),mutate(p8a$fit, plt = "SDGVM"))
+fits_PPFD <- dplyr::bind_rows(mutate(bp1c$fit, plt = "Measurement"),mutate(p1a$fit, plt = "CABLE"),mutate(p2a$fit, plt = "ISAM"),mutate(p4a$fit, plt = "JULES"),mutate(p5a$fit, plt = "LPJ"),mutate(p8a$fit, plt = "SDGVM"))
 
 fits_vpd <- dplyr::bind_rows(mutate(v1a$fit, plt = "CABLE"),mutate(v3a$fit, plt = "ISBA"),mutate(v7a$fit, plt = "ORCHICNP"),mutate(v8a$fit, plt = "SDGVM"))
 
-final1 <- ggplot() +geom_line(data = fits_tg2, aes(Tg_a, visregFit, group=plt, color=plt),size=2) + xlab("Tg") + ylab("TRENDY BP")+theme_classic()+theme(text = element_text(size=20),legend.position="none")+ scale_colour_manual(values=c(CABLE="#000066",ISAM="#663399",ISBA="#339999",JULES="#CC0033",LPJ="#FF6600",ORCHIDEE="#FF9933",ORCHICNP="cyan",SDGVM="yellow"))
-final2 <- ggplot() +geom_line(data = fits_fapar2, aes(fAPAR_a, visregFit, group=plt, color=plt),size=2) + xlab("fAPAR") + ylab(" ")+theme_classic()+theme(text = element_text(size=20),legend.position="none")+ scale_colour_manual(values=c(CABLE="#000066",ISAM="#663399",ISBA="#339999",JULES="#CC0033",LPJ="#FF6600",ORCHIDEE="#FF9933",ORCHICNP="cyan",SDGVM="yellow"))
-final3 <- ggplot() +geom_line(data = fits_vpd2, aes(vpd_a, visregFit, group=plt, color=plt),size=2)+ xlab("ln D") + ylab(" ") +theme_classic()+theme(text = element_text(size=20),legend.position="none")+ scale_colour_manual(values=c(CABLE="#000066",ISAM="#663399",ISBA="#339999",JULES="#CC0033",LPJ="#FF6600",ORCHIDEE="#FF9933",ORCHICNP="cyan",SDGVM="yellow"))
-final4 <- ggplot() +geom_line(data = fits_PPFD2, aes(PPFD_a, visregFit, group=plt, color=plt),size=2) + xlab("ln PPFD") + ylab(" ")+theme_classic()+theme(text = element_text(size=20),legend.position="none")+ scale_colour_manual(values=c(CABLE="#000066",ISAM="#663399",ISBA="#339999",JULES="#CC0033",LPJ="#FF6600",ORCHIDEE="#FF9933",ORCHICNP="cyan",SDGVM="yellow"))
+final1 <- ggplot() +geom_line(data = fits_tg, aes(Tg_a, visregFit, group=plt, color=plt),size=2) + xlab("Tg") + ylab("TRENDY BP")+theme_classic()+theme(text = element_text(size=20),legend.position="none")+ scale_colour_manual(values=c(Measurement="black",CABLE="pink",ISAM="#663399",ISBA="#339999",JULES="#CC0033",LPJ="#FF6600",ORCHIDEE="#FF9933",ORCHICNP="cyan",SDGVM="yellow"))
+final2 <- ggplot() +geom_line(data = fits_fapar, aes(fAPAR_a, visregFit, group=plt, color=plt),size=2) + xlab("fAPAR") + ylab(" ")+theme_classic()+theme(text = element_text(size=20),legend.position="none")+ scale_colour_manual(values=c(Measurement="black",CABLE="pink",ISAM="#663399",ISBA="#339999",JULES="#CC0033",LPJ="#FF6600",ORCHIDEE="#FF9933",ORCHICNP="cyan",SDGVM="yellow"))
+final3 <- ggplot() +geom_line(data = fits_vpd, aes(vpd_a, visregFit, group=plt, color=plt),size=2)+ xlab("ln D") + ylab(" ") +theme_classic()+theme(text = element_text(size=20),legend.position="none")+ scale_colour_manual(values=c(CABLE="pink",ISAM="#663399",ISBA="#339999",JULES="#CC0033",LPJ="#FF6600",ORCHIDEE="#FF9933",ORCHICNP="cyan",SDGVM="yellow"))
+final4 <- ggplot() +geom_line(data = fits_PPFD, aes(PPFD_a, visregFit, group=plt, color=plt),size=2) + xlab("ln PPFD") + ylab(" ")+theme_classic()+theme(text = element_text(size=20),legend.position="none")+ scale_colour_manual(values=c(Measurement="black",CABLE="pink",ISAM="#663399",ISBA="#339999",JULES="#CC0033",LPJ="#FF6600",ORCHIDEE="#FF9933",ORCHICNP="cyan",SDGVM="yellow"))
 
 #show legend
-final1_legend <- ggplot() +geom_line(data = fits_PPFD2, aes(PPFD_a, visregFit, group=plt, color=plt),size=2) + xlab("ln PPFD") + ylab(" ")+theme_classic()+theme(text = element_text(size=20))+ scale_colour_manual("TRENDY output",values=c(CABLE="#000066",ISAM="#663399",ISBA="#339999",JULES="#CC0033",LPJ="#FF6600",ORCHIDEE="#FF9933",ORCHICNP="cyan",SDGVM="yellow"))
+final1_legend <- ggplot() +geom_line(data = fits_PPFD, aes(PPFD_a, visregFit, group=plt, color=plt),size=2) + xlab("ln PPFD") + ylab(" ")+theme_classic()+theme(text = element_text(size=20))+ scale_colour_manual(" ",values=c(Measurement="black",CABLE="pink",ISAM="#663399",ISBA="#339999",JULES="#CC0033",LPJ="#FF6600",ORCHIDEE="#FF9933",ORCHICNP="cyan",SDGVM="yellow"))
 
 legend_info <- as_ggplot(get_legend(final1_legend))
 
@@ -572,7 +572,7 @@ plot_grid(w1,w2,w3,w4,w5,
           final1,final2,final4,final3,legend_info,
           nrow=2,label_x = 0.8, label_y = 0.8)+white
 
-ggsave(paste("~/data/output/figs_new2.jpg",sep=""), width = 20, height = 10)
+ggsave(paste("~/data/output/figs_new1.jpg",sep=""), width = 20, height = 10)
 
 
 #N minerlization
@@ -625,7 +625,7 @@ n1 <- stepwise(Nmin_statistical_final,"Nmin_a")
 n1[[1]]
 n1[[2]]
 summary(lmer(Nmin_a~fAPAR_a+Tg_a+(1|site_a),data=Nmin_statistical_final))
-r.squaredGLMM(lmer(Nmin_a~vcmax25_a+Tg_a+(1|site_a),data=Nmin_statistical_final))
+r.squaredGLMM(lmer(Nmin_a~fAPAR_a+Tg_a+(1|site_a),data=Nmin_statistical_final))
 
 #TRENDY1
 m1 <- na.omit(Nmin_statistical[,c("lon","lat","ORCHICNP_fNup","Tg_a","PPFD_a","vpd_a","fAPAR_a","site_a")])
@@ -641,105 +641,116 @@ q2[[2]]
 summary(lm(ISAM_fNup~Tg_a,data=m2))
 
 #final figure for Nup
-mod_n1 <- lmer(Nmin_a~vcmax25_a+Tg_a+(1|site_a),data=Nmin_statistical_final)
+mod_n1 <- lmer(Nmin_a~fAPAR_a+Tg_a+(1|site_a),data=Nmin_statistical_final)
 
-nn1a <- visreg(mod_n1,"vcmax25_a",type="contrast");nn1b <- visreg(mod_n1,"Tg_a",type="contrast")
+nn1a <- visreg(mod_n1,"fAPAR_a",type="contrast")
+nn1b <- visreg(mod_n1,"Tg_a",type="contrast")
 
-ww1 <- ggplot(data = nn1a$fit) +geom_line(aes(vcmax25_a, visregFit),color="blue",size=2) + xlab("ln Vcmax25") + ylab("Measured Nmin")+
-  geom_point(data=nn1a$res,aes(x=vcmax25_a,y=visregRes))+theme_classic()+theme(text = element_text(size=20))+
-  geom_ribbon(aes(vcmax25_a, ymin=visregLwr, ymax=visregUpr),fill="gray",alpha=0.5)
+ww1 <- ggplot(data = nn1a$fit) +geom_line(aes(fAPAR_a, visregFit),color="black",size=2) + xlab("fAPAR") + ylab("Measured Nmin")+
+  geom_point(data=nn1a$res,aes(x=fAPAR_a,y=visregRes),alpha=0.5)+theme_classic()+theme(text = element_text(size=20))+
+  geom_ribbon(aes(fAPAR_a, ymin=visregLwr, ymax=visregUpr),fill="gray",alpha=0.3)
 
-ww2 <- ggplot(data = nn1b$fit) +geom_line(aes(Tg_a, visregFit),color="blue",size=2) + xlab("Tg") + ylab("Measured BP")+
-  geom_point(data=nn1b$res,aes(x=Tg_a,y=visregRes))+theme_classic()+theme(text = element_text(size=20))+
-  geom_ribbon(aes(Tg_a, ymin=visregLwr, ymax=visregUpr),fill="gray",alpha=0.5)
+ww2 <- ggplot(data = nn1b$fit) +geom_line(aes(Tg_a, visregFit),color="black",size=2) + xlab("Tg") + ylab("Measured Nmin")+
+  geom_point(data=nn1b$res,aes(x=Tg_a,y=visregRes),alpha=0.5)+theme_classic()+theme(text = element_text(size=20))+
+  geom_ribbon(aes(Tg_a, ymin=visregLwr, ymax=visregUpr),fill="gray",alpha=0.3)
 
 mod_n2 <- lm(ORCHICNP_fNup~fAPAR_a,data=m1)
+nn1c <- visreg(mod_n2,"fAPAR_a",type="contrast")
 
 mod_n3 <- lm(ISAM_fNup~Tg_a,data=m2)
+nn1d <- visreg(mod_n3,"Tg_a",type="contrast")
 
-plot_grid(ff1,ff2,
-          ff3,ff4,
-          ff5,ff6,
-          nrow=3,label_x = 0.8, label_y = 0.8)+white
+fits_fapar <- dplyr::bind_rows(mutate(nn1a$fit, plt = "Measurement"),mutate(nn1c$fit, plt = "ORCHICNP"))
+fits_tg <- dplyr::bind_rows(mutate(nn1b$fit, plt = "Measurement"),mutate(nn1d$fit, plt = "ISAM"))
 
-ggsave(paste("~/data/output/figs_new2.jpg",sep=""), width = 15, height = 16)
+final1a <- ggplot() +geom_line(data = fits_fapar, aes(fAPAR_a, visregFit, group=plt, color=plt),size=2) + xlab("fAPAR") + ylab("TRENDY N uptake")+theme_classic()+theme(text = element_text(size=20),legend.position="none")+ scale_colour_manual(values=c(Measurement="black",ISAM="#663399",ORCHICNP="cyan"))
+final1b <- ggplot() +geom_line(data = fits_tg, aes(Tg_a, visregFit, group=plt, color=plt),size=2) + xlab("Tg") + ylab("TRENDY N uptake")+theme_classic()+theme(text = element_text(size=20),legend.position="none")+ scale_colour_manual(values=c(Measurement="black",ISAM="#663399",ORCHICNP="cyan"))
+
+final2_legend <- ggplot() +geom_line(data = fits_tg, aes(Tg_a, visregFit, group=plt, color=plt),size=2) + xlab("Tg") + ylab("TRENDY N uptake")+theme_classic()+theme(text = element_text(size=20))+ scale_colour_manual(" ",values=c(Measurement="black",ISAM="#663399",ORCHICNP="cyan"))
+
+legend_info2 <- as_ggplot(get_legend(final2_legend))
+
+plot_grid(ww1,ww2,white,
+          final1a,final1b,legend_info2,
+          nrow=2,label_x = 0.8, label_y = 0.8)+white
+
+ggsave(paste("~/data/output/figs_new2.jpg",sep=""), width = 15, height = 10)
 
 #validation - BP
-NPP_statistical$pred_npp
 NPP_statistical$pred_npp_model1 <- 
-  summary(mod_bp1)$coef[1,1]+summary(mod_bp1)$coef[2,1]*NPP_statistical$Tg_a+summary(mod_bp1)$coef[3,1]*NPP_statistical$fAPAR_a+
-  summary(mod_bp1)$coef[4,1]*NPP_statistical$age_a+summary(mod_bp1)$coef[5,1]*NPP_statistical$CNrt_a+summary(mod_bp1)$coef[6,1]*NPP_statistical$PPFD_a
-NPP_statistical$pred_npp_model2 <- 
-  summary(mod_bp2)$coef[1,1]+summary(mod_bp2)$coef[2,1]*NPP_statistical$Tg_a+summary(mod_bp2)$coef[3,1]*NPP_statistical$fAPAR_a+
-  summary(mod_bp2)$coef[4,1]*NPP_statistical$age_a+summary(mod_bp2)$coef[5,1]*NPP_statistical$PPFD_a+summary(mod_bp2)$coef[6,1]*NPP_statistical$alpha_a+
-  summary(mod_bp2)$coef[7,1]*NPP_statistical$soilCN_a
+  summary(model_1)$coef[1,1]+summary(model_1)$coef[2,1]*NPP_statistical$Tg_a+summary(model_1)$coef[3,1]*NPP_statistical$fAPAR_a+
+  summary(model_1)$coef[4,1]*NPP_statistical$age_a+summary(model_1)$coef[5,1]*NPP_statistical$CNrt_a+summary(model_1)$coef[6,1]*NPP_statistical$PPFD_a
 
-obj_name
-p1 <- analyse_modobs2(NPP_statistical,"pred_npp","TNPP_1", type = "points")
-p2 <- analyse_modobs2(NPP_statistical,"pred_npp_model1","TNPP_1", type = "points")
-p3 <- analyse_modobs2(NPP_statistical,"pred_npp_model2","TNPP_1", type = "points")
-p4 <- analyse_modobs2(NPP_statistical,"CABLE_NPP","TNPP_1", type = "points")
-p5 <- analyse_modobs2(NPP_statistical,"ISAM_npp","TNPP_1", type = "points")
-p6 <- analyse_modobs2(NPP_statistical,"ISBA_NPP","TNPP_1", type = "points")
-p7 <- analyse_modobs2(NPP_statistical,"JULES_NPP","TNPP_1", type = "points")
-p8 <- analyse_modobs2(NPP_statistical,"LPJ_NPP","TNPP_1", type = "points")
-p9 <- analyse_modobs2(NPP_statistical,"ORCHIDEE_NPP","TNPP_1", type = "points")
-p10 <- analyse_modobs2(NPP_statistical,"ORCHICNP_NPP","TNPP_1", type = "points")
-p11 <- analyse_modobs2(NPP_statistical,"SDGVM_NPP","TNPP_1", type = "points")
+NPP_statistical$BP_from_BPE_model <- NPP_statistical$pred_npp
+NPP_statistical$BP_from_BP_model <- NPP_statistical$pred_npp_model1
 
-plot_grid(p1$gg,p2$gg,p3$gg,p4$gg,p5$gg,p6$gg,p7$gg,p8$gg,p9$gg,p10$gg,p11$gg,
-          nrow=4,label_x = 0.8, label_y = 0.8)+white
+NPP_statistical$Measured_BP <- NPP_statistical$TNPP_1
+
+p1 <- analyse_modobs2(NPP_statistical,"BP_from_BPE_model","Measured_BP", type = "points")
+p2 <- analyse_modobs2(NPP_statistical,"BP_from_BP_model","Measured_BP", type = "points")
+p4 <- analyse_modobs2(NPP_statistical,"CABLE_NPP","Measured_BP", type = "points")
+p5 <- analyse_modobs2(NPP_statistical,"ISAM_npp","Measured_BP", type = "points")
+p6 <- analyse_modobs2(NPP_statistical,"ISBA_NPP","Measured_BP", type = "points")
+p7 <- analyse_modobs2(NPP_statistical,"JULES_NPP","Measured_BP", type = "points")
+p8 <- analyse_modobs2(NPP_statistical,"LPJ_NPP","Measured_BP", type = "points")
+p9 <- analyse_modobs2(NPP_statistical,"ORCHIDEE_NPP","Measured_BP", type = "points")
+p10 <- analyse_modobs2(NPP_statistical,"ORCHICNP_NPP","Measured_BP", type = "points")
+p11 <- analyse_modobs2(NPP_statistical,"SDGVM_NPP","Measured_BP", type = "points")
+
+plot_grid(p1$gg,p2$gg,p4$gg,p5$gg,p6$gg,p7$gg,p8$gg,p9$gg,p10$gg,p11$gg,
+          labels = c('(a)','(b)','(c)','(d)','(e)','(f)','(g)','(h)','(i)','(j)'),
+          nrow=4,label_x = 0.9,label_y=0.92)+white
 
 ggsave(paste("~/data/output/figs_new3.jpg",sep=""), width = 15, height = 16)
 
 #bpe
-NPP_statistical$pred_bpe <- NPP_statistical$pred_npp/NPP_statistical$pred_gpp_c3
-NPP_statistical$pred_bpe_model1 <- NPP_statistical$pred_npp_model1/NPP_statistical$pred_gpp_c3
-NPP_statistical$pred_bpe_model2 <- NPP_statistical$pred_npp_model2/NPP_statistical$pred_gpp_c3
+NPP_statistical$BPE_from_BPE_model <- NPP_statistical$pred_npp/NPP_statistical$pred_gpp_c3
+NPP_statistical$BPE_from_BP_model <- NPP_statistical$pred_npp_model1/NPP_statistical$pred_gpp_c3
 
-NPP_statistical$CABLE <- NPP_statistical$CABLE_NPP/NPP_statistical$CABLE_GPP
-NPP_statistical$ISAM <- NPP_statistical$ISAM_npp/NPP_statistical$ISAM_gpp
-NPP_statistical$ISBA <- NPP_statistical$ISBA_NPP/NPP_statistical$ISBA_GPP
-NPP_statistical$JULES <- NPP_statistical$JULES_NPP/NPP_statistical$JULES_GPP
-NPP_statistical$LPJ <- NPP_statistical$LPJ_NPP/NPP_statistical$LPJ_GPP
-NPP_statistical$ORCHIDEE <- NPP_statistical$ORCHIDEE_NPP/NPP_statistical$ORCHIDEE_GPP
-NPP_statistical$ORCHICNP <- NPP_statistical$ORCHICNP_NPP/NPP_statistical$ORCHICNP_GPP
-NPP_statistical$SDGVM <- NPP_statistical$SDGVM_NPP/NPP_statistical$SDGVM_GPP
-NPP_statistical$obs_bpe <- NPP_statistical$TNPP_1/NPP_statistical$GPP
+NPP_statistical$CABLE_BPE <- NPP_statistical$CABLE_NPP/NPP_statistical$CABLE_GPP
+NPP_statistical$ISAM_BPE <- NPP_statistical$ISAM_npp/NPP_statistical$ISAM_gpp
+NPP_statistical$ISBA_BPE <- NPP_statistical$ISBA_NPP/NPP_statistical$ISBA_GPP
+NPP_statistical$JULES_BPE <- NPP_statistical$JULES_NPP/NPP_statistical$JULES_GPP
+NPP_statistical$LPJ_BPE <- NPP_statistical$LPJ_NPP/NPP_statistical$LPJ_GPP
+NPP_statistical$ORCHIDEE_BPE <- NPP_statistical$ORCHIDEE_NPP/NPP_statistical$ORCHIDEE_GPP
+NPP_statistical$ORCHICNP_BPE <- NPP_statistical$ORCHICNP_NPP/NPP_statistical$ORCHICNP_GPP
+NPP_statistical$SDGVM_BPE <- NPP_statistical$SDGVM_NPP/NPP_statistical$SDGVM_GPP
+NPP_statistical$Measured_BPE <- NPP_statistical$TNPP_1/NPP_statistical$GPP
 
-p1a <- analyse_modobs2(NPP_statistical,"pred_bpe","obs_bpe", type = "points")
-p2a <- analyse_modobs2(NPP_statistical,"pred_bpe_model1","obs_bpe", type = "points")
-p3a <- analyse_modobs2(NPP_statistical,"pred_bpe_model2","obs_bpe", type = "points")
-p4a <- analyse_modobs2(NPP_statistical,"CABLE","obs_bpe", type = "points")
-p5a <- analyse_modobs2(NPP_statistical,"ISAM","obs_bpe", type = "points")
-p6a <- analyse_modobs2(NPP_statistical,"ISBA","obs_bpe", type = "points")
-p7a <- analyse_modobs2(NPP_statistical,"JULES","obs_bpe", type = "points")
-p8a <- analyse_modobs2(NPP_statistical,"LPJ","obs_bpe", type = "points")
-p9a <- analyse_modobs2(NPP_statistical,"ORCHIDEE","obs_bpe", type = "points")
-p10a <- analyse_modobs2(NPP_statistical,"ORCHICNP","obs_bpe", type = "points")
-p11a <- analyse_modobs2(NPP_statistical,"SDGVM","obs_bpe", type = "points")
+p1a <- analyse_modobs2(NPP_statistical,"BPE_from_BPE_model","Measured_BPE", type = "points")
+#p2a <- analyse_modobs2(NPP_statistical,"BPE_from_BP_model","Measured_BPE", type = "points")
+p4a <- analyse_modobs2(NPP_statistical,"CABLE_BPE","Measured_BPE", type = "points")
+p5a <- analyse_modobs2(NPP_statistical,"ISAM_BPE","Measured_BPE", type = "points")
+p6a <- analyse_modobs2(NPP_statistical,"ISBA_BPE","Measured_BPE", type = "points")
+p7a <- analyse_modobs2(NPP_statistical,"JULES_BPE","Measured_BPE", type = "points")
+p8a <- analyse_modobs2(NPP_statistical,"LPJ_BPE","Measured_BPE", type = "points")
+p9a <- analyse_modobs2(NPP_statistical,"ORCHIDEE_BPE","Measured_BPE", type = "points")
+p10a <- analyse_modobs2(NPP_statistical,"ORCHICNP_BPE","Measured_BPE", type = "points")
+p11a <- analyse_modobs2(NPP_statistical,"SDGVM_BPE","Measured_BPE", type = "points")
 
-plot_grid(p1a$gg,p2a$gg,p3a$gg,p4a$gg,p5a$gg,p6a$gg,p7a$gg,p8a$gg,p9a$gg,p10a$gg,p11a$gg,
-          nrow=4,label_x = 0.8, label_y = 0.8)+white
+plot_grid(p1a$gg,p4a$gg,p5a$gg,p6a$gg,p7a$gg,p8a$gg,p9a$gg,p10a$gg,p11a$gg,
+          labels = c('(a)','(b)','(c)','(d)','(e)','(f)','(g)','(h)','(i)'),
+          nrow=3,label_x = 0.9,label_y=0.92)+white
 
-ggsave(paste("~/data/output/figs_new3a.jpg",sep=""), width = 15, height = 16)
+ggsave(paste("~/data/output/figs_new4.jpg",sep=""), width = 15, height = 16)
 
 #validation - N uptake
-Nmin_statistical$pred_nuptake
+Nmin_statistical$Nuptake_from_MS <-Nmin_statistical$pred_nuptake
 summary(mod_n1)$coef
 
-Nmin_statistical$pred_nuptake_model1 <- summary(mod_n1)$coef[1,1]+ summary(mod_n1)$coef[2,1]*Nmin_statistical$Tg_a+
-  summary(mod_n1)$coef[3,1]*Nmin_statistical$alpha_a
+Nmin_statistical$Nuptake_from_Nup_model <- summary(mod_n1)$coef[1,1]+ summary(mod_n1)$coef[2,1]*Nmin_statistical$fAPAR_a+
+  summary(mod_n1)$coef[3,1]*Nmin_statistical$Tg_a
 
-pp1 <- analyse_modobs2(Nmin_statistical,"pred_nuptake","Nmin", type = "points")
-pp2 <- analyse_modobs2(Nmin_statistical,"pred_nuptake_model1","Nmin", type = "points")
+pp1 <- analyse_modobs2(Nmin_statistical,"Nuptake_from_MS","Nmin", type = "points")
+pp2 <- analyse_modobs2(Nmin_statistical,"Nuptake_from_Nup_model","Nmin", type = "points")
 pp3 <- analyse_modobs2(Nmin_statistical,"ORCHICNP_fNup","Nmin", type = "points")
 pp4 <- analyse_modobs2(Nmin_statistical,"ISAM_fNup","Nmin", type = "points")
 
 plot_grid(pp1$gg,pp2$gg,pp3$gg,pp4$gg,
-          nrow=2,label_x = 0.8, label_y = 0.8)+white
+          labels = c('(a)','(b)','(c)','(d)'),
+          nrow=2,label_x = 0.9,label_y=0.92)+white
 
-ggsave(paste("~/data/output/figs_new4.jpg",sep=""), width = 10, height = 10)
+ggsave(paste("~/data/output/figs_new5.jpg",sep=""), width = 10, height = 10)
 
 
 #global!
@@ -1044,4 +1055,4 @@ summary(lm(ISAM_final$NUE~ISAM_final$CUE))
 
 plot_grid(b5,b6,b7, nrow=1,label_x = 0.8, label_y = 0.8)+white
 
-ggsave(paste("~/data/output/figs_new5.jpg",sep=""), width = 20, height = 5)
+ggsave(paste("~/data/output/figs_new6.jpg",sep=""), width = 20, height = 5)
