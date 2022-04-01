@@ -10,7 +10,7 @@ library(gridGraphics)
 library(visreg)
 
 ###1. statistical model of NPP/GPP, ANPP/GPP, leaf NPP/ANPP.
-#input data was derived from /Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/NPP/NPP_statistical_model.Rmd
+##input data was derived from /Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/NPP/NPP_statistical_model.Rmd
 NPP_statistical <- read.csv("~/data/NPP_final/NPP_statistical_forest.csv")
 
 tnpp_gpp_a <- log((NPP_statistical$TNPP_1/NPP_statistical$GPP)/(1-(NPP_statistical$TNPP_1/NPP_statistical$GPP)))

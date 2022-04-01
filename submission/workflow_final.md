@@ -8,7 +8,7 @@
 
 All saved in: ~/data/nimpl_sofun_inputs/map/Final_ncfile/eg.nc
 
----Prepare Validation data for forest and grassland
+---Prepare Validation data for forest and grassland...
 
 7. write final dataset of forest + grassland csv (including finally checked sitename for forcing and rep info):
 /Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/NPP/Forest_site_orig.R
