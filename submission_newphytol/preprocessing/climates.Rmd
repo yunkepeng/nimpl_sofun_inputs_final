@@ -1,0 +1,236 @@
+---
+title: "Global input for climates (PPFD, Tg, vpd, alpha)"
+author: "Yunke Peng"
+date: "Nov 18 2020"
+output: html_document
+---
+
+## Introduction about Global nc files
+
+Elements below are global inputs that will be used in statistical model-based calculations. All data has a final resolution as 0.5 * 0.5 degree - though the resample procedure was needed for soil C/N and LMA. All climate or environmental data (fAPAR, alpha, PPFD, Tg, vpd) has constrained the year from 1980 to 2016 (37 yrs average); while some others (soil C/N, age and LMA) also had a long-term average, according to their paper's description.
+
+ * alpha (SPLASH: asssited by David Sandoval)
+ * PPFD (umol/m2/s) (WFDEI: http://www.eu-watch.org/gfx_content/documents/README-WFDEI%20(v2016).pdf)
+ * Tg (degree celcius) (CRU ts 4.01: https://crudata.uea.ac.uk/cru/data/hrg/cru_ts_4.01/)
+ * vpd (kPa) (CRU ts 4.01: https://crudata.uea.ac.uk/cru/data/hrg/cru_ts_4.01/)
+
+The process below will provide original codes of soil C/N, stand age, fAPAR, alpha and LMA, as well as description text of PPFD, Tg, vpd. Vcmax25 will be seperately processed in SOFUN in Euler then.
+
+#1. PPFD (description and main calculation were provided)
+PPFD is instantaneous photosynthetic photon flux density (umol/m2/s). We used the 30 yrs average data (1982-2011), which was originally derived from time-integrated (24 hrs) daily Shortwave radiation (SWdown) from WFDEI. In order to convert from SWdown to PPFD, we need to calculate them as:
+
+PPFD (umol/m2/s) = SWdown (w/m2) * 4.6 * 0.5 
+
+where Solar radiation was converted to incident PPFD assuming a flux : energy ratio of 4.6 umol/J and a photosynthetically active fraction of 0.50 (Peng et al. 2020; New Phytologist).
+
+The code below will represent the global map of final output:
+
+#2. Tg (description and main calculation were provided)
+Tg is growth temperature (degree celcius). We used the 30 yrs average data (1982-2011), which was originally derived from monthly maximum temperature (Tmx) and minimum temperature (Tmn) from CRU ts 4.01. See formula below:
+
+The solar declination used were average value from each two month's starting day
+https://www.cambridge.org/core/services/aop-cambridge-core/content/view/212421E8457A41C47B64D809BDEF53CA/9780511845727apx7_p351-352_CBO.pdf/solar_geometry_and_radiation_approximations.pdf
+
+#3. vpd (description and main calculation were provided)
+vpd is vapor-pressure-deficient (kPa). We used the 30 yrs average data (1982-2011), which was originally derived from monthly data from CRU ts 4.01. See formula below (Peng et al. 2020 New Phytologist):
+
+vpd <- 0.611*exp(17.27*(Tg)/((Tg)+237.3))-vap*0.1 
+
+where Tg (in celcius degree) was derived from above, and vap (hPa) was derived from CRU ts 4.01 monthly data. The code below shows the global map of final output.
+
+The original Rdata was based on code /Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/climates_30yrs_monthly/climates_WFDEI_CRU.R
+
+```{r}
+load(file = "/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/climates_30yrs_monthly/WFDEI_CRU_1980_2016.Rdata")
+library(rbeni)
+library(dplyr)
+library(raster)
+library(ncdf4)
+library(dplyr)
+library(maps)
+library(rgdal)
+
+#calculate growth temperature
+total_month <- (2016-1980+1) * 12
+
+#solar declination from Jan to Dec: https://www.cambridge.org/core/services/aop-cambridge-core/content/view/212421E8457A41C47B64D809BDEF53CA/9780511845727apx7_p351-352_CBO.pdf/solar_geometry_and_radiation_approximations.pdf
+s1 <- (-23.1+ -17.3)/2
+s2 <- (-17.3 + -8)/2
+s3 <- (-8 + 4.1)/2
+s4 <- (4.1 + 14.8)/2
+s5 <- (14.8 + 21.9)/2
+s6 <- (21.9 + 23.2)/2
+s7 <- (23.2 + 18.3)/2
+s8 <- (18.3 + 8.6)/2
+s9 <-  (8.6 + -2.8)/2
+s10 <- (-2.8 + -14.1)/2
+s11 <- (-14.1 + -21.6)/2
+s12 <- (-21.6 + -23.1)/2
+
+s <- c(s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12)
+
+lat <- monthly_tmn[,2]
+xx <- data.frame(matrix(, nrow=259200, ncol=total_month))
+output_Tg <- data.frame(matrix(, nrow=259200, ncol=total_month))
+
+for (a in 1:12){ 
+  month_no <- seq(from = 1, to = total_month, by = 12)+a-1
+  xx[1:259200,month_no]<- -tan(pi*lat/180)*tan(s[a]*pi/180)
+}
+
+#check each part of Tg formula
+part1 <- (0.5+((1-xx^2)^(0.5))/(2*acos(xx)))[,1:12]
+part2 <- (0.5-((1-xx^2)^(0.5))/(2*acos(xx)))[,1:12]
+summary(part1)
+summary(part2)
+#the percentage of tmx was dominated overall
+
+output_Tg<-monthly_tmx[,3:(total_month+2)]*(0.5+((1-xx^2)^(0.5))/(2*acos(xx)))+ monthly_tmn[,3:(total_month+2)]*(0.5-((1-xx^2)^(0.5))/(2*acos(xx)))
+output_Tg[output_Tg =="NaN"] <- NA
+output_Tg[output_Tg < 0] <- NA
+
+output_vpd <- 0.611*exp(17.27*(output_Tg)/((output_Tg)+237.3))-monthly_vap[,3:(total_month+2)]*0.1 #vap in hPa
+output_vpd[output_vpd =="NaN"] <- NA
+output_vpd[output_vpd < 0] <- NA
+
+output_PPFD <- monthly_radi[,3:(total_month+2)]*0.5*4.6 +output_Tg - output_Tg # here + Tg - Tg means it considered 
+output_PPFD[output_PPFD =="NaN"] <- NA
+
+#now, all done. Primarily calculated each year's average - then avaerage of years. Calculate na.rm=TRUE average.
+Tg <- data.frame(matrix(, nrow=259200, ncol=12))
+vpd <- data.frame(matrix(, nrow=259200, ncol=12))
+PPFD <- data.frame(matrix(, nrow=259200, ncol=12))
+
+#firstly calculate based on years (37 years to one year) - then calculate monthly average of one year
+for (a in 1:12){ 
+  month_no <- seq(from = 1, to = total_month, by = 12)+a-1
+  Tg[1:259200,a]<- rowMeans(output_Tg[,month_no],na.rm = TRUE)
+  vpd[1:259200,a]<- rowMeans(output_vpd[,month_no],na.rm = TRUE)
+  PPFD[1:259200,a]<- rowMeans(output_PPFD[,month_no],na.rm = TRUE)
+}
+
+Tg <- rowMeans(Tg,na.rm = TRUE)
+vpd <- rowMeans(vpd,na.rm = TRUE)
+PPFD <- rowMeans(PPFD,na.rm = TRUE)
+
+lonlat <- monthly_tmn[,1:2]
+
+Tg_final <- cbind(lonlat,Tg)
+names(Tg_final) <- c("lon","lat","Tg")
+Tg_final$Tg[Tg_final$Tg=="NaN"] <- NA
+Tg_df_output <- Tg_final
+
+vpd_final <- cbind(lonlat,vpd)
+names(vpd_final) <- c("lon","lat","vpd")
+vpd_final$vpd[vpd_final$vpd=="NaN"] <- NA
+vpd_df_output <- vpd_final
+
+PPFD_final <- cbind(lonlat,PPFD)
+names(PPFD_final) <- c("lon","lat","PPFD")
+PPFD_final$PPFD[PPFD_final$PPFD=="NaN"] <- NA
+PPFD_df_output <- PPFD_final
+
+#prepare lon and lat
+library(ncdf4)
+ncin <- nc_open("~/data/watch_wfdei/WFDEI-elevation.nc")
+lon <- ncvar_get(ncin,"lon")
+lat<-ncvar_get(ncin,"lat")
+
+#output PPFD nc file - In Euler its path is same: "~/data/nimpl_sofun_inputs/map/Final_ncfile"
+PPFD_nc <- list(df_to_grid(PPFD_df_output,varnam = "PPFD", lonnam = "lon", latnam = "lat"))
+names(PPFD_nc) <- "PPFD"
+varams = "PPFD"
+test <- list(lon,lat,PPFD_nc,varams)
+names(test) <- c("lon","lat","vars","varams")
+write_nc2(test,varnams = "PPFD",long_name = "PPFD",units = "umol/m2/s",
+          path = "~/data/nimpl_sofun_inputs/map/Final_ncfile/PPFD.nc")
+
+#output Tg nc file - In Euler its path is same: "~/data/nimpl_sofun_inputs/map/Final_ncfile"
+Tg_nc <- list(df_to_grid(Tg_df_output,varnam = "Tg", lonnam = "lon", latnam = "lat"))
+names(Tg_nc) <- "Tg"
+varams = "Tg"
+test <- list(lon,lat,Tg_nc,varams)
+names(test) <- c("lon","lat","vars","varams")
+write_nc2(test,varnams = "Tg",long_name = "Growth temperature",units = "Degree Celcius",
+          path = "~/data/nimpl_sofun_inputs/map/Final_ncfile/Tg.nc")
+
+#output vpd nc file - In Euler its path is same: "~/data/nimpl_sofun_inputs/map/Final_ncfile"
+vpd_nc <- list(df_to_grid(vpd_df_output,varnam = "vpd", lonnam = "lon", latnam = "lat"))
+names(vpd_nc) <- "vpd"
+varams = "vpd"
+test <- list(lon,lat,vpd_nc,varams)
+names(test) <- c("lon","lat","vars","varams")
+write_nc2(test,varnams = "vpd",long_name = "vapor prssure deficient",units = "KPa",
+          path = "~/data/nimpl_sofun_inputs/map/Final_ncfile/vpd.nc")
+
+
+
+library(raster)
+
+coordinates(PPFD_final) <- ~lon+lat 
+gridded(PPFD_final) <- TRUE
+r3 <- raster(PPFD_final, "PPFD") 
+plot(r3)
+
+coordinates(Tg_final) <- ~lon+lat 
+gridded(Tg_final) <- TRUE
+r3 <- raster(Tg_final, "Tg") 
+plot(r3)
+
+coordinates(vpd_final) <- ~lon+lat 
+gridded(vpd_final) <- TRUE
+r3 <- raster(vpd_final, "vpd") 
+plot(r3)
+
+``` 
+
+#4. alpha
+
+```{r}
+library(raster)
+library(ncdf4)
+library(dplyr)
+library(maps)
+library(rgdal)
+library(rbeni)
+alphalist <- list.files(path = "~/data/alpha/data_orig/",full.names = T) # here this file includes 116 data - that is the annual alpha from 1901 to 2016
+
+#alphalist <- list.files(path = "E:/C-N cycling/Carbon allocation/672 sites analysis/alpha/",full.names = T)
+
+#Input alpha from a list of data frame from 1901 to 2016 (list 116)
+empty_alpha <- data.frame(matrix(NA)) 
+
+#calculate alpha within 37 years (1980-2016)
+alphalist[80]
+alphalist[116]
+for (i in 80:116){ #here 82:111 means 1980-2016
+  load(file = alphalist[i])
+  empty_alpha[1:259200,i-79] <- rowMeans(SP_result_monthly,na.rm = TRUE)
+}
+
+final_alpha <- rowMeans(empty_alpha,na.rm = TRUE)
+
+alpha_input <- as.data.frame(cbind(lonlat,final_alpha)) 
+names(alpha_input) <- c("lon","lat","alpha")
+
+df_alpha <- alpha_input
+
+coordinates(alpha_input) <- ~lon+lat 
+gridded(alpha_input) <- TRUE
+
+r4 <- raster(alpha_input, "alpha") 
+plot(r4)
+
+#output nc file - In Euler its path is same: "~/data/nimpl_sofun_inputs/map/Final_ncfile"
+df_alpha$alpha[df_alpha$alpha == "NaN"] <- NA
+summary(df_alpha)
+
+alpha_nc <- list(df_to_grid(df_alpha,varnam = "alpha", lonnam = "lon", latnam = "lat"))
+names(alpha_nc) <- "alpha"
+varams = "alpha"
+test <- list(lon,lat,alpha_nc,varams)
+names(test) <- c("lon","lat","vars","varams")
+write_nc2(test,varnams = "alpha",long_name = "alpha",units = "unitless",
+          path = "~/data/nimpl_sofun_inputs/map/Final_ncfile/alpha.nc")
+
+``` 
