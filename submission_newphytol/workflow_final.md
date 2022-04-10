@@ -1,4 +1,4 @@
------Preprocessing
+-----Preprocessing------
 
 ---Global prediction fields
 1. c3c4: /Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/submission_newphytol/preprocessing/c3c4.Rmd
@@ -9,46 +9,21 @@
 6. vcmax25: /Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/submission_newphytol/preprocessing/Vcmax25.Rmd
 
 
----Prepare Validation data for forest and grassland...
-
-7. write final dataset of forest + grassland csv (including finally checked sitename for forcing and rep info):
-/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/NPP/Forest_site_orig.R
-
-output two csv in ("/Users/yunpeng/data/NPP_final/NPP_Forest.csv") and ("/Users/yunpeng/data/NPP_Grassland_final/NPP_grassland.csv") and 
-
----Prepare Training data for forest
-
-8. prepare training data for forest statistical model: /Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/NPP/NPP_statistical_model.Rmd
-output: 
-csvfile <- paste("/Users/yunpeng/data/NPP_final/NPP_statistical_forest.csv")
-csvfile <- paste("/Users/yunpeng/data/NPP_final/NRE_statistical_forest.csv")
+---Prepare complete dataset for measurements:
+7. forest npp + grassland npp + Nuptake: /Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/submission_newphytol/preprocessing/Forest_site_orig.R
 
 
----Forcing and p-model 
+#please note! 8-10 below requires csv that output from 7 ("~/data/NPP_Yunke/NPP_Nmin_dataset.csv"). This csv in the future may be changed/updated. However, as far as lon, lat, z, begin_year and end_year not changed/added. It's fine to not replicate the (too long) process below.
 
-9. Forest simulation: nimpl_sofun_inputs_final/NPP/Forest_simulation.R 
+---Forcing and p-model: (but not used in New Phytol submission since we don't simulate GPP here)
+8. Simulated GPP for forest npp + grassland npp + Nuptake: pmodel_simulation.R. This takes time, and output data in ~/data/NPP_Yunke/simulated_gpp/site_simulated_gpp_vcmax.csv
 
-Already finsished for calculating all predicted c and n uptakes, but I have repeated again in validation file
-output:
-csvfile <- paste("/Users/yunpeng/data/NPP_final/NPP_validation.csv")
-csvfile <- paste("/Users/yunpeng/data/NPP_final/Nmass_validation.csv")
-csvfile <- paste("/Users/yunpeng/data/NPP_final/NRE_validation.csv")
+---collect site level Tg, vpd, alpha and PPFD basing on measurement year, using gwr. 
+9. This take time and see climate_site_data.R. This takes time, and output data in ...
 
-Also output siteinfo in "/Users/yunpeng/data/NPP_final/fpar_name/forest_fpar_name.csv" (just note to myself!)
+---collect site level Tg, vpd, alpha and PPFD from Map, using gwr. 
+10. This take time and see map_site_data.R.
 
-10. Grassland simulation: nimpl_sofun_inputs_final/NPP/Grassland_simulation.R
-FINISH by line 577!!!
-Already finsished for calculating all predicted c and n uptakes, but I have repeated again in validation file
-output:
-csvfile <- paste("/Users/yunpeng/data/NPP_Grassland_final/NPP_grass_validation.csv")
-
-Also output siteinfo in "/Users/yunpeng/data/NPP_final/fpar_name/grassland_fpar_name.csv" (just note to myself!)
-
-
-11. N minerlization simulation: nimpl_sofun_inputs_final/NPP/New_Nuptake_site_simulation.R
-FINISH by line 426!!!
-output:
-csvfile <- paste("/Users/yunpeng/data/NPP_final/Nmin_validation.csv")
 
 ---Now, output figures in manuscript!
 

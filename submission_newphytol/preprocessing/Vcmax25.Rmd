@@ -9,7 +9,7 @@ output: html_document
 
 
 ```{r}
-library(rbeni)
+devtools::load_all("/Users/yunpeng/yunkepeng/rbeni/")
 library(raster)
 library(ncdf4)
 library(maps)
@@ -27,7 +27,6 @@ library(dplyr)
 library(gplots)
 library(tidyselect)
 library(extrafont)
-library(rbeni)
 library(raster)
 library(maps)
 library(rworldmap)

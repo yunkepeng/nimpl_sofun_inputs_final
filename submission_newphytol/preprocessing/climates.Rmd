@@ -42,7 +42,7 @@ The original Rdata was based on code /Users/yunpeng/yunkepeng/nimpl_sofun_inputs
 
 ```{r}
 load(file = "/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/climates_30yrs_monthly/WFDEI_CRU_1980_2016.Rdata")
-library(rbeni)
+devtools::load_all("/Users/yunpeng/yunkepeng/rbeni/")
 library(dplyr)
 library(raster)
 library(ncdf4)
@@ -192,7 +192,6 @@ library(ncdf4)
 library(dplyr)
 library(maps)
 library(rgdal)
-library(rbeni)
 alphalist <- list.files(path = "~/data/alpha/data_orig/",full.names = T) # here this file includes 116 data - that is the annual alpha from 1901 to 2016
 
 #alphalist <- list.files(path = "E:/C-N cycling/Carbon allocation/672 sites analysis/alpha/",full.names = T)

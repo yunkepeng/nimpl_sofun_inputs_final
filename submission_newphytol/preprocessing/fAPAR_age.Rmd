@@ -19,7 +19,7 @@ library(ncdf4)
 library(dplyr)
 library(maps)
 library(rgdal)
-library(rbeni)
+devtools::load_all("/Users/yunpeng/yunkepeng/rbeni/")
 
 #set the path and filename
 ncfname <- paste ("~/data/GFAD/data_orig/", "GFAD_V1-1", ".nc", sep="")
@@ -211,7 +211,6 @@ library(ncdf4)
 library(dplyr)
 library(maps)
 library(rgdal)
-library(rbeni)
 
 ncfname <- paste ("~/data/fAPAR/fAPAR3g_v2/", "fAPAR3g_v2_1982_2016_FILLED", ".nc", sep="")
 

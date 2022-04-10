@@ -1,4 +1,24 @@
 rm(list=ls())
+library(tidyverse) 
+library(ncmeta)
+library(viridis)
+library(ggthemes)
+library(LSD)
+library(yardstick)
+library(ggplot2)
+library(RColorBrewer)
+library(dplyr)
+library(gplots)
+library(tidyselect)
+library(extrafont)
+devtools::load_all("/Users/yunpeng/yunkepeng/rbeni/")
+#library(rbeni)
+library(raster)
+library(maps)
+library(rworldmap)
+library(cowplot)
+library(ncdf4)
+library(scales)
 ##1.Sara Vicca
 #1.1 NPP
 Sara_NPP <- read.csv("/Users/yunpeng/data/NPP_Yunke/NPP_Vicca/orig/Forests_Colin_NPP.csv")
@@ -14,7 +34,6 @@ Sara_NPP$Begin.year[Sara_NPP$Begin.year==9999] <- Sara_NPP$End.year[Sara_NPP$Beg
 #Sara_NPP$End.year - Sara_NPP$Begin.year
 
 Sara_NPP$no <- c(1:nrow(Sara_NPP))
-
 
 #1.2 siteinfo
 Sara_NPP_siteinfo <- read.csv("/Users/yunpeng/data/NPP_Yunke/NPP_Vicca/orig/Forests_Colin_siteinfo.csv")
@@ -384,6 +403,9 @@ Tiandi_npp$End_year <- as.numeric(Tiandi_npp$End_year)
 summary(Tiandi_npp$Begin_year)
 summary(Tiandi_npp$End_year)
 summary(Tiandi_npp)
+Tiandi_npp$file <- "Tiandi Grassland"
+Tiandi_npp$pft <- "Grassland"
+Tiandi_npp$Source_NPP <- "Tiandi Grassland"
 
 ## 7. add data from Campioli (pft = grassland for all data)
 Cam_df <- read.csv(file="~/data/campioli/grasslands_MCampioli_20160111.csv")
@@ -405,14 +427,10 @@ Cam_npp <- Cam_df[,c("site","lon","lat","elevation","period_start","period_end",
 names(Cam_npp) <- c("site","lon","lat","z","Begin_year","End_year","TNPP_1","ANPP_2","NPP.foliage","BNPP_1","management_MCampioli","biome_MCampioli")
 
 #rbind them and manually add some input
-Tiandi_npp$file <- "Tiandi Grassland"
-Tiandi_npp$pft <- "Grassland"
-Tiandi_npp$Source_NPP <- "Tiandi Grassland"
-
 Cam_npp$file <- "MCampioli"
 Cam_npp$pft <- Cam_npp$biome_MCampioli
 Cam_npp$Management.code <- Cam_npp$management_MCampioli
-Cam_npp$Source_NPP <- "Tiandi Grassland"
+Cam_npp$Source_NPP <- "MCampioli"
 
 NPP_final <- dplyr::bind_rows(NPP_all, Tiandi_npp,Cam_npp) 
 
@@ -600,11 +618,21 @@ NPP$TNPP_1[NPP$TNPP_1==0] <- NA
 
 
 #remove repeated data
+NPP$rep <- "not_repeated"
 
 #remove rep data (GPP itself was repeated)
-NPP <- NPP[!(NPP$site %in% c("Bartlett","Cascade Head (1)","Cascade Head (1A)","Frazer old","Frazer young","Guyaflux","Hesse","Santiam Pass","Scio","Takayama 2","Waring's Woods")), ]
+NPP$rep[NPP$site=="Bartlett"] <- "repeated"
+NPP$rep[NPP$site=="Cascade Head (1)"] <- "repeated"
+NPP$rep[NPP$site=="Cascade Head (1A)"] <- "repeated"
+NPP$rep[NPP$site=="Frazer old"] <- "repeated"
+NPP$rep[NPP$site=="Frazer young"] <- "repeated"
+NPP$rep[NPP$site=="Guyaflux"] <- "repeated"
+NPP$rep[NPP$site=="Hesse"] <- "repeated"
+NPP$rep[NPP$site=="Santiam Pass"] <- "repeated"
+NPP$rep[NPP$site=="Scio"] <- "repeated"
+NPP$rep[NPP$site=="Takayama 2"] <- "repeated"
+NPP$rep[NPP$site=="Waring's Woods"] <- "repeated"
 
-NPP$rep <- "not_repeated"
 
 #remove rep data (from Keith, where repeated to Campioli, see below) - 14 removed
 NPP$rep[NPP$site=="CA-Let-F01"&NPP$file=="Keith"] <- "repeated"
@@ -623,57 +651,138 @@ NPP$rep[NPP$site=="US-kon-D05"&NPP$file=="Keith"] <- "repeated"
 NPP$rep[NPP$site=="US-osg-D01"&NPP$file=="Keith"] <- "repeated"
 
 #remove rep data (paired repeated measurements between ForC and Sara Vicca) - 13 removed
-NPP$rep[NPP$site=="FLONA Tapajos Km 83"&NPP$file=="ForC"] <- "repeated_paired"
-NPP$rep[NPP$site=="Metolius Old Pine"&NPP$file=="ForC"&NPP$GPP==1120] <- "repeated_paired"
-NPP$rep[NPP$site=="Thompson dry chronosequence d12"&NPP$file=="ForC"] <- "repeated_paired"
-NPP$rep[NPP$site=="Thompson dry chronosequence d131"&NPP$file=="ForC"] <- "repeated_paired"
-NPP$rep[NPP$site=="Thompson dry chronosequence d20"&NPP$file=="ForC"] <- "repeated_paired"
-NPP$rep[NPP$site=="Thompson dry chronosequence d37"&NPP$file=="ForC"] <- "repeated_paired"
-NPP$rep[NPP$site=="Thompson dry chronosequence d71"&NPP$file=="ForC"] <- "repeated_paired"
-NPP$rep[NPP$site=="Willow Creek (WC)-Chequamegon National Forest"&NPP$file=="ForC"] <- "repeated_paired"
-NPP$rep[NPP$site=="Wind River Canopy Crane"&NPP$file=="ForC"] <- "repeated_paired"
+NPP$rep[NPP$site=="FLONA Tapajos Km 83"&NPP$file=="ForC"] <- "repeated"
+NPP$rep[NPP$site=="Metolius Old Pine"&NPP$file=="ForC"&NPP$GPP==1120] <- "repeated"
+NPP$rep[NPP$site=="Thompson dry chronosequence d12"&NPP$file=="ForC"] <- "repeated"
+NPP$rep[NPP$site=="Thompson dry chronosequence d131"&NPP$file=="ForC"] <- "repeated"
+NPP$rep[NPP$site=="Thompson dry chronosequence d20"&NPP$file=="ForC"] <- "repeated"
+NPP$rep[NPP$site=="Thompson dry chronosequence d37"&NPP$file=="ForC"] <- "repeated"
+NPP$rep[NPP$site=="Thompson dry chronosequence d71"&NPP$file=="ForC"] <- "repeated"
+NPP$rep[NPP$site=="Willow Creek (WC)-Chequamegon National Forest"&NPP$file=="ForC"] <- "repeated"
+NPP$rep[NPP$site=="Wind River Canopy Crane"&NPP$file=="ForC"] <- "repeated"
 
-NPP <- subset(NPP,rep=="not_repeated")
-NPP <- NPP[,!(names(NPP) %in% "rep")]
-
-#output
-NPP_Forest_new <- subset(NPP,pft=="Forest")
-NPP_Grassland_new <- subset(NPP,pft!="Forest")
+#NPP <- subset(NPP,rep=="not_repeated")
 
 #removing part for collecting c3,c4 (too confusing and not used in this submission). For info see submission/Forest_site_org.R 
 
 #additional step: 
 #add more gpp data from Compioli et al. SI table 1, and remove repeated data (see above, already removed)
-NPP_Grassland_new$GPP[NPP_Grassland_new$site=="IT-bea-D02"] <- 1568
-NPP_Grassland_new$GPP[NPP_Grassland_new$site=="US-che-D01"] <- 626
-NPP_Grassland_new$GPP[NPP_Grassland_new$site=="DE-gri-D01"] <- 1233#repeated
-NPP_Grassland_new$GPP[NPP_Grassland_new$site=="CN-Hab-F01"] <- 634
-NPP_Grassland_new$GPP[NPP_Grassland_new$site=="RU-ha1-F01"] <- 519#repeated
-NPP_Grassland_new$GPP[NPP_Grassland_new$site=="RU-ha3-F01"] <- 526 #repeated
-NPP_Grassland_new$GPP[NPP_Grassland_new$site=="CN-Inn-D01_C"] <- 182
-NPP_Grassland_new$GPP[NPP_Grassland_new$site=="US-kbs-D01"] <- 1015
-NPP_Grassland_new$GPP[NPP_Grassland_new$site=="US-kbs-D04"] <- 512
-NPP_Grassland_new$GPP[NPP_Grassland_new$site=="US-kbs-D05"] <- 374
-NPP_Grassland_new$GPP[NPP_Grassland_new$site=="US-kbs-D03"] <- 793
-NPP_Grassland_new$GPP[NPP_Grassland_new$site=="US-jas-D01"] <- 516
-NPP_Grassland_new$GPP[NPP_Grassland_new$site=="US-kon-D05"] <- 1151
-NPP_Grassland_new$GPP[NPP_Grassland_new$site=="RU-krs-D01"] <- 1611
-NPP_Grassland_new$GPP[NPP_Grassland_new$site=="CA-Let-F01"] <- 280
-NPP_Grassland_new$GPP[NPP_Grassland_new$site=="CA-mat-D01"] <- 786
-NPP_Grassland_new$GPP[NPP_Grassland_new$site=="US-osg-D01"] <- 1890
-NPP_Grassland_new$GPP[NPP_Grassland_new$site=="CG-tch-D01"] <- 1572
-NPP_Grassland_new$GPP[NPP_Grassland_new$site=="US-Spe-D01"] <- 829
+NPP$GPP[NPP$site=="IT-bea-D02"] <- 1568
+NPP$GPP[NPP$site=="US-che-D01"] <- 626
+NPP$GPP[NPP$site=="DE-gri-D01"] <- 1233#repeated
+NPP$GPP[NPP$site=="CN-Hab-F01"] <- 634
+NPP$GPP[NPP$site=="RU-ha1-F01"] <- 519 #repeated
+NPP$GPP[NPP$site=="RU-ha3-F01"] <- 526 #repeated
+NPP$GPP[NPP$site=="CN-Inn-D01_C"] <- 182
+NPP$GPP[NPP$site=="US-kbs-D01"] <- 1015
+NPP$GPP[NPP$site=="US-kbs-D04"] <- 512
+NPP$GPP[NPP$site=="US-kbs-D05"] <- 374
+NPP$GPP[NPP$site=="US-kbs-D03"] <- 793
+NPP$GPP[NPP$site=="US-jas-D01"] <- 516
+NPP$GPP[NPP$site=="US-kon-D05"] <- 1151
+NPP$GPP[NPP$site=="RU-krs-D01"] <- 1611
+NPP$GPP[NPP$site=="CA-Let-F01"] <- 280
+NPP$GPP[NPP$site=="CA-mat-D01"] <- 786
+NPP$GPP[NPP$site=="US-osg-D01"] <- 1890
+NPP$GPP[NPP$site=="CG-tch-D01"] <- 1572
+NPP$GPP[NPP$site=="US-Spe-D01"] <- 829
 
 #interpolate gpp to Cambioli's data from keith's source (with same site name)
-NPP_Grassland_new$GPP[NPP_Grassland_new$site=="CN-Inn-F01"] <- 204 #this value is reasonable comparing with NPP/GPP
+NPP$GPP[NPP$site=="CN-Inn-F01"] <- 204 #this value is reasonable comparing with NPP/GPP
 
 #add more data from /Users/yunpeng/data/NPP_Yunke/NPP_Keith/orig/Bremer and Ham 2010.pdf from keith's grassland data
 #based on its Table 3 - GPP, for example, at the site below, was calculated as averages of 2 values (at 2 period) from site BA, so does site BB. 
-NPP_Grassland_new$TNPP_1[NPP_Grassland_new$site=="US-Kon-D02"] <- ((1669-1354) + (2269-1666))/2
-NPP_Grassland_new$TNPP_1[NPP_Grassland_new$site=="US-Kon-D03"] <- ((1368-1185) + (1997-1495))/2
+NPP$TNPP_1[NPP$site=="US-Kon-D02"] <- ((1669-1354) + (2269-1666))/2
+NPP$TNPP_1[NPP$site=="US-Kon-D03"] <- ((1368-1185) + (1997-1495))/2
 
-NPP_Grassland_new$BNPP_1[NPP_Grassland_new$site=="US-Kon-D02"] <- NPP_Grassland_new$TNPP_1[NPP_Grassland_new$site=="US-Kon-D02"] - NPP_Grassland_new$ANPP_2[NPP_Grassland_new$site=="US-Kon-D02"]
-NPP_Grassland_new$BNPP_1[NPP_Grassland_new$site=="US-Kon-D03"] <- NPP_Grassland_new$TNPP_1[NPP_Grassland_new$site=="US-Kon-D03"] - NPP_Grassland_new$ANPP_2[NPP_Grassland_new$site=="US-Kon-D03"]
+NPP$BNPP_1[NPP$site=="US-Kon-D02"] <- NPP$TNPP_1[NPP$site=="US-Kon-D02"] - NPP$ANPP_2[NPP$site=="US-Kon-D02"]
+NPP$BNPP_1[NPP$site=="US-Kon-D03"] <- NPP$TNPP_1[NPP$site=="US-Kon-D03"] - NPP$ANPP_2[NPP$site=="US-Kon-D03"]
 
-#csvfile <- paste("/Users/yunpeng/data/NPP_final/NPP_Forest.csv")
-#write_csv(NPP_Forest, path = csvfile)
+##### Finally Input N uptake
+#(1) newly added Nmin rate data from Finzi
+Finzi <- read.csv("/Users/yunpeng/data/NPP_Yunke/Nmin_Finzi/Nmin_Finzi.csv")
+names(Finzi)[names(Finzi) == "Lat"] <- "lat"
+names(Finzi)[names(Finzi) == "Long"] <- "lon"
+devtools::load_all("/Users/yunpeng/yunkepeng/Grassland_new_ingestr_rsofun_20210326/ingestr/")
+
+#Forest - only merging forest this time
+Finzi_Forest <- subset(Finzi, Biome!="temp grass")
+Finzi_Forest_sitemean <- aggregate(Finzi_Forest,by=list(Finzi_Forest$lon,Finzi_Forest$lat), FUN=mean, na.rm=TRUE) #site-mean
+dim(Finzi_Forest_sitemean)
+for (i in 1:nrow(Finzi_Forest_sitemean)){
+  Finzi_Forest_sitemean$sitename[i] <- paste("Finzi_Forest",i,sep = "") # this is also sitename for fpar
+  Finzi_Forest_sitemean$sitename_climate[i] <- paste("Finzi_Forest_climate",i,sep = "")
+  
+}
+df_etopo <- ingest(Finzi_Forest_sitemean,source = "etopo1",dir = "~/data/etopo/" )
+Finzi_Forest_sitemean$elv <- as.numeric(as.data.frame(df_etopo$data))
+Finzi_Forest_sitemean$elv[Finzi_Forest_sitemean$elv< 0] <- 0
+Finzi_Forest_sitemean
+#Finzi_final <- dplyr::bind_rows(Finzi_Forest_sitemean, Finzi_Grassland_sitemean)
+
+Finzi_Forest_sitemean2 <- Finzi_Forest_sitemean[,c("lon","lat","elv","sitename","sitename_climate")]
+dim(Finzi_Forest_sitemean2)
+Finzi_all <-Reduce(function(x,y) merge(x = x, y = y, by = c("lon","lat"),all.x=TRUE), 
+                   list(Finzi,Finzi_Forest_sitemean2))
+
+Finzi_all_forest <- subset(Finzi_all, Biome!="temp grass" & is.na(lon)==FALSE)
+summary(Finzi_all_forest)
+Finzi_all_forest$year_start <- 1984
+Finzi_all_forest$year_end <- 2013
+
+Nmin_final <- Finzi_all_forest
+
+Nmin_dataset <- Nmin_final[,c("lon","lat","elv","sitename","year_start","year_end","Publication","Nmin")]
+names(Nmin_dataset) <- c("lon","lat","z","site","Begin_year","End_year","Source_NPP","Nmin")
+Nmin_dataset$pft<- "Forest"
+Nmin_dataset$file<- "Finzi"
+Nmin_dataset$rep<- "not_repeated"
+
+NPP_Nuptake <- dplyr::bind_rows(NPP, Nmin_dataset) 
+
+NPP_Nuptake$year_start <- NPP_Nuptake$Begin_year
+NPP_Nuptake$year_end <- NPP_Nuptake$End_year
+
+NPP_Nuptake$year_start[NPP_Nuptake$Begin_year<=1980] <- 1980
+NPP_Nuptake$year_end[NPP_Nuptake$End_year<=1980] <- 1989
+
+csvfile <- paste("/Users/yunpeng/data/NPP_Yunke/NPP_Nmin_dataset.csv")
+write_csv(NPP_Nuptake, path = csvfile)
+
+#please note! below 3 steps requires above output NPP_Nmin_dataset.csv
+#but I guess, This csv in the future may be changed/updated, if some filter more required
+#However, as far as lon, lat, z, begin_year and end_year from (NPP_Nmin_dataset.csv) not changed/added. It's fine to not replicate the (too long) process below. Just directly merging with below output
+
+#combine with p-model's gpcessing/pmodel_simulation.R
+gpp_vcmax25 <- read.csv("/Users/yunpeng/data/NPP_Yunke/simulated_gpp/site_simulated_gpp_vcmax.csv")
+NPP_Nuptake_gpp_vcmax25 <- merge(NPP_Nuptake,gpp_vcmax25,by=c("lon","lat","z","year_start","year_end"),all.x=TRUE)
+
+#combine site-simulated vpd, ppfd, alpha and Tg: see climate_site_data.R
+climates_sites <- read.csv("/Users/yunpeng/data/NPP_Yunke/predictors/climates_sites.csv")
+NPP_Nuptake_gpp_vcmax25_climates <- merge(NPP_Nuptake_gpp_vcmax25,climates_sites,by=c("lon","lat","z","year_start","year_end","Begin_year","End_year"),all.x=TRUE)
+summary(NPP_Nuptake_gpp_vcmax25_climates)
+
+#combine with site-interpolated value from all maps: see map_site_data.R
+gwr_sites <- read.csv("/Users/yunpeng/data/NPP_Yunke/predictors/predictors_gwr.csv")
+gwr_sites <- gwr_sites %>% 
+  rename(
+    mapped_age = age)
+NPP_Nuptake_gpp_vcmax25_climates_gwr <- merge(NPP_Nuptake_gpp_vcmax25_climates,gwr_sites,by=c("lon","lat","z","year_start","year_end","Begin_year","End_year"),all.x=TRUE)
+summary(NPP_Nuptake_gpp_vcmax25_climates_gwr)
+
+#final dataset - with predictors additionally
+
+csvfile <- paste("/Users/yunpeng/data/NPP_Yunke/NPP_Nmin_dataset_with_predictors.csv")
+write_csv(NPP_Nuptake_gpp_vcmax25_climates_gwr, path = csvfile)
+
+#check: plot missing data - p model's vcmax25 - many of them are missing due to on the edge
+aa <- subset(NPP_Nuptake_gpp_vcmax25_climates_gwr,is.na(max_vcmax25_c3)==TRUE)
+newmap <- getMap(resolution = "low")
+plot(newmap, xlim = c(-180, 180), ylim = c(-75, 75), asp = 1)
+points(aa$lon,aa$lat, col="red", pch=16,cex=1)
+
+#check: plot missing data - mapped vcmax25 - many of them are missing due to on the edge
+aa <- subset(NPP_Nuptake_gpp_vcmax25_climates_gwr,is.na(vcmax25)==TRUE)
+newmap <- getMap(resolution = "low")
+plot(newmap, xlim = c(-180, 180), ylim = c(-75, 75), asp = 1)
+points(aa$lon,aa$lat, col="red", pch=16,cex=1)

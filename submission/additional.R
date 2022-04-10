@@ -392,6 +392,20 @@ NPP_statistical$LMA_a <- log(NPP_statistical$LMA)
 NPP_statistical$vcmax25_a <- log(NPP_statistical$max_vcmax25_c3)
 NPP_statistical$site_a <- NPP_statistical$site
 
+#examine alternative model using mapped predictor - too bad!
+a1 <- stepwise(na.omit(NPP_statistical[,c("tnpp_gpp_a","age_a","fAPAR_a","CNrt_a","Tg_a","PPFD_a","vpd_a","site_a")]),"tnpp_gpp_a")
+a1[[1]]
+
+a1_old <- stepwise(na.omit(NPP_statistical[,c("tnpp_gpp_a","obs_age_a","observedfAPAR_a","soilCN_a","Tg_a","PPFD_a","vpd_a","site_a")]),"tnpp_gpp_a")
+a1_old[[1]]
+summary(lmer(tnpp_gpp_a~obs_age_a+observedfAPAR_a+soilCN_a+(1|site_a),data=NPP_statistical))
+
+a2 <- stepwise(na.omit(NPP_statistical[,c("anpp_tnpp_a","age_a","fAPAR_a","CNrt_a","Tg_a","PPFD_a","vpd_a","site_a")]),"anpp_tnpp_a")
+a2[[1]]
+
+r.squaredGLMM(lmer(tnpp_gpp_a~CNrt_a+(1|site_a),data=NPP_statistical))
+r.squaredGLMM(lmer(anpp_tnpp_a~CNrt_a+(1|site_a),data=NPP_statistical))
+
 #two dataset
 #1. large - all mapping data
 NPP_statistical_large <- na.omit(NPP_statistical[,c("tnpp_a","age_a","Tg_a","PPFD_a","vpd_a","fAPAR_a","CNrt_a","site_a")])

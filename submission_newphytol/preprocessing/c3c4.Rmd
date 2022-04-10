@@ -24,7 +24,7 @@ library(ncdf4)
 library(dplyr)
 library(maps)
 library(rgdal)
-library(rbeni)
+devtools::load_all("/Users/yunpeng/yunkepeng/rbeni/")
 
 elev_nc <- read_nc_onefile("~/data/watch_wfdei/WFDEI-elevation.nc")
 elev <- as.data.frame(nc_to_df(elev_nc, varnam = "elevation"))
