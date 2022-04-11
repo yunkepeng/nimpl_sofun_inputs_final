@@ -467,16 +467,18 @@ ggplot(data=subset(measurement_grassland2,rep=="not_repeated"), aes(x=pred_gpp_c
     aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
     label.x = 3)+xlim(0,5000)+ylim(0,5000)
 
-fill_missing <- subset(measurement_grassland2,is.na(max_vcmax25_c3)==TRUE)[,c("lon","lat","z","year_start","year_end")]
+fill_missing <- unique(subset(measurement_grassland2,is.na(max_vcmax25_c3)==TRUE)[,c("lon","lat","z","year_start","year_end","pred_gpp_c3","max_vcmax25_c3")])
 
-#some measured year were mixed - just fill it again - basing on lon, lat, z
-merged_data_grassland_v2 <- aggregate(merged_grassland,by=list(merged_grassland$lon,merged_grassland$lat,merged_grassland$elv), FUN=mean, na.rm=TRUE)[,c("lon","lat","elv","pred_gpp_c3","max_vcmax25_c3")]
-names(merged_data_grassland_v2) <- c("lon","lat","z","pred_gpp_c3","max_vcmax25_c3")
+#fill some missing data (some lacked because one measurement year (in old simulation converted to) show 1980-1989 while measurement data show 1980-1982, so that failed to merge)
+fill_missing$pred_gpp_c3[fill_missing$lon==11.8] <-merged_grassland$pred_gpp_c3[merged_grassland$lon==11.8];fill_missing$max_vcmax25_c3[fill_missing$lon==11.8] <-merged_grassland$max_vcmax25_c3[merged_grassland$lon==11.8];
+fill_missing$pred_gpp_c3[fill_missing$lon==36.50000&fill_missing$year_start==1980] <-merged_grassland$pred_gpp_c3[merged_grassland$lon==36.50000&merged_grassland$year_start==1980];fill_missing$max_vcmax25_c3[fill_missing$lon==36.50000&fill_missing$year_start==1980] <-merged_grassland$max_vcmax25_c3[merged_grassland$lon==36.50000&merged_grassland$year_start==1980]
+fill_missing$pred_gpp_c3[fill_missing$lon==60.08000&fill_missing$year_start==1980] <-merged_grassland$pred_gpp_c3[merged_grassland$lon==60.08000&merged_grassland$year_start==1980];fill_missing$max_vcmax25_c3[fill_missing$lon==60.08000&fill_missing$year_start==1980] <-merged_grassland$max_vcmax25_c3[merged_grassland$lon==60.08000&merged_grassland$year_start==1980]
+fill_missing$pred_gpp_c3[fill_missing$lon==116.55000&fill_missing$year_start==1980] <-merged_grassland$pred_gpp_c3[merged_grassland$lon==116.55000&merged_grassland$year_start==1980];fill_missing$max_vcmax25_c3[fill_missing$lon==116.55000&fill_missing$year_start==1980] <-merged_grassland$max_vcmax25_c3[merged_grassland$lon==116.55000&merged_grassland$year_start==1980]
+fill_missing$pred_gpp_c3[fill_missing$lon==116.66000&fill_missing$year_start==1980] <-merged_grassland$pred_gpp_c3[merged_grassland$lon==116.66000&merged_grassland$year_start==1980];fill_missing$max_vcmax25_c3[fill_missing$lon==116.66000&fill_missing$year_start==1980] <-merged_grassland$max_vcmax25_c3[merged_grassland$lon==116.66000&merged_grassland$year_start==1980]
+fill_missing$pred_gpp_c3[fill_missing$lon==116.74000&fill_missing$year_start==1980] <-merged_grassland$pred_gpp_c3[merged_grassland$lon==116.74000&merged_grassland$year_start==1980];fill_missing$max_vcmax25_c3[fill_missing$lon==116.74000&fill_missing$year_start==1980] <-merged_grassland$max_vcmax25_c3[merged_grassland$lon==116.74000&merged_grassland$year_start==1980]
 
-measurement_grassland3 <- merge(fill_missing,merged_data_grassland_v2,by=c("lon","lat","z"),all.x=TRUE)
-
-merged_data_grassland2 <- na.omit(unique(measurement_grassland3))
-
+#some measured year were missed to be collected so it has not merged sucessfuly - just fill it - basing on lon, lat, z only
+merged_data_grassland2 <- na.omit(fill_missing)
 
 #finally, site simulation of N uptake
 #input Filzi's climates

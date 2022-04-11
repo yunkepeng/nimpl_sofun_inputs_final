@@ -254,7 +254,28 @@ object_correct_years <- function(object_npp){
   return(object_npp2)
 }
 
-NPP_1_C <- object_correct_years(NPP_1_C)
+#with additional info - including ambient/elevated info
+object_correct_years_with_siteinfo <- function(object_npp){
+  object_npp$year_start <- NA
+  object_npp$year_end <- NA
+  for (i in 1:nrow(object_npp)){
+    if (is.na(object_npp$start.date[i]) == FALSE){
+      object_npp$year_start[i] <- object_npp$start.date[i]
+      object_npp$year_end[i] <- object_npp$end.date[i]} else {
+        object_npp$year_start[i] <- object_npp$date[i]
+        object_npp$year_end[i] <- object_npp$date[i]}}
+  
+  object_npp$year_start <- round(as.numeric(object_npp$year_start))  
+  object_npp$year_end <- round(as.numeric(object_npp$year_end))  
+  object_npp$year_start[is.na(object_npp$year_start)==TRUE] <- 1991
+  object_npp$year_end[is.na(object_npp$year_end)==TRUE] <- 2010
+  object_npp <- object_npp[,c("sites.sitename","plot.name","year_start","year_end","mean")]
+  object_npp$mean <- object_npp$mean * 100 #convert to consistent unit gC/m2/yr
+  object_npp2 <- aggregate(mean~sites.sitename+plot.name+year_start+year_end,data=object_npp,mean,na.rm=TRUE)
+  return(object_npp2)
+}
+
+NPP_1_C <- object_correct_years_with_siteinfo(NPP_1_C)
 ANPP_woody_stem_C <- object_correct_years(ANPP_woody_stem_C)
 ANPP_foliage_C<- object_correct_years(ANPP_foliage_C)
 ANPP_woody_C<- object_correct_years(ANPP_woody_C)
@@ -263,7 +284,7 @@ BNPP_root_C<- object_correct_years(BNPP_root_C)
 BNPP_root_coarse_C<- object_correct_years(BNPP_root_coarse_C)
 BNPP_root_fine_C<- object_correct_years(BNPP_root_fine_C)
 
-names(NPP_1_C) <- c("sites.sitename","year_start","year_end","TNPP_1")
+names(NPP_1_C) <- c("sites.sitename","Management","year_start","year_end","TNPP_1")
 names(ANPP_woody_stem_C) <- c("sites.sitename","year_start","year_end","NPP.stem")
 names(ANPP_foliage_C) <- c("sites.sitename","year_start","year_end","NPP.foliage")
 names(ANPP_woody_C) <- c("sites.sitename","year_start","year_end","NPP.wood")
@@ -358,15 +379,20 @@ ForC_all_coord2$Elevation <- ForC_all_coord2$masl
 ForC_all_coord2$Elevation[is.na(ForC_all_coord2$masl)==TRUE] <- ForC_all_coord2$Elevation_etopo[is.na(ForC_all_coord2$masl)==TRUE]
 
 ForC_all_coord2 <- ForC_all_coord2[,!(names(ForC_all_coord2) %in% c("masl","Elevation_etopo"))]
-names(ForC_all_coord2) <- c("site","lon","lat","Begin_year","End_year","TNPP_1","NPP.stem","NPP.foliage","NPP.wood","ANPP_2","BNPP_1","NPP.coarse","NPP.fine","GPP","z")
+ForC_all_coord2 <- ForC_all_coord2 %>% 
+  rename(site=sites.sitename,
+         Begin_year=year_start,
+         End_year=year_end,
+         z=Elevation)
+
 ForC_all_coord2$pft <- "Forest"
 ForC_all_coord2$file <- "ForC"
 ForC_all_coord2$Source_NPP <- "ForC"
 NPP_Sara_Malhi_Keith_Forc <- dplyr::bind_rows(NPP_Sara_Malhi_Keith, ForC_all_coord2) 
 
-summary(NPP_Sara_Malhi_Keith_Forc)
-
 NPP_all <- NPP_Sara_Malhi_Keith_Forc[,!(names(NPP_Sara_Malhi_Keith_Forc) %in% c("no","Source_siteinfo","Elevation_etopo"))]
+
+summary(NPP_all)
 
 #5. add Schulze 
 NPP_Schulze <- read.csv(file="~/data/NPP_Yunke/NPP_Schulze/NPP_Schulze.csv")
@@ -776,6 +802,10 @@ csvfile <- paste("/Users/yunpeng/data/NPP_Yunke/NPP_Nmin_dataset_with_predictors
 write_csv(NPP_Nuptake_gpp_vcmax25_climates_gwr, path = csvfile)
 
 #check: plot missing data - p model's vcmax25 - many of them are missing due to on the edge
+
+#already checked all missing sites, comparing with past attempt of validations in NPP_final or NPP_grassland_final, all consistent.
+
+#this seems be due to fapar in those places are NA, try re-working on this plots in rsofun to fill vcmax25?
 aa <- subset(NPP_Nuptake_gpp_vcmax25_climates_gwr,is.na(max_vcmax25_c3)==TRUE)
 newmap <- getMap(resolution = "low")
 plot(newmap, xlim = c(-180, 180), ylim = c(-75, 75), asp = 1)
@@ -786,3 +816,6 @@ aa <- subset(NPP_Nuptake_gpp_vcmax25_climates_gwr,is.na(vcmax25)==TRUE)
 newmap <- getMap(resolution = "low")
 plot(newmap, xlim = c(-180, 180), ylim = c(-75, 75), asp = 1)
 points(aa$lon,aa$lat, col="red", pch=16,cex=1)
+
+
+#part 2, prepare NRE dataset
