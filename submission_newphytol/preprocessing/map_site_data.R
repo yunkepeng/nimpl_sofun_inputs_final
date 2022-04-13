@@ -66,11 +66,7 @@ LMA <- as.data.frame(nc_to_df(read_nc_onefile(
   "~/data/nimpl_sofun_inputs/map/Final_ncfile/LMA.nc"),
   varnam = "LMA"))
 
-#input vcmax map
-firstyr_data <- 1982 # In data file, which is the first year
-endyr_data <- 2011 # In data file, which is the last year
-location <- "~/data/output/latest_forest/"
-alloutput_list <- list.files(location,full.names = T)
+#input vcmax and gpp map
 inputnc <- function(name,start_year,end_year){
   output_allyears <- data.frame(matrix(NA))
   # first, include all years annual data into a daframe
@@ -96,19 +92,30 @@ inputnc <- function(name,start_year,end_year){
   #-----------------------------------------------------------------------
 }
 
+firstyr_data <- 1982 # In data file, which is the first year
+endyr_data <- 2011 # In data file, which is the last year
+location <- "~/data/nimpl_sofun_inputs/map/Final_nc_file_vcmax25/"
+#location also in: "~/data/output/latest_forest/"
+alloutput_list <- list.files(location,full.names = T)
 vcmax25_df <- inputnc("vcmax25",1982,2011)
+
+location <- "~/data/nimpl_sofun_inputs/map/Final_nc_file_gpp/"
+alloutput_list <- list.files(location,full.names = T)
+gpp_df <- inputnc("gpp",1982,2011)
+
 #check vcmax25 ready to combine
 summary(vcmax25_df)
+summary(gpp_df)
 summary(vcmax25_df$lon -elev$lon)
-summary(vcmax25_df$lat -elev$lat)
+summary(gpp_df$lat -gpp_df$lat)
 
 #cbind all predictors, and its lon, lat, z
 all_predictors <- cbind(elev,Tg$myvar,PPFD$myvar,vpd$myvar,
                         alpha$myvar,fAPAR$myvar,age$myvar,
-                        CNrt$myvar,LMA$myvar,vcmax25_df$vcmax25)
+                        CNrt$myvar,LMA$myvar,vcmax25_df$vcmax25,gpp_df$gpp)
 
 names(all_predictors) <- c("lon","lat","z","Tg","PPFD","vpd",
-                           "alpha","fAPAR","age","CNrt","LMA","vcmax25")
+                           "alpha","fAPAR","age","CNrt","LMA","vcmax25","gpp")
 
 Tg_df <- all_predictors[,c("lon","lat","z","Tg")]
 PPFD_df <- all_predictors[,c("lon","lat","z","PPFD")]
@@ -119,6 +126,7 @@ age_df <- all_predictors[,c("lon","lat","z","age")]
 CNrt_df <- all_predictors[,c("lon","lat","z","CNrt")]
 LMA_df <- all_predictors[,c("lon","lat","z","LMA")]
 vcmax25_df <- all_predictors[,c("lon","lat","z","vcmax25")]
+gpp_df <- all_predictors[,c("lon","lat","z","gpp")]
 
 #now, apply gwr to extract site predictors' value
 NPP_Forest <- gwr_sites
@@ -131,6 +139,7 @@ NPP_Forest$age <- NA
 NPP_Forest$CNrt <- NA
 NPP_Forest$LMA <- NA
 NPP_Forest$vcmax25 <- NA
+NPP_Forest$gpp <- NA
 
 a <- 1.5 # which degree (distance) of grid when interpolating gwr from global grids
 #Extract Tg, PPFD, vpd, alpha,fAPAR,age,CNrt,LMA, max-vcmax25
@@ -218,12 +227,22 @@ for (i in 1:nrow(NPP_Forest)) {
     NRE_coord <- NPP_Forest[i,c("lon","lat","z")]
     coordinates(NRE_coord) <- c("lon","lat")
     NPP_Forest[i,c("vcmax25")]  <- (gwr(vcmax25 ~ z, NRE_part, bandwidth = 1.06, fit.points =NRE_coord,predictions=TRUE))$SDF$pred
+    #gpp
+    gpp_global <- na.omit(gpp_df)
+    NRE_part <- subset(gpp_global,lon>(NPP_Forest[i,"lon"]-a)&lon<(NPP_Forest[i,"lon"]+a)&
+                         lat>(NPP_Forest[i,"lat"]-a)&lat<(NPP_Forest[i,"lat"]+a))
+    coordinates(NRE_part) <- c("lon","lat")
+    gridded(NRE_part) <- TRUE
+    NRE_coord <- NPP_Forest[i,c("lon","lat","z")]
+    coordinates(NRE_coord) <- c("lon","lat")
+    NPP_Forest[i,c("mapped_gpp")]  <- (gwr(gpp ~ z, NRE_part, bandwidth = 1.06, fit.points =NRE_coord,predictions=TRUE))$SDF$pred
   }, error=function(e){})} 
 
 summary(NPP_Forest)
 NPP_Forest$vpd[NPP_Forest$vpd<0] <- NA
 NPP_Forest$age[NPP_Forest$age<0] <- NA
 NPP_Forest$vcmax25[NPP_Forest$vcmax25<0] <- NA
+NPP_Forest$mapped_gpp[NPP_Forest$mapped_gpp<0] <- NA
 NPP_Forest$fAPAR[NPP_Forest$fAPAR>1] <- NA
 NPP_Forest$alpha[NPP_Forest$alpha>1] <- NA
 

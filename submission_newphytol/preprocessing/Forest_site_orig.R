@@ -19,6 +19,7 @@ library(rworldmap)
 library(cowplot)
 library(ncdf4)
 library(scales)
+library(spgwr)
 ##1.Sara Vicca
 #1.1 NPP
 Sara_NPP <- read.csv("/Users/yunpeng/data/NPP_Yunke/NPP_Vicca/orig/Forests_Colin_NPP.csv")
@@ -385,9 +386,17 @@ ForC_all_coord2 <- ForC_all_coord2 %>%
          End_year=year_end,
          z=Elevation)
 
+#aggregate basing lon, lat, z, begin_year, end_year (this is important because some data is flipped from the same thing - but it doesn't change)
+#ForC_all_coord2_final <- aggregate(ForC_all_coord2,by=list(ForC_all_coord2$lon,ForC_all_coord2$lat,ForC_all_coord2$z,ForC_all_coord2$Begin_year,ForC_all_coord2$End_year,ForC_all_coord2$site,ForC_all_coord2$Management), mean,na.rm=TRUE)
+#ForC_all_coord2_final$site <- ForC_all_coord2_final$Group.6
+#ForC_all_coord2_final$Management <- ForC_all_coord2_final$Group.7
+#ForC_all_coord2_final <- ForC_all_coord2_final[,!(names(ForC_all_coord2_final) %in% c("Group.1","Group.2","Group.3","Group.4","Group.5","Group.6","Group.7"))]
+#dim(ForC_all_coord2_final)
+
 ForC_all_coord2$pft <- "Forest"
 ForC_all_coord2$file <- "ForC"
 ForC_all_coord2$Source_NPP <- "ForC"
+
 NPP_Sara_Malhi_Keith_Forc <- dplyr::bind_rows(NPP_Sara_Malhi_Keith, ForC_all_coord2) 
 
 NPP_all <- NPP_Sara_Malhi_Keith_Forc[,!(names(NPP_Sara_Malhi_Keith_Forc) %in% c("no","Source_siteinfo","Elevation_etopo"))]
@@ -796,10 +805,85 @@ gwr_sites <- gwr_sites %>%
 NPP_Nuptake_gpp_vcmax25_climates_gwr <- merge(NPP_Nuptake_gpp_vcmax25_climates,gwr_sites,by=c("lon","lat","z","year_start","year_end","Begin_year","End_year"),all.x=TRUE)
 summary(NPP_Nuptake_gpp_vcmax25_climates_gwr)
 
-#final dataset - with predictors additionally
+
+#final dataset - now conducts consistency and repeated chceck
+dataset1 <- subset(NPP_Nuptake_gpp_vcmax25_climates_gwr,rep=="not_repeated") #removed repeated
+
+dataset1[grep("elevated", dataset1$Management),]$rep <- "elevated_co2" #remove with co2 elevated measurements
+dataset1[grep("Elevated", dataset1$Management),]$rep <- "elevated_co2" 
+dataset2 <- subset(dataset1,rep=="not_repeated")
+
+#convert grassland anpp = npp.foliage
+dataset2$ANPP_2[dataset2$pft!="Forest"] <-  dataset2$NPP.foliage[dataset2$pft!="Forest"]
+
+#check npp = anpp + bnpp
+dataset2$check_npp <- dataset2$ANPP_2+dataset2$BNPP_1-dataset2$TNPP_1
+aa <-subset(dataset2,check_npp< -5 |check_npp >5 )[c(1:8,14:16,27,52)] 
+dim(aa)
+dataset2$outlier[dataset2$check_npp< -5 |dataset2$check_npp >5  ] <- "NPP!=ANPP+BNPP"
+#check anpp = npp.foliage + npp.wood
+dataset2$check_anpp <- dataset2$NPP.foliage+dataset2$NPP.wood-dataset2$ANPP_2
+bb <-subset(dataset2,check_anpp< -5 |check_anpp>5 )[c(1:8,9,11,14,27,53)]
+dim(bb)
+dataset2$outlier[dataset2$check_anpp< -5 |dataset2$check_anpp >5  ] <- "ANPP!=NPP.foliage+NPP.wood"
+
+#they need figured out
+dataset2$ANPP_2[is.na(dataset2$NPP.foliage)==FALSE&is.na(dataset2$NPP.wood)==FALSE] <- dataset2$NPP.foliage[is.na(dataset2$NPP.foliage)==FALSE&is.na(dataset2$NPP.wood)==FALSE] +dataset2$NPP.wood[is.na(dataset2$NPP.foliage)==FALSE&is.na(dataset2$NPP.wood)==FALSE]
+dataset2$TNPP_1[is.na(dataset2$ANPP_2)==FALSE&is.na(dataset2$BNPP_1)==FALSE] <- dataset2$ANPP_2[is.na(dataset2$ANPP_2)==FALSE&is.na(dataset2$BNPP_1)==FALSE] +dataset2$BNPP_1[is.na(dataset2$ANPP_2)==FALSE&is.na(dataset2$BNPP_1)==FALSE]
+
+summary(dataset2$ANPP_2+dataset2$BNPP_1-dataset2$TNPP_1)
+summary(dataset2$NPP.foliage+dataset2$NPP.wood-dataset2$ANPP_2)
+
+#check if it is balanced and witho special NA (e.g. have npp and anpp but missed bnpp)
+subset(dataset2,is.na(ANPP_2)==F &is.na(NPP.wood)==F &pft=="Forest"&is.na(NPP.foliage)==T)
+dataset2$NPP.foliage[is.na(dataset2$ANPP_2)==F &is.na(dataset2$NPP.wood)==F &dataset2$pft=="Forest"&is.na(dataset2$NPP.foliage)==T] <- 
+  dataset2$ANPP_2[is.na(dataset2$ANPP_2)==F &is.na(dataset2$NPP.wood)==F &dataset2$pft=="Forest"&is.na(dataset2$NPP.foliage)==T] -
+  dataset2$NPP.wood[is.na(dataset2$ANPP_2)==F &is.na(dataset2$NPP.wood)==F &dataset2$pft=="Forest"&is.na(dataset2$NPP.foliage)==T]
+
+subset(dataset2,is.na(ANPP_2)==F &is.na(NPP.foliage)==F &pft=="Forest"&is.na(NPP.wood)==T)
+dataset2$NPP.wood[is.na(dataset2$ANPP_2)==F &is.na(dataset2$NPP.foliage)==F &dataset2$pft=="Forest"&is.na(dataset2$NPP.wood)==T] <- 
+  dataset2$ANPP_2[is.na(dataset2$ANPP_2)==F &is.na(dataset2$NPP.foliage)==F &dataset2$pft=="Forest"&is.na(dataset2$NPP.wood)==T] -
+  dataset2$NPP.foliage[is.na(dataset2$ANPP_2)==F &is.na(dataset2$NPP.foliage)==F &dataset2$pft=="Forest"&is.na(dataset2$NPP.wood)==T]
+
+subset(dataset2,is.na(TNPP_1)==F &is.na(BNPP_1)==F &is.na(ANPP_2)==T)
+dataset2$ANPP_2[is.na(dataset2$TNPP_1)==F &is.na(dataset2$BNPP_1)==F &is.na(dataset2$ANPP_2)==T] <- 
+  dataset2$TNPP_1[is.na(dataset2$TNPP_1)==F &is.na(dataset2$BNPP_1)==F &is.na(dataset2$ANPP_2)==T] -
+  dataset2$BNPP_1[is.na(dataset2$TNPP_1)==F &is.na(dataset2$BNPP_1)==F &is.na(dataset2$ANPP_2)==T]
+
+
+subset(dataset2,is.na(TNPP_1)==F &is.na(ANPP_2)==F &is.na(BNPP_1)==T)
+dataset2$BNPP_1[is.na(dataset2$TNPP_1)==F &is.na(dataset2$ANPP_2)==F &is.na(dataset2$BNPP_1)==T] <- 
+  dataset2$TNPP_1[is.na(dataset2$TNPP_1)==F &is.na(dataset2$ANPP_2)==F &is.na(dataset2$BNPP_1)==T] -
+  dataset2$ANPP_2[is.na(dataset2$TNPP_1)==F &is.na(dataset2$ANPP_2)==F &is.na(dataset2$BNPP_1)==T]
+
+#double check
+summary(dataset2$ANPP_2+dataset2$BNPP_1-dataset2$TNPP_1)
+summary(dataset2$NPP.foliage+dataset2$NPP.wood-dataset2$ANPP_2)
+
+#have observed that some repeated data ForC. In this way, remove such repeated data
+dataset2$addtional_rep <- duplicated(dataset2[,c("lon","lat","z","Begin_year","End_year","TNPP_1","ANPP_2","BNPP_1")])
+dim(subset(dataset2,addtional_rep=="TRUE" & file=="ForC"))
+
+dataset2$rep_ForC[dataset2$addtional_rep=="TRUE" & dataset2$file=="ForC"] <- "repeated"
+dataset3 <- subset(dataset2,is.na(rep_ForC)==TRUE)
+dim(dataset2)
+dim(dataset3)
+
+dataset4 <- dataset3[,!(names(dataset3) %in% c("check_npp","check_anpp","outlier","check_bnpp","addtional_rep","rep_ForC","rep"))]
+
+#only keep forest and grassland
+dataset5 <- subset(dataset4,pft=="Forest" | pft=="Grassland")
+
+#one thing
+dataset5$NPP.foliage[dataset5$site=="Sara2_NPP72"]
+dataset5$ANPP_2[dataset5$site=="Sara2_NPP72"]
+dataset5$NPP.foliage[dataset5$site=="Sara2_NPP72"]  <- NA #one thing shown wrong npp.foliage, with npp.leaf = anpp, remove npp.leaf
+
+#remove the old file from NPP_Schulze
+dataset6 <- subset(dataset5,file!="NPP_Schulze")
 
 csvfile <- paste("/Users/yunpeng/data/NPP_Yunke/NPP_Nmin_dataset_with_predictors.csv")
-write_csv(NPP_Nuptake_gpp_vcmax25_climates_gwr, path = csvfile)
+write_csv(dataset6, path = csvfile)
 
 #check: plot missing data - p model's vcmax25 - many of them are missing due to on the edge
 
@@ -819,3 +903,169 @@ points(aa$lon,aa$lat, col="red", pch=16,cex=1)
 
 
 #part 2, prepare NRE dataset
+#2. Input NRE from different sources, rbind, remove repeated data and plot maps, and test a lm model
+#Dong is species-based, Du is site-based. To make them consistent, let's use site-based for both df
+
+NRE_Du <- read.csv(file="~/data/NRE_various/NRE_Du/NRE_Du.csv")
+NRE_Dong <- read.csv(file="~/data/NRE_various/NRE_Deng/NRE_Deng.csv")
+
+#first - make forest model only
+NRE_Du_df <- NRE_Du[,c("lon","lat","NRE","MAT","MAP","VegeType")]
+#vegetype =1 is woody ecosystem (all assumed as forest here)
+#vegetype = 2 is grassland ecosystem
+NRE_Du_df <- subset(NRE_Du_df,VegeType==1)
+
+NRE_Du_df <- aggregate(NRE_Du_df,by=list(NRE_Du_df$lon,NRE_Du_df$lat), FUN=mean, na.rm=TRUE) #site-mean
+NRE_Du_df <- NRE_Du_df[,c(3:7)]
+head(NRE_Du_df)
+dim(NRE_Du_df)
+
+NRE_Dong_df <- NRE_Dong[,c("Longitude","Latitude","NRE.nitrogen.resorption.efficiency.","MAT","MAP","Biome.abbreviation...")]
+names(NRE_Dong_df) <- c("lon","lat","NRE","MAT","MAP","biome")
+NRE_Dong_df <- subset(NRE_Dong_df,biome=="TRF"|biome=="STF"|biome=="TF"|biome=="BF")
+#Forest is TRF,STF,TF,BF
+#Desert is Des; Tundra is TUN
+#Grassland is Grs
+NRE_Dong_df <- aggregate(NRE_Dong_df,by=list(NRE_Dong_df$lon,NRE_Dong_df$lat), FUN=mean, na.rm=TRUE) #site-mean
+head(NRE_Dong_df)
+NRE_Dong_df <- NRE_Dong_df[,c(3:7)]
+dim(NRE_Dong_df)
+
+
+NRE_Dong_df$source <- "Dong"
+NRE_Du_df$source <- "Du"
+NRE_df <- rbind(NRE_Du_df,NRE_Dong_df)
+summary(NRE_df)
+
+#check repeated data, and remove 4 repeated points from Du et al. paper
+NRE_df$repeated <- duplicated(NRE_df[,c("lon","lat")])
+subset(NRE_df,repeated==TRUE)
+NRE_df <- subset(NRE_df,repeated==FALSE)
+
+#project data
+newmap <- getMap(resolution = "low")
+plot(newmap, xlim = c(-180, 180), ylim = c(-75, 75), asp = 1)
+
+points(NRE_df$lon,NRE_df$lat, col="red", pch=16,cex=1)
+
+#3. add elevation in this df, based on ingtestr 
+siteinfo <- NRE_df[,c("lon","lat")] # present x and y separately
+siteinfo$date_start <- lubridate::ymd(paste0(1982, "-01-01"))
+siteinfo$date_end <- lubridate::ymd(paste0(2011, "-12-31"))
+siteinfo$sitename <- paste0("s", 1:nrow(siteinfo),sep="")
+siteinfo <- as_tibble(siteinfo)
+
+df_etopo <- ingest(
+  siteinfo,
+  source = "etopo1",
+  dir = "~/data/etopo/" 
+)
+
+NRE_df$elevation <- as.numeric(as.data.frame(df_etopo$data))
+subset(NRE_df,elevation<0)
+#Some grids > 0, lets' assume -3062 as NA, and others as 0 firstly?
+NRE_df$elevation[NRE_df$elevation< -50] <- NA
+NRE_df$elevation[NRE_df$elevation< 0] <- 0
+
+#4. Extract site climate/soil/age data (from prediction fields in nimpl simulation) for all NRE sites
+#Input data from: ~/data/nimpl_sofun_inputs/map/Final_ncfile
+library(rbeni)
+
+#input elevation for global grids
+elev_nc <- read_nc_onefile("~/data/watch_wfdei/WFDEI-elevation.nc")
+elev <- as.data.frame(nc_to_df(elev_nc, varnam = "elevation"))
+head(elev) 
+
+#input nc file
+Tg <- as.data.frame(nc_to_df(read_nc_onefile(
+  "~/data/nimpl_sofun_inputs/map/Final_ncfile/Tg.nc"),
+  varnam = "Tg"))
+
+PPFD <- as.data.frame(nc_to_df(read_nc_onefile(
+  "~/data/nimpl_sofun_inputs/map/Final_ncfile/PPFD.nc"),
+  varnam = "PPFD"))
+
+vpd <- as.data.frame(nc_to_df(read_nc_onefile(
+  "~/data/nimpl_sofun_inputs/map/Final_ncfile/vpd.nc"),
+  varnam = "vpd"))
+
+alpha <- as.data.frame(nc_to_df(read_nc_onefile(
+  "~/data/nimpl_sofun_inputs/map/Final_ncfile/alpha.nc"),
+  varnam = "alpha"))
+
+fAPAR <- as.data.frame(nc_to_df(read_nc_onefile(
+  "~/data/nimpl_sofun_inputs/map/Final_ncfile/fAPAR.nc"),
+  varnam = "fAPAR"))
+
+#cbind all predictors, and its lon, lat, z
+all_predictors <- cbind(elev,Tg$myvar,PPFD$myvar,vpd$myvar,
+                        alpha$myvar,fAPAR$myvar)
+
+names(all_predictors) <- c("lon","lat","z","Tg","PPFD","vpd",
+                           "alpha","fAPAR")
+
+Tg_df <- all_predictors[,c("lon","lat","z","Tg")]
+PPFD_df <- all_predictors[,c("lon","lat","z","PPFD")]
+vpd_df <- all_predictors[,c("lon","lat","z","vpd")]
+alpha_df <- all_predictors[,c("lon","lat","z","alpha")]
+fAPAR_df <- all_predictors[,c("lon","lat","z","fAPAR")]
+
+#now, apply gwr to extract site predictors' value
+head(NRE_df)
+NRE_df$elevation[is.na(NRE_df$elevation)==TRUE] <- 0
+
+NRE_site <- NRE_df[,c("lon","lat","elevation")]
+names(NRE_site) <- c("lon","lat","z")
+
+
+a <- 1.5 # which degree (distance) of grid when interpolating gwr from global grids
+i <- 1
+#Extract Tg, PPFD, vpd, alpha
+for (i in c(1:nrow(NRE_site))){ #one site does not have elevation (NA), therefore omitted
+  #Tg
+  Tg_global <- na.omit(Tg_df)
+  NRE_part <- subset(Tg_global,lon>(NRE_site[i,1]-a)&lon<(NRE_site[i,1]+a)&
+                       lat>(NRE_site[i,2]-a)&lat<(NRE_site[i,2]+a))
+  coordinates(NRE_part) <- c("lon","lat")
+  gridded(NRE_part) <- TRUE
+  NRE_coord <- NRE_site[i,1:3]
+  coordinates(NRE_coord) <- c("lon","lat")
+  NRE_site$Tg[i] <- (gwr(Tg ~ z, NRE_part, bandwidth = 1.06, fit.points =NRE_coord,predictions=TRUE))$SDF$pred
+  #ppfd
+  PPFD_global <- na.omit(PPFD_df)
+  NRE_part <- subset(PPFD_global,lon>(NRE_site[i,1]-a)&lon<(NRE_site[i,1]+a)&
+                       lat>(NRE_site[i,2]-a)&lat<(NRE_site[i,2]+a))
+  coordinates(NRE_part) <- c("lon","lat")
+  gridded(NRE_part) <- TRUE
+  NRE_coord <- NRE_site[i,1:3]
+  coordinates(NRE_coord) <- c("lon","lat")
+  NRE_site$PPFD[i] <- (gwr(PPFD ~ z, NRE_part, bandwidth = 1.06, fit.points =NRE_coord,predictions=TRUE))$SDF$pred
+  #vpd
+  vpd_global <- na.omit(vpd_df)
+  NRE_part <- subset(vpd_global,lon>(NRE_site[i,1]-a)&lon<(NRE_site[i,1]+a)&
+                       lat>(NRE_site[i,2]-a)&lat<(NRE_site[i,2]+a))
+  coordinates(NRE_part) <- c("lon","lat")
+  gridded(NRE_part) <- TRUE
+  NRE_coord <- NRE_site[i,1:3]
+  coordinates(NRE_coord) <- c("lon","lat")
+  NRE_site$vpd[i] <- (gwr(vpd ~ z, NRE_part, bandwidth = 1.06, fit.points =NRE_coord,predictions=TRUE))$SDF$pred
+  #alpha
+  alpha_global <- na.omit(alpha_df)
+  NRE_part <- subset(alpha_global,lon>(NRE_site[i,1]-a)&lon<(NRE_site[i,1]+a)&
+                       lat>(NRE_site[i,2]-a)&lat<(NRE_site[i,2]+a))
+  coordinates(NRE_part) <- c("lon","lat")
+  gridded(NRE_part) <- TRUE
+  NRE_coord <- NRE_site[i,1:3]
+  coordinates(NRE_coord) <- c("lon","lat")
+  NRE_site$alpha[i] <- (gwr(alpha ~ z, NRE_part, bandwidth = 1.06, fit.points =NRE_coord,predictions=TRUE))$SDF$pred
+}
+
+#combine NRE with site extracted climate and CNrt (Tg, PPFD, vpd, alpha, CNrt)
+NRE_climate <- cbind(NRE_df[,c("NRE","MAT","MAP","source")],NRE_site)
+summary(NRE_climate)
+
+NRE_climate$vpd[NRE_climate$vpd<=0] <-NA
+NRE_climate$nre <- NRE_climate$NRE/100
+summary(NRE_climate)
+csvfile <- paste("/Users/yunpeng/data/NRE_various/NRE_dataset.csv")
+write.csv(NRE_climate, csvfile, row.names = TRUE)
