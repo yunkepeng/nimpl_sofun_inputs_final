@@ -139,7 +139,7 @@ NPP_Forest$age <- NA
 NPP_Forest$CNrt <- NA
 NPP_Forest$LMA <- NA
 NPP_Forest$vcmax25 <- NA
-NPP_Forest$gpp <- NA
+NPP_Forest$mapped_gpp <- NA
 
 a <- 1.5 # which degree (distance) of grid when interpolating gwr from global grids
 #Extract Tg, PPFD, vpd, alpha,fAPAR,age,CNrt,LMA, max-vcmax25

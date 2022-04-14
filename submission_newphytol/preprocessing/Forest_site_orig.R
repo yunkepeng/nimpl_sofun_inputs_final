@@ -882,6 +882,15 @@ dataset5$NPP.foliage[dataset5$site=="Sara2_NPP72"]  <- NA #one thing shown wrong
 #remove the old file from NPP_Schulze
 dataset6 <- subset(dataset5,file!="NPP_Schulze")
 
+#REMOVE Tiandi Grassland's npp and bnpp
+dataset6$BNPP_1[dataset6$file=="Tiandi Grassland"] <- NA
+dataset6$TNPP_1[dataset6$file=="Tiandi Grassland"] <- NA
+
+#final calculation of lnf, bnf and wnf 
+dataset6$lnf_obs_final <-dataset6$NPP.foliage/dataset6$CN_leaf_final
+dataset6$bnf_obs_final  <- dataset6$BNPP_1/dataset6$CN_root_final
+dataset6$wnf_obs_final  <- dataset6$NPP.wood/dataset6$CN_wood_final
+
 csvfile <- paste("/Users/yunpeng/data/NPP_Yunke/NPP_Nmin_dataset_with_predictors.csv")
 write_csv(dataset6, path = csvfile)
 
