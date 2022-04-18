@@ -1,0 +1,139 @@
+---
+title: "Global input for total PPFD"
+author: "Yunke Peng"
+date: "Nov 18 2020"
+output: html_document
+---
+
+## Introduction about Global nc files
+
+#1. Total PPFD (description and main calculation were provided)
+PPFD is instantaneous photosynthetic photon flux density (umol/m2/s). We used the 30 yrs average data (1982-2011), which was originally derived from time-integrated (24 hrs) daily Shortwave radiation (SWdown) from WFDEI. In order to convert from SWdown to PPFD, we need to calculate them as:
+
+PPFD (umol/m2/s) = SWdown (w/m2) * 4.6 * 0.5 
+
+where Solar radiation was converted to incident PPFD assuming a flux : energy ratio of 4.6 umol/J and a photosynthetically active fraction of 0.50 (Peng et al. 2020; New Phytologist).
+
+Additionally, we calculate total PPFD * fapar at growth season (mol/m2)
+
+The code below will represent the global map of final output:
+
+
+The original Rdata was based on code /Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/climates_30yrs_monthly/climates_WFDEI_CRU.R
+
+```{r}
+load(file = "/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/climates_30yrs_monthly/WFDEI_CRU_1980_2016.Rdata")
+devtools::load_all("/Users/yunpeng/yunkepeng/rbeni/")
+library(dplyr)
+library(raster)
+library(ncdf4)
+library(dplyr)
+library(maps)
+library(rgdal)
+
+#calculate growth temperature
+total_month <- (2016-1982+1) * 12
+
+#solar declination from Jan to Dec: https://www.cambridge.org/core/services/aop-cambridge-core/content/view/212421E8457A41C47B64D809BDEF53CA/9780511845727apx7_p351-352_CBO.pdf/solar_geometry_and_radiation_approximations.pdf
+s1 <- (-23.1+ -17.3)/2
+s2 <- (-17.3 + -8)/2
+s3 <- (-8 + 4.1)/2
+s4 <- (4.1 + 14.8)/2
+s5 <- (14.8 + 21.9)/2
+s6 <- (21.9 + 23.2)/2
+s7 <- (23.2 + 18.3)/2
+s8 <- (18.3 + 8.6)/2
+s9 <-  (8.6 + -2.8)/2
+s10 <- (-2.8 + -14.1)/2
+s11 <- (-14.1 + -21.6)/2
+s12 <- (-21.6 + -23.1)/2
+
+s <- c(s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12)
+
+lat <- monthly_tmn[,2]
+xx <- data.frame(matrix(nrow=259200, ncol=total_month))
+output_Tg <- data.frame(matrix(nrow=259200, ncol=total_month))
+
+for (a in 1:12){ 
+  month_no <- seq(from = 1, to = total_month, by = 12)+a-1
+  xx[1:259200,month_no]<- -tan(pi*lat/180)*tan(s[a]*pi/180)
+}
+
+#check each part of Tg formula
+part1 <- (0.5+((1-xx^2)^(0.5))/(2*acos(xx)))[,1:12]
+part2 <- (0.5-((1-xx^2)^(0.5))/(2*acos(xx)))[,1:12]
+summary(part1)
+summary(part2)
+#the percentage of tmx was dominated overall
+
+output_Tg<-monthly_tmx[,3:(total_month+2)]*(0.5+((1-xx^2)^(0.5))/(2*acos(xx)))+ monthly_tmn[,3:(total_month+2)]*(0.5-((1-xx^2)^(0.5))/(2*acos(xx)))
+output_Tg[output_Tg =="NaN"] <- NA
+output_Tg[output_Tg < 0] <- NA
+
+output_PPFD <- monthly_radi[,3:(total_month+2)]*0.5*4.6 +output_Tg - output_Tg # here + Tg - Tg means it considered growth condition
+output_PPFD[output_PPFD =="NaN"] <- NA
+
+#include fAPAR
+ncfname <- paste ("~/data/fAPAR/fAPAR3g_v2/", "fAPAR3g_v2_1982_2016_FILLED", ".nc", sep="")
+
+dname <- "FAPAR_FILLED"
+
+ncin <- nc_open(ncfname)
+
+lon <- ncvar_get(ncin,"LON")
+nlon <- dim(lon) 
+
+lat<-ncvar_get(ncin,"LAT")
+nlat <- dim(lat)
+
+FAPAR <- ncvar_get(ncin,"FAPAR_FILLED")
+nc_close(ncin)
+
+pre.vec.long <- as.vector(FAPAR)
+
+pre.mat <- matrix(pre.vec.long, nrow = nlon * nlat, ncol = 420) # 259200 * 420 (420 is 35 years: 1982-2016)
+
+fAPAR1982_2016 <- pre.mat[,c(1:420)]
+
+output_PPFD2 <- fAPAR1982_2016*output_PPFD
+
+#repeat days of month, for 37 years
+days <- rep(c(31,28,31,30,31,30,31,31,30,31,30,31),ncol(output_PPFD)/12)
+
+#convert from umol/m2/s to mol/m2 of the year
+output_PPFD_total <- rowSums(output_PPFD2*86400*days/1000000,na.rm = TRUE)/(ncol(output_PPFD2)/12)
+output_PPFD_total[output_PPFD_total==0] <- NA
+summary(output_PPFD_total)
+
+lonlat <- monthly_tmn[,1:2]
+
+PPFD_final <- cbind(lonlat,output_PPFD_total)
+names(PPFD_final) <- c("lon","lat","PPFD_total_fapar")
+PPFD_final$PPFD_total_fapar[PPFD_final$PPFD_total_fapar=="NaN"] <- NA
+PPFD_df_output <- PPFD_final
+
+#prepare lon and lat
+library(ncdf4)
+ncin <- nc_open("~/data/watch_wfdei/WFDEI-elevation.nc")
+lon <- ncvar_get(ncin,"lon")
+lat<-ncvar_get(ncin,"lat")
+
+#output PPFD nc file - In Euler its path is same: "~/data/nimpl_sofun_inputs/map/Final_ncfile"
+PPFD_nc <- list(df_to_grid(PPFD_df_output,varnam = "PPFD_total_fapar", lonnam = "lon", latnam = "lat"))
+names(PPFD_nc) <- "PPFD_total_fapar"
+varams = "PPFD_total_fapar"
+test <- list(lon,lat,PPFD_nc,varams)
+names(test) <- c("lon","lat","vars","varams")
+write_nc2(test,varnams = "PPFD_total_fapar",long_name = "PPFD_total_fapar",units = "mol/m2",
+          path = "~/data/nimpl_sofun_inputs/map/Final_ncfile/PPFD_total_fapar.nc")
+
+library(raster)
+
+coordinates(PPFD_final) <- ~lon+lat 
+gridded(PPFD_final) <- TRUE
+r3 <- raster(PPFD_final, "PPFD_total_fapar") 
+plot(r3)
+
+``` 
+
+
