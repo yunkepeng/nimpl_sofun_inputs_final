@@ -802,6 +802,7 @@ gwr_sites <- read.csv("/Users/yunpeng/data/NPP_Yunke/predictors/predictors_gwr.c
 gwr_sites <- gwr_sites %>% 
   rename(
     mapped_age = age)
+
 NPP_Nuptake_gpp_vcmax25_climates_gwr <- merge(NPP_Nuptake_gpp_vcmax25_climates,gwr_sites,by=c("lon","lat","z","year_start","year_end","Begin_year","End_year"),all.x=TRUE)
 summary(NPP_Nuptake_gpp_vcmax25_climates_gwr)
 

@@ -34,6 +34,14 @@ dim(gwr_sites)
 elev_nc <- read_nc_onefile("~/data/watch_wfdei/WFDEI-elevation.nc")
 elev <- as.data.frame(nc_to_df(elev_nc, varnam = "elevation"))
 
+PPFD_total_fapar <- as.data.frame(nc_to_df(read_nc_onefile(
+  "~/data/nimpl_sofun_inputs/map/Final_ncfile/PPFD_total_fapar.nc"),
+  varnam = "PPFD_total_fapar"))
+
+PPFD_total <- as.data.frame(nc_to_df(read_nc_onefile(
+  "~/data/nimpl_sofun_inputs/map/Final_ncfile/PPFD_total.nc"),
+  varnam = "PPFD_total"))
+
 Tg <- as.data.frame(nc_to_df(read_nc_onefile(
   "~/data/nimpl_sofun_inputs/map/Final_ncfile/Tg.nc"),
   varnam = "Tg"))
@@ -110,13 +118,15 @@ summary(vcmax25_df$lon -elev$lon)
 summary(gpp_df$lat -gpp_df$lat)
 
 #cbind all predictors, and its lon, lat, z
-all_predictors <- cbind(elev,Tg$myvar,PPFD$myvar,vpd$myvar,
+all_predictors <- cbind(elev,PPFD_total_fapar$myvar,PPFD_total$myvar,Tg$myvar,PPFD$myvar,vpd$myvar,
                         alpha$myvar,fAPAR$myvar,age$myvar,
                         CNrt$myvar,LMA$myvar,vcmax25_df$vcmax25,gpp_df$gpp)
 
-names(all_predictors) <- c("lon","lat","z","Tg","PPFD","vpd",
+names(all_predictors) <- c("lon","lat","z","PPFD_total_fapar","PPFD_total","Tg","PPFD","vpd",
                            "alpha","fAPAR","age","CNrt","LMA","vcmax25","gpp")
 
+PPFD_total_fapar_df <- all_predictors[,c("lon","lat","z","PPFD_total_fapar")]
+PPFD_total_df <- all_predictors[,c("lon","lat","z","PPFD_total")]
 Tg_df <- all_predictors[,c("lon","lat","z","Tg")]
 PPFD_df <- all_predictors[,c("lon","lat","z","PPFD")]
 vpd_df <- all_predictors[,c("lon","lat","z","vpd")]
@@ -130,6 +140,8 @@ gpp_df <- all_predictors[,c("lon","lat","z","gpp")]
 
 #now, apply gwr to extract site predictors' value
 NPP_Forest <- gwr_sites
+NPP_Forest$PPFD_total_fapar <- NA
+NPP_Forest$PPFD_total <- NA
 NPP_Forest$Tg <- NA
 NPP_Forest$PPFD <- NA
 NPP_Forest$vpd <- NA
@@ -145,6 +157,24 @@ a <- 1.5 # which degree (distance) of grid when interpolating gwr from global gr
 #Extract Tg, PPFD, vpd, alpha,fAPAR,age,CNrt,LMA, max-vcmax25
 for (i in 1:nrow(NPP_Forest)) {
   tryCatch({
+    #PPFD_total_fapar
+    PPFD_total_fapar_global <- na.omit(PPFD_total_fapar_df)
+    NRE_part <- subset(PPFD_total_fapar_global,lon>(NPP_Forest[i,"lon"]-a)&lon<(NPP_Forest[i,"lon"]+a)&
+                         lat>(NPP_Forest[i,"lat"]-a)&lat<(NPP_Forest[i,"lat"]+a))
+    coordinates(NRE_part) <- c("lon","lat")
+    gridded(NRE_part) <- TRUE
+    NRE_coord <- NPP_Forest[i,c("lon","lat","z")]
+    coordinates(NRE_coord) <- c("lon","lat")
+    NPP_Forest[i,c("PPFD_total_fapar")] <- (gwr(PPFD_total_fapar ~ z, NRE_part, bandwidth = 1.06, fit.points =NRE_coord,predictions=TRUE))$SDF$pred
+    #PPFD_total
+    PPFD_total_global <- na.omit(PPFD_total_df)
+    NRE_part <- subset(PPFD_total_global,lon>(NPP_Forest[i,"lon"]-a)&lon<(NPP_Forest[i,"lon"]+a)&
+                         lat>(NPP_Forest[i,"lat"]-a)&lat<(NPP_Forest[i,"lat"]+a))
+    coordinates(NRE_part) <- c("lon","lat")
+    gridded(NRE_part) <- TRUE
+    NRE_coord <- NPP_Forest[i,c("lon","lat","z")]
+    coordinates(NRE_coord) <- c("lon","lat")
+    NPP_Forest[i,c("PPFD_total")] <- (gwr(PPFD_total ~ z, NRE_part, bandwidth = 1.06, fit.points =NRE_coord,predictions=TRUE))$SDF$pred
     #Tg
     print(i)
     Tg_global <- na.omit(Tg_df)
@@ -245,6 +275,8 @@ NPP_Forest$vcmax25[NPP_Forest$vcmax25<0] <- NA
 NPP_Forest$mapped_gpp[NPP_Forest$mapped_gpp<0] <- NA
 NPP_Forest$fAPAR[NPP_Forest$fAPAR>1] <- NA
 NPP_Forest$alpha[NPP_Forest$alpha>1] <- NA
+NPP_Forest$PPFD_total[NPP_Forest$PPFD_total<0] <- NA
+NPP_Forest$PPFD_total_fapar[NPP_Forest$PPFD_total_fapar<0] <- NA
 
 summary(NPP_Forest)
 
