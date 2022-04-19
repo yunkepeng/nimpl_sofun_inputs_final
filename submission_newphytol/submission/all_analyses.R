@@ -30,6 +30,8 @@ library(ggplot2)
 library(lme4)
 library(visreg)
 library(ggpubr)
+library(car)
+library("ggplotify")
 
 rm(list=ls())
 
@@ -304,6 +306,8 @@ bp_model <- (lmer(tnpp_a~Tg_a+fAPAR_a+PPFD_a+CNrt_a+age_a+(1|site_a),data=BP_dat
 summary(bp_model)
 r.squaredGLMM(bp_model)
 
+vif_bp <- vif((lmer(tnpp_a~Tg_a+fAPAR_a+PPFD_a+CNrt_a+age_a+vpd_a+(1|site_a),data=BP_dataset2)))
+
 #try an alternative, with additional PPFD_total
 #but no improvement
 BP_dataset2a <- na.omit(NPP_forest[,c("tnpp_a","age_a","fAPAR_a","CNrt_a","Tg_a","PPFD_total_a","vpd_a","site_a")])
@@ -313,6 +317,7 @@ a2a[[3]]
 bp_modela <- (lmer(tnpp_a~Tg_a+fAPAR_a+vpd_a+CNrt_a+age_a+(1|site_a),data=BP_dataset2a))
 summary(bp_modela)
 r.squaredGLMM(bp_modela)
+
 
 #anpp_tnpp_dataset <- na.omit(NPP_forest[,c("anpp_tnpp_a","obs_age_a","observedfAPAR_a","soilCN_a","Tg_a","PPFD_a","vpd_a","alpha_a","site_a")])
 #dim(anpp_tnpp_dataset)
@@ -331,6 +336,8 @@ model2a[[3]]
 anpp_tnpp_model <- (lmer(anpp_tnpp_a~CNrt_a+PPFD_a+Tg_a+age_a+(1|site_a),data=anpp_tnpp_dataset2))
 summary(anpp_tnpp_model)
 r.squaredGLMM(anpp_tnpp_model)
+
+vif_anpp_tnpp <- vif((lmer(anpp_tnpp_a~Tg_a+fAPAR_a+PPFD_a+CNrt_a+age_a+vpd_a+(1|site_a),data=anpp_tnpp_dataset2)))
 
 #mapped, try an alternative, with additional PPFD_total - still negative 
 #anpp_tnpp_dataset2a <- na.omit(NPP_forest[,c("anpp_tnpp_a","age_a","fAPAR_a","CNrt_a","Tg_a","PPFD_total_a","vpd_a","site_a")])
@@ -360,12 +367,28 @@ r.squaredGLMM(anpp_tnpp_model)
 #anpp_leafnpp_model2 <- (lmer(anpp_leafnpp_a~age_a+PPFD_a+vpd_a+(1|site_a),data=anpp_leafnpp_dataset)) 
 #r.squaredGLMM(anpp_leafnpp_model2)
 
+#with age
+anpp_leafnpp_dataset_age <- na.omit(NPP_forest[,c("anpp_leafnpp_a","age_a","Tg_a","PPFD_a","vpd_a","site_a")])
+model3 <- stepwise(anpp_leafnpp_dataset_age,"anpp_leafnpp_a")
+model3[[1]]
+model3[[3]]
+anpp_leafnpp_model <- (lmer(anpp_leafnpp_a~age_a+PPFD_a+vpd_a+(1|site_a),data=anpp_leafnpp_dataset_age)) 
+r.squaredGLMM(anpp_leafnpp_model)
+AIC(anpp_leafnpp_model) #age + PPFD +vpd: 1347
+
+anpp_leafnpp_model <- (lmer(anpp_leafnpp_a~Tg_a+PPFD_a+vpd_a+(1|site_a),data=anpp_leafnpp_dataset_age)) 
+r.squaredGLMM(anpp_leafnpp_model)
+AIC(anpp_leafnpp_model) #climate-driven: 1339
+
+#without age
 anpp_leafnpp_dataset <- na.omit(NPP_forest[,c("anpp_leafnpp_a","Tg_a","PPFD_a","vpd_a","site_a")])
 model3 <- stepwise(anpp_leafnpp_dataset,"anpp_leafnpp_a")
 model3[[1]]
 model3[[3]]
-anpp_leafnpp_model <- (lmer(anpp_leafnpp_a~Tg_a+vpd_a+PPFD_a+(1|site_a),data=anpp_leafnpp_dataset)) 
+anpp_leafnpp_model <- (lmer(anpp_leafnpp_a~PPFD_a+vpd_a+Tg_a+(1|site_a),data=anpp_leafnpp_dataset)) 
 r.squaredGLMM(anpp_leafnpp_model)
+summary(anpp_leafnpp_model)
+vif_anpp_leafnpp <- vif((lmer(anpp_leafnpp_a~Tg_a+PPFD_a+vpd_a+(1|site_a),data=anpp_leafnpp_dataset)))
 
 #check tnpp grassland
 #not filtering any management/non-management! while previous do so
@@ -381,6 +404,9 @@ model_g1[[2]]
 bp_grass_model <- (lm(tnpp_a~PPFD_a+Tg_a,data=BP_dataset_grass))
 summary(bp_grass_model)
 r.squaredGLMM(bp_grass_model)
+
+vif_bp_grass <- vif((lm(tnpp_a~Tg_a+PPFD_a+vpd_a+CNrt_a+fAPAR_a,data=BP_dataset_grass)))
+
 
 #try alternative for grassland bp with total PPFD
 #BP_dataset_grass2 <- na.omit(grassland_sitemean[,c("tnpp_a","Tg_a","PPFD_total_a","vpd_a","CNrt_a","fAPAR_a")])
@@ -541,6 +567,22 @@ points(qq$lon,qq$lat, col="red", pch=16,cex=1)
 
 #final model look
 #bp_model,anpp_tnpp_model,anpp_leafnpp_model,bp_grass_model,0.49/0.51,n1,nre_model
+
+#check model vif
+#vif_bp,vif_anpp_tnpp,vif_anpp_leafnpp,vif_bp_grass
+
+p1 <- as.ggplot(~barplot(vif_bp, main = "VIF of Forest BP model", horiz = TRUE, col = "steelblue",
+                         names.arg = c("Tg", "fAPAR", "ln PPFD", "ln soil C/N", "ln age", "ln vpd")))
+p2 <- as.ggplot(~barplot(vif_anpp_tnpp, main = "VIF of Forest ANPP/BP model", horiz = TRUE, col = "steelblue",
+                         names.arg = c("Tg", "fAPAR", "ln PPFD", "ln soil C/N", "ln age", "ln vpd")))
+p3 <- as.ggplot(~barplot(vif_anpp_leafnpp, main = "VIF of Forest leaf-NPP/ANPP model", horiz = TRUE, col = "steelblue",
+                         names.arg = c("Tg", "ln PPFD", "ln vpd")))
+p4 <- as.ggplot(~barplot(vif_bp_grass, main = "VIF of Grassland BP model", horiz = TRUE, col = "steelblue",
+                         names.arg = c("Tg", "ln PPFD", "ln vpd", "ln soil C/N", "fAPAR")))
+plot_grid(p1,p2,p3,p4,
+          labels = c('(a)','(b)','(c)','(d)'),
+          ncol=2,label_x = 0.9,label_y=0.92)+white
+ggsave(paste("~/data/output/newphy_vif_figs.jpg",sep=""),width = 10, height = 13)
 
 #forest validation
 NPP_forest$pred_npp <- summary(bp_model)$coefficients[1,1] +  
