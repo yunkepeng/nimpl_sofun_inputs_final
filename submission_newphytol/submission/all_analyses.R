@@ -1,4 +1,3 @@
-#Forest NPP validation: calculations see ~/yunkepeng/nimpl_sofun_inputs_final/NPP/Forest_simulation.R
 library(tidyverse) 
 library(ncmeta)
 library(viridis)
@@ -35,6 +34,9 @@ library("ggplotify")
 
 rm(list=ls())
 white <- theme(plot.background=element_rect(fill="white", color="white"))
+
+larger_size <- theme(axis.text=element_text(size=20),axis.title=element_text(size=20),
+                     plot.subtitle=element_text(size=15))
 
 #1. input complete dataset and do some re-processing
 stepwise <- function(df_input,target_var){
@@ -292,7 +294,7 @@ NPP_all$vpd_b <- log(NPP_all$vpd_sites)
 
 NPP_forest <- subset(NPP_all,pft=="Forest")
 
-#BP_dataset <- na.omit(NPP_forest[,c("tnpp_a","obs_age_a","observedfAPAR_a","soilCN_a","Tg_a","PPFD_a","vpd_a","alpha_a","site_a")])
+BP_dataset <- na.omit(NPP_forest[,c("tnpp_a","obs_age_a","observedfAPAR_a","soilCN_a","Tg_a","PPFD_a","vpd_a","alpha_a","site_a")])
 #model1 <- stepwise(BP_dataset,"tnpp_a")
 #model1[[1]]
 #model1[[2]]
@@ -306,6 +308,9 @@ a2[[3]]
 bp_model <- (lmer(tnpp_a~Tg_a+fAPAR_a+PPFD_a+CNrt_a+age_a+(1|site_a),data=BP_dataset2))
 summary(bp_model)
 r.squaredGLMM(bp_model)
+
+#check how many data were removed
+nrow(BP_dataset)/nrow(BP_dataset2)
 
 vif_bp <- vif((lmer(tnpp_a~Tg_a+fAPAR_a+PPFD_a+CNrt_a+age_a+vpd_a+(1|site_a),data=BP_dataset2)))
 
@@ -463,8 +468,8 @@ summary(n1)
 #validation directly
 sitemean$pred_nmass <- (summary(n1)$coefficients[1,1]) + (summary(n1)$coefficients[2,1])* sitemean$Vcmax.25/sitemean$lma
 sitemean$obs_nmass <- sitemean$narea/sitemean$lma
-p11 <- analyse_modobs2(sitemean,"pred_nmass","obs_nmass", type = "points")
-
+p11 <- analyse_modobs2(sitemean,"pred_nmass","obs_nmass", type = "points")$gg + larger_size+
+  labs(y = ~paste("Forest leaf ", N[obs.], " (g g"^-1,")")) +labs(x = ~paste("Forest leaf ", N[pred.], " (g g"^-1,")"))
 
 ###3. NRE model basing site-mean (lm)
 NRE_climate <- read.csv("/Users/yunpeng/data/NRE_various/NRE_dataset.csv")
@@ -481,7 +486,8 @@ summary(nre_model)
 NRE_climate$pred_nre <- (1/(1+exp(-(summary(nre_model)$coefficients[1,1] + summary(nre_model)$coefficients[2,1] *NRE_climate$Tg_a + 
                                       summary(nre_model)$coefficients[3,1] * NRE_climate$vpd_a))))
 
-p12 <- analyse_modobs2(NRE_climate,"pred_nre","nre", type = "points")
+p12 <- analyse_modobs2(NRE_climate,"pred_nre","nre", type = "points")$gg + larger_size+
+  labs(y = ~paste("Forest ", NRE[obs.])) +labs(x = ~paste("Forest ", NRE[pred.]))
 
 
 # Cmass constant = 46%
@@ -557,15 +563,15 @@ points(qq$lon,qq$lat, col="red", pch=16,cex=1)
 #check model vif
 #vif_bp,vif_anpp_tnpp,vif_anpp_leafnpp,vif_bp_grass
 
-p1 <- as.ggplot(~barplot(vif_bp, main = "VIF of Forest BP model", horiz = TRUE, col = "steelblue",
+b1 <- as.ggplot(~barplot(vif_bp, main = "VIF of Forest BP model", horiz = TRUE, col = "steelblue",
                          names.arg = c("Tg", "fAPAR", "ln PPFD", "ln soil C/N", "ln age", "ln vpd")))
-p2 <- as.ggplot(~barplot(vif_anpp_tnpp, main = "VIF of Forest ANPP/BP model", horiz = TRUE, col = "steelblue",
+b2 <- as.ggplot(~barplot(vif_anpp_tnpp, main = "VIF of Forest ANPP/BP model", horiz = TRUE, col = "steelblue",
                          names.arg = c("Tg", "fAPAR", "ln PPFD", "ln soil C/N", "ln age", "ln vpd")))
-p3 <- as.ggplot(~barplot(vif_anpp_leafnpp, main = "VIF of Forest leaf-NPP/ANPP model", horiz = TRUE, col = "steelblue",
+b3 <- as.ggplot(~barplot(vif_anpp_leafnpp, main = "VIF of Forest leaf-NPP/ANPP model", horiz = TRUE, col = "steelblue",
                          names.arg = c("Tg", "ln PPFD", "ln vpd")))
-p4 <- as.ggplot(~barplot(vif_bp_grass, main = "VIF of Grassland BP model", horiz = TRUE, col = "steelblue",
+b4 <- as.ggplot(~barplot(vif_bp_grass, main = "VIF of Grassland BP model", horiz = TRUE, col = "steelblue",
                          names.arg = c("Tg", "ln PPFD", "ln vpd", "ln soil C/N", "fAPAR")))
-plot_grid(p1,p2,p3,p4,
+plot_grid(b1,b2,b3,b4,
           labels = c('(a)','(b)','(c)','(d)'),
           ncol=2,label_x = 0.9,label_y=0.92)+white
 ggsave(paste("~/data/output/newphy_vif_figs.jpg",sep=""),width = 10, height = 13)
@@ -613,13 +619,27 @@ NPP_forest$bnf_obs_final  <- NPP_forest$BNPP_1/NPP_forest$CN_root_final
 NPP_forest$wnf_obs_final  <- NPP_forest$NPP.wood/NPP_forest$CN_wood_final
 
 #aggregate
-p1 <- analyse_modobs2(NPP_forest, "pred_npp","TNPP_1",type = "points")
-p2 <- analyse_modobs2(NPP_forest,"pred_anpp", "ANPP_2",type = "points")
-p3 <- analyse_modobs2(NPP_forest,"pred_lnpp","NPP.foliage", type = "points")
-p4 <- analyse_modobs2(NPP_forest, "pred_wnpp","NPP.wood",type = "points")
-p5 <- analyse_modobs2(NPP_forest,"pred_bnpp","BNPP_1", type = "points")
-p6 <- analyse_modobs2(NPP_forest,"pred_lnf","lnf_obs_final", type = "points")
-p7 <- analyse_modobs2(NPP_forest,"pred_nuptake","Nmin", type = "points")
+
+p1 <- analyse_modobs2(NPP_forest, "pred_npp","TNPP_1",type = "points")$gg + larger_size+
+  labs(y = ~paste("Forest ", BP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest ", BP[pred.], " (gC m"^-2,"yr"^-1,")"))
+
+p2 <- analyse_modobs2(NPP_forest,"pred_anpp", "ANPP_2",type = "points")$gg+ larger_size+
+  labs(y = ~paste("Forest ", ANPP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest ", ANPP[pred.], " (gC m"^-2,"yr"^-1,")"))
+
+p3 <- analyse_modobs2(NPP_forest,"pred_lnpp","NPP.foliage", type = "points")$gg + larger_size+
+  labs(y = ~paste("Forest leaf ", NPP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest leaf ", NPP[pred.], " (gC m"^-2,"yr"^-1,")"))
+
+p4 <- analyse_modobs2(NPP_forest, "pred_wnpp","NPP.wood",type = "points")$gg+ larger_size+
+  labs(y = ~paste("Forest wood ", NPP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest wood ", NPP[pred.], " (gC m"^-2,"yr"^-1,")"))
+
+p5 <- analyse_modobs2(NPP_forest,"pred_bnpp","BNPP_1", type = "points")$gg+ larger_size+
+  labs(y = ~paste("Forest ", BNPP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest ", BNPP[pred.], " (gC m"^-2,"yr"^-1,")"))
+
+p6 <- analyse_modobs2(NPP_forest,"pred_lnf","lnf_obs_final", type = "points")$gg+ larger_size+
+  labs(y = ~paste("Forest leaf N ", flux[obs.], " (gN m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest leaf N ", flux[pred.], " (gN m"^-2,"yr"^-1,")"))
+
+p7 <- analyse_modobs2(NPP_forest,"pred_nuptake","Nmin", type = "points")$gg+ larger_size+
+  labs(y = ~paste("Forest N ", uptake[obs.], " (gN m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest N ", uptake[pred.], " (gN m"^-2,"yr"^-1,")"))
 
 #grass validation
 NPP_grassland$grassland_pred_npp <- summary(bp_grass_model)$coefficients[1,1] +  
@@ -632,19 +652,25 @@ NPP_grassland$grassland_pred_bnpp <- NPP_grassland$grassland_pred_npp - NPP_gras
 NPP_grassland$grassland_pred_bnf <- NPP_grassland$grassland_pred_bnpp/41
 NPP_grassland$grassland_pred_nuptake <- NPP_grassland$grassland_pred_lnf*(1-0.69)+NPP_grassland$grassland_pred_bnf
 
-p8 <- analyse_modobs2(NPP_grassland,"grassland_pred_npp","TNPP_1", type = "points")
-p9 <- analyse_modobs2(NPP_grassland,"grassland_pred_anpp","ANPP_2", type = "points")
-p10 <- analyse_modobs2(NPP_grassland,"grassland_pred_bnpp","BNPP_1", type = "points")
+p8 <- analyse_modobs2(NPP_grassland,"grassland_pred_npp","TNPP_1", type = "points")$gg + larger_size+
+  labs(y = ~paste("Grassland ", BP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Grassland ", BP[pred.], " (gC m"^-2,"yr"^-1,")"))
+
+p9 <- analyse_modobs2(NPP_grassland,"grassland_pred_anpp","ANPP_2", type = "points")$gg + larger_size+
+  labs(y = ~paste("Grassland ", ANPP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Grassland ", ANPP[pred.], " (gC m"^-2,"yr"^-1,")"))
+
+p10 <- analyse_modobs2(NPP_grassland,"grassland_pred_bnpp","BNPP_1", type = "points")$gg + larger_size+
+  labs(y = ~paste("Grassland ", BNPP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Grassland ", BNPP[pred.], " (gC m"^-2,"yr"^-1,")"))
+
 white <- theme(plot.background=element_rect(fill="white", color="white"))
 
 #fig.2 validation
-plot_grid(p1$gg,p2$gg,p5$gg,
-          p8$gg,p9$gg,p10$gg,
-          p3$gg,p4$gg,p11$gg,
-          p6$gg,p12$gg,p7$gg, 
+plot_grid(p1,p2,p5,
+          p8,p9,p10,
+          p3,p4,p11,
+          p6,p12,p7, 
           labels = c('(a)','(b)','(c)','(d)','(e)','(f)','(g)','(h)','(i)','(j)','(k)','(l)'),
-          ncol=3,label_x = 0.9,label_y=0.92)+white
-ggsave(paste("~/data/output/newphy_fig2.jpg",sep=""),width = 20, height = 20)
+          ncol=3,label_x = 0.9,label_y=0.92,label_size = 25)+white
+ggsave(paste("~/data/output/newphy_fig2.jpg",sep=""),width = 23, height = 23)
 
 #now, inputting all predictors
 vcmax25_df <- as.data.frame(nc_to_df(read_nc_onefile(
@@ -1118,24 +1144,24 @@ nue_all$name[nue_all$lat >= 60]<- "60°N ~ 90°N"
 nue_all$name <- factor(nue_all$name,levels = c("90°S ~ 60°S","60°S ~ 30°S","30°S ~ 0",
                                                "0 ~ 30°N","30°N ~ 60°N","60°N ~ 90°N"))
 nue_all <- subset(nue_all,name!="90°S ~ 60°S")
-a1 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = nue_CNrt),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="blue")+ geom_vline(xintercept=0, linetype="dashed")+labs(y= " ", x = "Soil C/N effect") 
-a2 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = nue_age),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="blue")+ geom_vline(xintercept=0, linetype="dashed")+labs(y= " ", x = "Age effect") 
-a3 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = nue_fAPAR),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="blue")+ geom_vline(xintercept=0, linetype="dashed")+labs(y= " ", x = "fAPAR effect") 
-a4 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = nue_Tg),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="blue")+ geom_vline(xintercept=0, linetype="dashed")+labs(y= " ", x = "Tg effect") 
-a5 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = nue_vpd),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="blue")+ geom_vline(xintercept=0, linetype="dashed")+labs(y= " ", x = "vpd effect") 
-a6 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = nue_PPFD),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="blue")+ geom_vline(xintercept=0, linetype="dashed")+labs(y= " ", x = "PPFD effect") 
-a7 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = nue_vcmax25),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="blue")+ geom_vline(xintercept=0, linetype="dashed")+labs(y= " ", x = "Vcmax25 effect") 
-a8 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = nue_LMA),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="blue")+ geom_vline(xintercept=0, linetype="dashed")+labs(y= " ", x = "LMA effect") 
-a9 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = NUE),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="blue")
+a1 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = nue_CNrt),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="blue")+ geom_vline(xintercept=0, linetype="dashed")+labs(y= " ", x = "Soil C/N effect") +larger_size
+a2 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = nue_age),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="blue")+ geom_vline(xintercept=0, linetype="dashed")+labs(y= " ", x = "Age effect") +larger_size
+a3 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = nue_fAPAR),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="blue")+ geom_vline(xintercept=0, linetype="dashed")+labs(y= " ", x = "fAPAR effect") +larger_size
+a4 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = nue_Tg),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="blue")+ geom_vline(xintercept=0, linetype="dashed")+labs(y= " ", x = "Tg effect") +larger_size
+a5 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = nue_vpd),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="blue")+ geom_vline(xintercept=0, linetype="dashed")+labs(y= " ", x = "D effect") +larger_size
+a6 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = nue_PPFD),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="blue")+ geom_vline(xintercept=0, linetype="dashed")+labs(y= " ", x = "PPFD effect") +larger_size
+a7 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = nue_vcmax25),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="blue")+ geom_vline(xintercept=0, linetype="dashed")+labs(y= " ", x = "Vcmax25 effect") +larger_size
+a8 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = nue_LMA),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="blue")+ geom_vline(xintercept=0, linetype="dashed")+labs(y= " ", x = "LMA effect") +larger_size
+a9 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = NUE),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="blue")+labs(y= " ", x = "NUE") +larger_size
 
-aa1 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = CNrt),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="black")+labs(y= " ", x = "Soil C/N") 
-aa2 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = age),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="black")+labs(y= " ", x = "Age") 
-aa3 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = fAPAR),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="black")+labs(y= " ", x = "fAPAR") 
-aa4 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = Tg),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="black")+labs(y= " ", x = "Tg") 
-aa5 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = vpd),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="black")+labs(y= " ", x = "vpd") 
-aa6 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = PPFD),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="black")+labs(y= " ", x = "PPFD") 
-aa7 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = vcmax25),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="black")+labs(y= " ", x = "Vcmax25") 
-aa8 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = LMA),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="black")+labs(y= " ", x = "LMA") 
+aa1 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = CNrt),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="black")+labs(y= " ", x = "Soil C/N") +larger_size
+aa2 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = age),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="black")+labs(y= " ", x = "Age") +larger_size
+aa3 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = fAPAR),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="black")+labs(y= " ", x = "fAPAR") +larger_size
+aa4 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = Tg),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="black")+labs(y= " ", x = "Tg") +larger_size
+aa5 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = vpd),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="black")+labs(y= " ", x = "D") +larger_size
+aa6 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = PPFD),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="black")+labs(y= " ", x = "PPFD")+larger_size 
+aa7 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = vcmax25),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="black")+labs(y= " ", x = "Vcmax25") +larger_size
+aa8 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = LMA),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="black")+labs(y= " ", x = "LMA") +larger_size
 
 plot_grid(a1,a2,a3,a4,a5,a6,a7,a8,a9)+white
 ggsave(paste("~/data/output/newphy_fig4.jpg",sep=""),width = 20, height = 10)
@@ -1466,7 +1492,9 @@ final3 <- ggplot() +geom_line(data = fits_vpd, aes(vpd_a, visregFit, group=plt, 
 final4 <- ggplot() +geom_line(data = fits_PPFD, aes(PPFD_a, visregFit, group=plt, color=plt),size=2) + xlab("ln PPFD") + ylab(" ")+theme_classic()+theme(text = element_text(size=20),legend.position="none")+geom_ribbon(data = bp1c$fit,aes(PPFD_a, ymin=visregLwr, ymax=visregUpr),fill="gray",alpha=0.5)+ scale_colour_manual(values=c(Measurement="black",CABLE="pink",ISAM="red",ISBA="#339999",JULES="#663399",LPJ="#0066CC",ORCHIDEE="#FF9933",ORCHICNP="cyan",SDGVM="yellow"))
 
 #show legend
-final1_legend <- ggplot() +geom_line(data = fits_PPFD, aes(PPFD_a, visregFit, group=plt, color=plt),size=2) + xlab("ln PPFD") + ylab(" ")+theme_classic()+theme(text = element_text(size=20))+ scale_colour_manual(" ",values=c(Measurement="black",CABLE="pink",ISAM="red",ISBA="#339999",JULES="#663399",LPJ="#0066CC",ORCHIDEE="#FF9933",ORCHICNP="cyan",SDGVM="yellow"))
+final1_legend <- ggplot() +geom_line(data = fits_PPFD, aes(PPFD_a, visregFit, group=plt, color=plt),size=2) + xlab("ln PPFD") + ylab(" ")+theme_classic()+theme(text = element_text(size=20))+
+  scale_colour_manual(" ",values=c(Measurement="black",CABLE="pink",ISAM="red",ISBA="#339999",JULES="#663399",LPJ="#0066CC",ORCHIDEE="#FF9933",ORCHICNP="cyan",SDGVM="yellow"), 
+                      labels = c(~paste(BP[obs.]," or N ",uptake[obs.], " or ", NUE[pred.],sep=""),"CABLE","ISAM","ISBA","JULES","LPJ","ORCHIDEE","ORCHICNP","SDGVM"))
 
 legend_info <- as_ggplot(get_legend(final1_legend))
 
@@ -1572,7 +1600,7 @@ final1a <- ggplot() +geom_line(data = fits_fapar, aes(fAPAR_a, visregFit, group=
 
 final1b <- ggplot() +geom_line(data = fits_tg, aes(Tg_a, visregFit, group=plt, color=plt),size=2) + 
   geom_ribbon(data=nn1b$fit,aes(Tg_a, ymin=visregLwr, ymax=visregUpr),fill="gray",alpha=0.5)+
-  xlab("Tg") + ylab("Net minerlization")+
+  xlab("Tg") + ylab("N uptake")+
   theme_classic()+theme(text = element_text(size=20),legend.position="none")+
   scale_colour_manual(values=c(Measurement="black",ISAM="red",ORCHICNP="cyan"))
 
@@ -1753,26 +1781,44 @@ plot_grid(final1,final2,final3,final4,legend_info,
           final1_nue6,final1_nue2,final1_nue4,final1_nue8,white,
           nrow=4,label_x = 0.8, label_y = 0.8)+white
 
-ggsave(paste("~/data/output/newphy_fig5.jpg",sep=""), width = 15, height = 10)
+ggsave(paste("~/data/output/newphy_fig5.jpg",sep=""), width = 20, height = 15)
 
 #validation - BP
 NPP_statistical$Measured_BP <- NPP_statistical$TNPP_1
 
-pp2 <- analyse_modobs2(NPP_statistical,"pred_npp","Measured_BP", type = "points")
-pp4 <- analyse_modobs2(NPP_statistical,"CABLE_NPP","Measured_BP", type = "points")
-pp5 <- analyse_modobs2(NPP_statistical,"ISAM_npp","Measured_BP", type = "points")
-pp6 <- analyse_modobs2(NPP_statistical,"ISBA_NPP","Measured_BP", type = "points")
-pp7 <- analyse_modobs2(NPP_statistical,"JULES_NPP","Measured_BP", type = "points")
-pp8 <- analyse_modobs2(NPP_statistical,"LPJ_NPP","Measured_BP", type = "points")
-pp9 <- analyse_modobs2(NPP_statistical,"ORCHIDEE_NPP","Measured_BP", type = "points")
-pp10 <- analyse_modobs2(NPP_statistical,"ORCHICNP_NPP","Measured_BP", type = "points")
-pp11 <- analyse_modobs2(NPP_statistical,"SDGVM_NPP","Measured_BP", type = "points")
+pp2 <- analyse_modobs2(NPP_statistical,"pred_npp","Measured_BP", type = "points")$gg + larger_size+
+  labs(y = ~paste("Forest ", BP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest ", BP[pred.], " (gC m"^-2,"yr"^-1,")"))
 
-plot_grid(pp2$gg,pp4$gg,pp5$gg,pp6$gg,pp7$gg,pp8$gg,pp9$gg,pp10$gg,pp11$gg,
+pp4 <- analyse_modobs2(NPP_statistical,"CABLE_NPP","Measured_BP", type = "points")$gg + larger_size+
+  labs(y = ~paste("Forest ", BP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("CABLE ", BP[pred.], " (gC m"^-2,"yr"^-1,")"))
+
+pp5 <- analyse_modobs2(NPP_statistical,"ISAM_npp","Measured_BP", type = "points")$gg + larger_size+
+  labs(y = ~paste("Forest ", BP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("ISAM ", BP[pred.], " (gC m"^-2,"yr"^-1,")"))
+
+pp6 <- analyse_modobs2(NPP_statistical,"ISBA_NPP","Measured_BP", type = "points")$gg + larger_size+
+  labs(y = ~paste("Forest ", BP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("ISBA ", BP[pred.], " (gC m"^-2,"yr"^-1,")"))
+
+pp7 <- analyse_modobs2(NPP_statistical,"JULES_NPP","Measured_BP", type = "points")$gg + larger_size+
+  labs(y = ~paste("Forest ", BP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("JULES ", BP[pred.], " (gC m"^-2,"yr"^-1,")"))
+
+pp8 <- analyse_modobs2(NPP_statistical,"LPJ_NPP","Measured_BP", type = "points")$gg + larger_size+
+  labs(y = ~paste("Forest ", BP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("LPJ ", BP[pred.], " (gC m"^-2,"yr"^-1,")"))
+
+pp9 <- analyse_modobs2(NPP_statistical,"ORCHIDEE_NPP","Measured_BP", type = "points")$gg + larger_size+
+  labs(y = ~paste("Forest ", BP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("ORCHIDEE ", BP[pred.], " (gC m"^-2,"yr"^-1,")"))
+
+pp10 <- analyse_modobs2(NPP_statistical,"ORCHICNP_NPP","Measured_BP", type = "points")$gg + larger_size+
+  labs(y = ~paste("Forest ", BP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("ORCHICNP ", BP[pred.], " (gC m"^-2,"yr"^-1,")"))
+
+pp11 <- analyse_modobs2(NPP_statistical,"SDGVM_NPP","Measured_BP", type = "points")$gg + larger_size+
+  labs(y = ~paste("Forest ", BP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("SDGVM ", BP[pred.], " (gC m"^-2,"yr"^-1,")"))
+
+
+plot_grid(pp2,pp4,pp5,pp6,pp7,pp8,pp9,pp10,pp11,
           labels = c('(a)','(b)','(c)','(d)','(e)','(f)','(g)','(h)','(i)'),
-          nrow=3,label_x = 0.9,label_y=0.92)+white
+          nrow=3,label_x = 0.9,label_y=0.92,label_size = 20)+white
 
-ggsave(paste("~/data/output/newphy_figs5.jpg",sep=""), width = 15, height = 16)
+ggsave(paste("~/data/output/newphy_figs5.jpg",sep=""), width = 20, height = 16)
 
 #validation - N uptake
 Nmin_statistical$pred_nuptake
@@ -1782,16 +1828,24 @@ Nmin_statistical$Nuptake_from_Nup_model <- summary(mod_n1)$coef[1,1]+
   summary(mod_n1)$coef[3,1]*Nmin_statistical$Tg_a+
   summary(mod_n1)$coef[4,1]*Nmin_statistical$LMA_a
 
-ppp1 <- analyse_modobs2(Nmin_statistical,"pred_nuptake","Nmin", type = "points")
-ppp2 <- analyse_modobs2(Nmin_statistical,"Nuptake_from_Nup_model","Nmin", type = "points")
-ppp3 <- analyse_modobs2(Nmin_statistical,"ORCHICNP_fNup","Nmin", type = "points")
-ppp4 <- analyse_modobs2(Nmin_statistical,"ISAM_fNup","Nmin", type = "points")
+ppp1 <- analyse_modobs2(Nmin_statistical,"pred_nuptake","Nmin", type = "points")$gg +larger_size+
+  labs(y = ~paste("Forest N ", uptake[obs.], " (gN m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest N ", uptake[pred.], " (gN m"^-2,"yr"^-1,")"))
 
-plot_grid(ppp1$gg,ppp2$gg,ppp3$gg,ppp4$gg,
-          labels = c('(a)','(b)','(c)','(d)'),
-          nrow=2,label_x = 0.9,label_y=0.92)+white
+#remove direct nuptake model since it is irrelevant
+#ppp2 <- analyse_modobs2(Nmin_statistical,"Nuptake_from_Nup_model","Nmin", type = "points")
 
-ggsave(paste("~/data/output/newphy_figs6.jpg",sep=""), width = 10, height = 10)
+ppp3 <- analyse_modobs2(Nmin_statistical,"ORCHICNP_fNup","Nmin", type = "points")$gg +larger_size+
+  labs(y = ~paste("Forest N ", uptake[obs.], " (gN m"^-2,"yr"^-1,")")) +labs(x = ~paste("ORCHICNP N ", uptake[pred.], " (gN m"^-2,"yr"^-1,")"))
+
+ppp4 <- analyse_modobs2(Nmin_statistical,"ISAM_fNup","Nmin", type = "points")$gg +larger_size+
+  labs(y = ~paste("Forest N ", uptake[obs.], " (gN m"^-2,"yr"^-1,")")) +labs(x = ~paste("ISAM N ", uptake[pred.], " (gN m"^-2,"yr"^-1,")"))
+
+
+plot_grid(ppp1,ppp3,ppp4,
+          labels = c('(a)','(b)','(c)'),
+          nrow=1,label_x = 0.9,label_y=0.92,label_size = 20)+white
+
+ggsave(paste("~/data/output/newphy_figs6.jpg",sep=""), width = 20, height = 5)
 
 #visreg
 
