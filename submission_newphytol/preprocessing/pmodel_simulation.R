@@ -66,7 +66,9 @@ points(na_fapar$lon,na_fapar$lat, col="red", pch=16,cex=1)
 #the code of this is available at L90-110 in forest/Reprocessing_fpar_climates_forest.R
 
 #now, reprocessing such values - by updating such fapar ###this code (from 79 to 86) add addtional data from n_focal = 1 or 2 (if not using them the don't run!)
-fapar_df_new <- list.files("~/data/forest_npp/reprocessing_fpar_raw/",full.names = T)
+#fapar_df_new <- list.files("~/data/forest_npp/reprocessing_fpar_raw/",full.names = T)
+fapar_df_new <- list.files("~/data/NPP_final/reprocessing_fpar_raw2/",full.names = T)
+
 for (i in 1:(length(fapar_df_new)-1)){
   df1 <- read.csv(fapar_df_new[i])
   df1$date <- as.Date(df1$date)

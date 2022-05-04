@@ -28,15 +28,5 @@
 10. This take time and see map_site_data.R.
 
 
----Now, output figures in manuscript!
-
-12. Statistical model: /Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/submission/statistical_fig1_tab1.R
-save all statsitical model info in: file = "~/data/NPP_Grassland_final/statistical_model/...RData"
-	
-13. valdation figure: /Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/submission/validation_fig2.R
-
-14. Global simulation: /Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/submission/global_figs.R
-
-15: Uncertainty: /Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/submission/uncertainty_table_s1.R
-
-16: AIC for model selection: 
+---Now,my analysis
+/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/submission_newphytol/submission/all_analyses.R

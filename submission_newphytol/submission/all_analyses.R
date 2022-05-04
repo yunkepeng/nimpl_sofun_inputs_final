@@ -885,8 +885,7 @@ a7 <- gg$ggmap +
 a8 <- gg$gglegend+ white
 
 #5. NRE
-NRE_validation <- read.csv(file="~/data/NPP_final/NRE_validation.csv") 
-nre_site <- (NRE_validation %>% filter(pred_nre>0) %>% filter(NRE>0))[,c("lon","lat")]
+nre_site <- (NRE_climate %>% filter(pred_nre>0) %>% filter(NRE>0))[,c("lon","lat")]
 
 gg <- plot_map3(na.omit(all_maps[,c("lon","lat","nre_pft")]),
                 varnam = "nre_pft",latmin = -65, latmax = 85,combine=FALSE)
