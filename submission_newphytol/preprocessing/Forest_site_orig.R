@@ -22,7 +22,7 @@ library(scales)
 library(spgwr)
 ##1.Sara Vicca
 #1.1 NPP
-Sara_NPP <- read.csv("/Users/yunpeng/data/NPP_Yunke/NPP_Vicca/orig/Forests_Colin_NPP.csv")
+Sara_NPP <- read.csv("~/data/NPP_Yunke/NPP_Vicca/orig/Forests_Colin_NPP.csv")
 Sara_NPP$Source_NPP <- Sara_NPP$Source
 Sara_NPP <- Sara_NPP[,c("Plot","Begin.year","End.year","NPP.foliage","NPP.stem","NPP.wood","NPP.fine","NPP.coarse","ANPP_2","BNPP_1","TNPP_1","Source_NPP")]
 #TNPP_1 = ANPP_2 + BNPP_1 (not including understory)
@@ -37,7 +37,7 @@ Sara_NPP$Begin.year[Sara_NPP$Begin.year==9999] <- Sara_NPP$End.year[Sara_NPP$Beg
 Sara_NPP$no <- c(1:nrow(Sara_NPP))
 
 #1.2 siteinfo
-Sara_NPP_siteinfo <- read.csv("/Users/yunpeng/data/NPP_Yunke/NPP_Vicca/orig/Forests_Colin_siteinfo.csv")
+Sara_NPP_siteinfo <- read.csv("~/data/NPP_Yunke/NPP_Vicca/orig/Forests_Colin_siteinfo.csv")
 Sara_NPP_siteinfo$Plot <- Sara_NPP_siteinfo$Plot.name
 
 for (i in 1:nrow(Sara_NPP_siteinfo)){
@@ -62,7 +62,7 @@ Sara_NPP2_elv_missing <- subset(Sara_NPP2,is.na(Elevation)==TRUE)
 Sara_NPP2_elv_missing_Plot <- aggregate(Sara_NPP2_elv_missing,by=list(Sara_NPP2_elv_missing$Plot), FUN=mean, na.rm=TRUE)
 Sara_NPP2_elv_missing_Plot <-Sara_NPP2_elv_missing_Plot[,c("Group.1","lon","lat")]
 names(Sara_NPP2_elv_missing_Plot) <- c("sitename","lon","lat")
-devtools::load_all("/Users/yunpeng/yunkepeng/Grassland_new_ingestr_rsofun_20210326/ingestr/")
+devtools::load_all("~/yunkepeng/Grassland_new_ingestr_rsofun_20210326/ingestr/")
 df_etopo <- ingest(
   Sara_NPP2_elv_missing_Plot,
   source = "etopo1",
@@ -78,7 +78,7 @@ Sara_NPP2$Elevation[is.na(Sara_NPP2$Elevation)==TRUE] <- Sara_NPP2$Elevation_eto
 Sara_NPP2$Elevation
 
 #Now, add site-level stand-age
-Sara_age <- read.csv("/Users/yunpeng/data/NPP_Yunke/NPP_Vicca/orig/Forests_Colin_age.csv")
+Sara_age <- read.csv("~/data/NPP_Yunke/NPP_Vicca/orig/Forests_Colin_age.csv")
 Sara_age <- Sara_age[,c("Plot","Stand.age")]
 Sara_age_site <- aggregate(Sara_age,by=list(Sara_age$Plot), FUN=mean, na.rm=TRUE)
 Sara_age_site <- subset(Sara_age_site,Stand.age>0)
@@ -89,7 +89,7 @@ summary(Sara_age_site)
 Sara_NPP3 <- merge(Sara_NPP2,Sara_age_site,by=c("Plot"),all.x=TRUE)
 
 #Now, add site-level LAI
-Sara_LAI <- read.csv("/Users/yunpeng/data/NPP_Yunke/NPP_Vicca/orig/Forests_Colin_LAI.csv")
+Sara_LAI <- read.csv("~/data/NPP_Yunke/NPP_Vicca/orig/Forests_Colin_LAI.csv")
 Sara_LAI <- Sara_LAI[,c("Plot","LAI")]
 Sara_LAI_site <- aggregate(Sara_LAI,by=list(Sara_LAI$Plot), FUN=mean, na.rm=TRUE)
 Sara_LAI_site <- Sara_LAI_site[,c(1,3)]
@@ -101,7 +101,7 @@ Sara_NPP4 <- merge(Sara_NPP3,Sara_LAI_site,by=c("Plot"),all.x=TRUE)
 
 #now, merged with GPP (1) primarily based on plot + start.year + end.year and (2) based on average of plot
 #firstly, aggregate based on sitename, start.year and end.year
-Sara_GPP <- read.csv("/Users/yunpeng/data/NPP_Yunke/NPP_Vicca/orig/Forests_Colin_GPP.csv")
+Sara_GPP <- read.csv("~/data/NPP_Yunke/NPP_Vicca/orig/Forests_Colin_GPP.csv")
 Sara_GPP <- Sara_GPP[,c("Plot","GPP","Begin.year","End.year")]
 Sara_GPP$Begin.year[Sara_GPP$Begin.year==9999] <- Sara_GPP$End.year[Sara_GPP$Begin.year==9999]
 Sara_GPP <- subset(Sara_GPP,GPP>0)
@@ -111,7 +111,7 @@ names(Sara_GPP_site) <- c("Plot","Begin.year","End.year","GPP")
 Sara_NPP5 <- merge(Sara_NPP4,Sara_GPP_site,by=c("Plot","Begin.year","End.year"),all.x=TRUE)
 
 #alternatively, aggregate based on site only
-Sara_GPP <- read.csv("/Users/yunpeng/data/NPP_Yunke/NPP_Vicca/orig/Forests_Colin_GPP.csv")
+Sara_GPP <- read.csv("~/data/NPP_Yunke/NPP_Vicca/orig/Forests_Colin_GPP.csv")
 Sara_GPP <- Sara_GPP[,c("Plot","GPP")]
 Sara_GPP_site <- aggregate(Sara_GPP,by=list(Sara_GPP$Plot), FUN=mean, na.rm=TRUE)
 Sara_GPP_site <- subset(Sara_GPP_site,GPP>0)
@@ -131,11 +131,11 @@ Sara_NPP6 <- Sara_NPP6[,!(names(Sara_NPP6) %in% "GPP2")]
 
 #add alpha - as obtained earlier in SPLASH
 #Sara_NPP6 <- Sara_NPP6[order(Sara_NPP6$no), ]
-#alphalist3 <- read.csv(file="/Users/yunpeng/data/NPP_Yunke/NPP_Vicca/climates_alpha.csv")$alpha
+#alphalist3 <- read.csv(file="~/data/NPP_Yunke/NPP_Vicca/climates_alpha.csv")$alpha
 #Sara_NPP6$alpha <- alphalist3
 
 #add site-level soil C/N
-Sara_CN <- read.csv(file="/Users/yunpeng/data/NPP_Yunke/NPP_Vicca/orig/References_Yunke_soilCN.csv")
+Sara_CN <- read.csv(file="~/data/NPP_Yunke/NPP_Vicca/orig/References_Yunke_soilCN.csv")
 Sara_CN <- Sara_CN[,c("Plot.name","Soil.C.N")]
 Sara_CN$soilCN <- (as.numeric(gsub(",",".",Sara_CN[,2])))
 hist(Sara_CN$soilCN)
@@ -150,14 +150,14 @@ Sara_NPP7$pft <- "Forest"
 Sara_NPP7$file <- "Sara Vicca"
 
 #2. now, add Malhi # NPP_Malhi's data needs double check
-NPP_Malhi <- read.csv("/Users/yunpeng/data/NPP_Yunke/NPP_Malhi/NPP_Malhi.csv")
+NPP_Malhi <- read.csv("~/data/NPP_Yunke/NPP_Malhi/NPP_Malhi.csv")
 NPP_Malhi <- NPP_Malhi[,c("site","lon","lat","z","file","Begin_year","End_year","Source","NPP.foliage","NPP.stem","NPP.wood","NPP.fine","NPP.coarse","ANPP_2","BNPP_1","TNPP_1","GPP")]
 names(NPP_Malhi) <- c("Plot","lon","lat","Elevation","file","Begin.year","End.year","Source_NPP","NPP.foliage","NPP.stem","NPP.wood","NPP.fine","NPP.coarse","ANPP_2","BNPP_1","TNPP_1","GPP")
 NPP_Malhi$Management.code <- "UM"
 NPP_Malhi$pft <-"Forest"
 
 #3. add Keith (take care about rep)
-NPP_Keith <- read.csv("/Users/yunpeng/data/NPP_Yunke/NPP_Keith/orig/ABPE.csv")
+NPP_Keith <- read.csv("~/data/NPP_Yunke/NPP_Keith/orig/ABPE.csv")
 NPP_Keith <- NPP_Keith[,c("Site","Ecosystem","age","lat","long","Elevation","Mgmt_code","ANPP","GPP","Source")]
 names(NPP_Keith) <- c("Plot","pft","age","lat","lon","Elevation","Management.code","ANPP_2","GPP","Source_NPP")
 NPP_Keith$Begin.year <- 1991
@@ -182,7 +182,7 @@ head(NPP_Sara_Malhi_Keith)
 
 Forc <- read.csv(file="~/data/NPP_Yunke/NPP_ForC/orig/ForC_measurements.csv")
 variablelist <- c("GPP_C","NPP_1_C","ANPP_woody_stem_C","ANPP_foliage_C","ANPP_woody_C","ANPP_2_C","BNPP_root_C","BNPP_root_coarse_C","BNPP_root_fine_C")
-#according to definition in "/Users/yunpeng/data/NPP_Yunke/NPP_ForC/orig/ForC_variables.csv"
+#according to definition in "~/data/NPP_Yunke/NPP_ForC/orig/ForC_variables.csv"
 #NPP_1_C: NPP, including foliage, branch, stem, coarse root, and fine root. 
 # ANPP_2_C (Annual aboveground NPP, including foliage, stem growth, and branch turnover)= ANPP_foliage_C + ANPP_woody_C:
 #ANPP_woody_stem_C: stem ANPP, part of wood ANPP
@@ -321,7 +321,7 @@ new_NPP_GPP3 <- new_NPP_GPP2 %>% mutate(GPP = coalesce(GPP_sitename_yr,GPP_siten
 ForC_all <- new_NPP_GPP3[,!(names(new_NPP_GPP3) %in% c("repeated","GPP_sitename_yr","GPP_sitename"))]
 
 #finally, combine with coordinates
-forc_coord <- read.csv("/Users/yunpeng/data/NPP_Yunke/NPP_ForC/orig/ForC_sites.csv")
+forc_coord <- read.csv("~/data/NPP_Yunke/NPP_ForC/orig/ForC_sites.csv")
 forc_coord <- forc_coord[,c("sites.sitename","lat","lon","masl")]
 ForC_all_coord <- merge(ForC_all,forc_coord,by=c("sites.sitename"),all.x=TRUE) # now, merge to get new GPP sites 
 summary(ForC_all_coord)
@@ -725,7 +725,7 @@ NPP$GPP[NPP$site=="US-Spe-D01"] <- 829
 #interpolate gpp to Cambioli's data from keith's source (with same site name)
 NPP$GPP[NPP$site=="CN-Inn-F01"] <- 204 #this value is reasonable comparing with NPP/GPP
 
-#add more data from /Users/yunpeng/data/NPP_Yunke/NPP_Keith/orig/Bremer and Ham 2010.pdf from keith's grassland data
+#add more data from ~/data/NPP_Yunke/NPP_Keith/orig/Bremer and Ham 2010.pdf from keith's grassland data
 #based on its Table 3 - GPP, for example, at the site below, was calculated as averages of 2 values (at 2 period) from site BA, so does site BB. 
 NPP$TNPP_1[NPP$site=="US-Kon-D02"] <- ((1669-1354) + (2269-1666))/2
 NPP$TNPP_1[NPP$site=="US-Kon-D03"] <- ((1368-1185) + (1997-1495))/2
@@ -735,10 +735,10 @@ NPP$BNPP_1[NPP$site=="US-Kon-D03"] <- NPP$TNPP_1[NPP$site=="US-Kon-D03"] - NPP$A
 
 ##### Finally Input N uptake
 #(1) newly added Nmin rate data from Finzi
-Finzi <- read.csv("/Users/yunpeng/data/NPP_Yunke/Nmin_Finzi/Nmin_Finzi.csv")
+Finzi <- read.csv("~/data/NPP_Yunke/Nmin_Finzi/Nmin_Finzi.csv")
 names(Finzi)[names(Finzi) == "Lat"] <- "lat"
 names(Finzi)[names(Finzi) == "Long"] <- "lon"
-devtools::load_all("/Users/yunpeng/yunkepeng/Grassland_new_ingestr_rsofun_20210326/ingestr/")
+devtools::load_all("~/yunkepeng/Grassland_new_ingestr_rsofun_20210326/ingestr/")
 
 #Forest - only merging forest this time
 Finzi_Forest <- subset(Finzi, Biome!="temp grass")
@@ -781,7 +781,7 @@ NPP_Nuptake$year_end <- NPP_Nuptake$End_year
 NPP_Nuptake$year_start[NPP_Nuptake$Begin_year<=1980] <- 1980
 NPP_Nuptake$year_end[NPP_Nuptake$End_year<=1980] <- 1989
 
-csvfile <- paste("/Users/yunpeng/data/NPP_Yunke/NPP_Nmin_dataset.csv")
+csvfile <- paste("~/data/NPP_Yunke/NPP_Nmin_dataset.csv")
 write_csv(NPP_Nuptake, path = csvfile)
 
 #please note! below 3 steps requires above output NPP_Nmin_dataset.csv
@@ -789,16 +789,16 @@ write_csv(NPP_Nuptake, path = csvfile)
 #However, as far as lon, lat, z, begin_year and end_year from (NPP_Nmin_dataset.csv) not changed/added. It's fine to not replicate the (too long) process below. Just directly merging with below output
 
 #combine with p-model's gpcessing/pmodel_simulation.R
-gpp_vcmax25 <- read.csv("/Users/yunpeng/data/NPP_Yunke/simulated_gpp/site_simulated_gpp_vcmax.csv")
+gpp_vcmax25 <- read.csv("~/data/NPP_Yunke/simulated_gpp/site_simulated_gpp_vcmax.csv")
 NPP_Nuptake_gpp_vcmax25 <- merge(NPP_Nuptake,gpp_vcmax25,by=c("lon","lat","z","year_start","year_end"),all.x=TRUE)
 
 #combine site-simulated vpd, ppfd, alpha and Tg: see climate_site_data.R
-climates_sites <- read.csv("/Users/yunpeng/data/NPP_Yunke/predictors/climates_sites.csv")
+climates_sites <- read.csv("~/data/NPP_Yunke/predictors/climates_sites.csv")
 NPP_Nuptake_gpp_vcmax25_climates <- merge(NPP_Nuptake_gpp_vcmax25,climates_sites,by=c("lon","lat","z","year_start","year_end","Begin_year","End_year"),all.x=TRUE)
 summary(NPP_Nuptake_gpp_vcmax25_climates)
 
 #combine with site-interpolated value from all maps: see map_site_data.R
-gwr_sites <- read.csv("/Users/yunpeng/data/NPP_Yunke/predictors/predictors_gwr.csv")
+gwr_sites <- read.csv("~/data/NPP_Yunke/predictors/predictors_gwr.csv")
 gwr_sites <- gwr_sites %>% 
   rename(
     mapped_age = age)
@@ -883,16 +883,25 @@ dataset5$NPP.foliage[dataset5$site=="Sara2_NPP72"]  <- NA #one thing shown wrong
 #remove the old file from NPP_Schulze
 dataset6 <- subset(dataset5,file!="NPP_Schulze")
 
+#check leaf and root C/N
+summary(aggregate(subset(dataset6,pft=="Grassland"),by=list(subset(dataset6,pft=="Grassland")$site), FUN=mean, na.rm=TRUE)$CN_leaf_final)
+summary(aggregate(subset(dataset6,pft=="Grassland"),by=list(subset(dataset6,pft=="Grassland")$site), FUN=mean, na.rm=TRUE)$CN_root_final)
+
 #REMOVE Tiandi Grassland's npp and bnpp
-dataset6$BNPP_1[dataset6$file=="Tiandi Grassland"] <- NA
-dataset6$TNPP_1[dataset6$file=="Tiandi Grassland"] <- NA
+dataset6 <- subset(dataset6,file!="Tiandi Grassland")
 
 #final calculation of lnf, bnf and wnf 
 dataset6$lnf_obs_final <-dataset6$NPP.foliage/dataset6$CN_leaf_final
 dataset6$bnf_obs_final  <- dataset6$BNPP_1/dataset6$CN_root_final
 dataset6$wnf_obs_final  <- dataset6$NPP.wood/dataset6$CN_wood_final
 
-csvfile <- paste("/Users/yunpeng/data/NPP_Yunke/NPP_Nmin_dataset_with_predictors.csv")
+#remove columns not used
+dataset6 <- dataset6[,!(names(dataset6) %in% c("Evergreen.Deciduous","Management.code",
+                                               "Management","pred_gpp_c3","max_vcmax25_c3",
+                                               "alpha_sites","PPFD_sites","Tg_sites","vpd_sites",
+                                               "PPFD_total_fapar","PPFD_total","alpha","mapped_gpp"))]
+
+csvfile <- paste("~/data/NPP_Yunke/NPP_Nmin_dataset_with_predictors.csv")
 write_csv(dataset6, path = csvfile)
 
 #check: plot missing data - p model's vcmax25 - many of them are missing due to on the edge
@@ -1077,5 +1086,5 @@ summary(NRE_climate)
 NRE_climate$vpd[NRE_climate$vpd<=0] <-NA
 NRE_climate$nre <- NRE_climate$NRE/100
 summary(NRE_climate)
-csvfile <- paste("/Users/yunpeng/data/NRE_various/NRE_dataset.csv")
+csvfile <- paste("~/data/NRE_various/NRE_dataset.csv")
 write.csv(NRE_climate, csvfile, row.names = TRUE)

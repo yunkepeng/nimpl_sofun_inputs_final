@@ -249,15 +249,6 @@ stepwise_lm <- function(df_input,target_var){
 
 NPP_all <- read.csv("~/data/NPP_Yunke/NPP_Nmin_dataset_with_predictors.csv")
 
-#remove tiandi's grassland since their bnpp and bp were considered to be not used
-#tiandi's bnpp and bp were alredy removed in Forest_site_orig.R
-NPP_all$TNPP_1[NPP_all$file=="Tiandi Grassland"] <- NA
-NPP_all$ANPP_2[NPP_all$file=="Tiandi Grassland"] <- NA
-NPP_all$BNPP_1[NPP_all$file=="Tiandi Grassland"] <- NA
-NPP_all$NPP.foliage[NPP_all$file=="Tiandi Grassland"] <- NA
-NPP_all$lnf_obs_final[NPP_all$file=="Tiandi Grassland"] <- NA
-NPP_all$bnf_obs_final[NPP_all$file=="Tiandi Grassland"] <- NA
-
 NPP_all$NPP.foliage[NPP_all$NPP.foliage==0] <-NA
 NPP_all$NPP.wood[NPP_all$NPP.wood==0] <-NA
 NPP_all$ANPP_2[NPP_all$ANPP_2==0] <-NA
@@ -275,26 +266,17 @@ NPP_all$observedfAPAR_a <- NPP_all$observedfAPAR
 NPP_all$obs_age_a <- log(NPP_all$age)
 
 NPP_all$age_a <- log(NPP_all$mapped_age)
-NPP_all$alpha_a <- (NPP_all$alpha)
 NPP_all$Tg_a <- NPP_all$Tg
 NPP_all$PPFD_a <- log(NPP_all$PPFD)
-
-NPP_all$PPFD_total_a <- log(NPP_all$PPFD_total)
-
 NPP_all$vpd_a <- log(NPP_all$vpd)
 NPP_all$fAPAR_a <- NPP_all$fAPAR
 NPP_all$CNrt_a <- log(NPP_all$CNrt)
 NPP_all$LMA_a <- log(NPP_all$LMA)
 NPP_all$vcmax25_a <- log(NPP_all$vcmax25)
 
-NPP_all$alpha_b <- (NPP_all$alpha_sites)
-NPP_all$Tg_b <- NPP_all$Tg_sites
-NPP_all$PPFD_b <- log(NPP_all$PPFD_sites)
-NPP_all$vpd_b <- log(NPP_all$vpd_sites)
-
 NPP_forest <- subset(NPP_all,pft=="Forest")
 
-BP_dataset <- na.omit(NPP_forest[,c("tnpp_a","obs_age_a","observedfAPAR_a","soilCN_a","Tg_a","PPFD_a","vpd_a","alpha_a","site_a")])
+BP_dataset <- na.omit(NPP_forest[,c("tnpp_a","obs_age_a","observedfAPAR_a","soilCN_a","Tg_a","PPFD_a","vpd_a","site_a")])
 #model1 <- stepwise(BP_dataset,"tnpp_a")
 #model1[[1]]
 #model1[[2]]
@@ -315,7 +297,7 @@ nrow(BP_dataset)/nrow(BP_dataset2)
 
 vif_bp <- vif((lmer(tnpp_a~Tg_a+fAPAR_a+PPFD_a+CNrt_a+age_a+vpd_a+(1|site_a),data=BP_dataset2)))
 
-#anpp_tnpp_dataset <- na.omit(NPP_forest[,c("anpp_tnpp_a","obs_age_a","observedfAPAR_a","soilCN_a","Tg_a","PPFD_a","vpd_a","alpha_a","site_a")])
+#anpp_tnpp_dataset <- na.omit(NPP_forest[,c("anpp_tnpp_a","obs_age_a","observedfAPAR_a","soilCN_a","Tg_a","PPFD_a","vpd_a","site_a")])
 #dim(anpp_tnpp_dataset)
 #model2 <- stepwise(anpp_tnpp_dataset,"anpp_tnpp_a")
 #model2[[1]]
@@ -335,34 +317,6 @@ r.squaredGLMM(anpp_tnpp_model)
 
 vif_anpp_tnpp <- vif((lmer(anpp_tnpp_a~Tg_a+fAPAR_a+PPFD_a+CNrt_a+age_a+vpd_a+(1|site_a),data=anpp_tnpp_dataset2)))
 
-#mapped, try an alternative, with additional PPFD_total - still negative 
-#anpp_tnpp_dataset2a <- na.omit(NPP_forest[,c("anpp_tnpp_a","age_a","fAPAR_a","CNrt_a","Tg_a","PPFD_total_a","vpd_a","site_a")])
-#dim(anpp_tnpp_dataset2a)
-#model2a <- stepwise(anpp_tnpp_dataset2a,"anpp_tnpp_a")
-#model2a[[1]]
-#model2a[[3]]
-#anpp_tnpp_model <- (lmer(anpp_tnpp_a~CNrt_a+PPFD_total_a+Tg_a+vpd_a+age_a+(1|site_a),data=anpp_tnpp_dataset2a))
-#summary(anpp_tnpp_model)
-#r.squaredGLMM(anpp_tnpp_model)
-
-#only one predictor found when including measured predictors
-#anpp_leafnpp_dataset <- na.omit(NPP_forest[,c("anpp_leafnpp_a","obs_age_a","observedfAPAR_a","soilCN_a","Tg_a","PPFD_a","vpd_a","alpha_a","site_a")])
-#dim(anpp_tnpp_dataset)
-#model3 <- stepwise(anpp_leafnpp_dataset,"anpp_leafnpp_a")
-#model3[[1]]
-#model3[[2]]
-#anpp_leafnpp_model <- (lmer(anpp_leafnpp_a~obs_age_a+(1|site_a),data=anpp_leafnpp_dataset))
-#summary(anpp_leafnpp_model)
-
-# two versions - later one selected
-#anpp_leafnpp_dataset <- subset(na.omit(NPP_forest[,c("anpp_leafnpp_a","age_a","fAPAR_a","CNrt_a","Tg_a","PPFD_a","vpd_a","alpha_a","site_a")]))
-#dim(anpp_leafnpp_dataset)
-#model3 <- stepwise(anpp_leafnpp_dataset,"anpp_leafnpp_a")
-#model3[[1]]
-#model3[[3]]
-#anpp_leafnpp_model2 <- (lmer(anpp_leafnpp_a~age_a+PPFD_a+vpd_a+(1|site_a),data=anpp_leafnpp_dataset)) 
-#r.squaredGLMM(anpp_leafnpp_model2)
-
 #with age, but age should be removed since it shows higher AIC and lower R2
 anpp_leafnpp_dataset_age <- na.omit(NPP_forest[,c("anpp_leafnpp_a","age_a","fAPAR_a","CNrt_a","Tg_a","PPFD_a","vpd_a","site_a")])
 model3a <- stepwise(anpp_leafnpp_dataset_age,"anpp_leafnpp_a")
@@ -375,7 +329,6 @@ AIC(test)
 r.squaredGLMM(lmer(anpp_leafnpp_a~Tg_a+PPFD_a+vpd_a+(1|site_a),data=anpp_leafnpp_dataset_age)) 
 AIC(lmer(anpp_leafnpp_a~Tg_a+PPFD_a+vpd_a+(1|site_a),data=anpp_leafnpp_dataset_age)) 
 #AIC(anpp_leafnpp_model) #age + PPFD +vpd: 1347
-
 
 #without age
 anpp_leafnpp_dataset <- na.omit(NPP_forest[,c("anpp_leafnpp_a","Tg_a","PPFD_a","vpd_a","site_a")])
@@ -404,18 +357,6 @@ summary(bp_grass_model)
 r.squaredGLMM(bp_grass_model)
 
 vif_bp_grass <- vif((lm(tnpp_a~Tg_a+PPFD_a+vpd_a+CNrt_a+fAPAR_a,data=BP_dataset_grass)))
-
-
-#try alternative for grassland bp with total PPFD
-#BP_dataset_grass2 <- na.omit(grassland_sitemean[,c("tnpp_a","Tg_a","PPFD_total_a","vpd_a","CNrt_a","fAPAR_a")])
-#model_g1a <- stepwise_lm(BP_dataset_grass2,"tnpp_a")
-#model_g1a[[1]]
-#model_g1a[[2]]
-
-#bp_grass_modela <- (lm(tnpp_a~vpd_a+Tg_a,data=BP_dataset_grass2))
-#summary(bp_grass_modela)
-#r.squaredGLMM(bp_grass_model)
-
 
 #anpp/tnpp
 dim(subset(grassland_sitemean,TNPP_1>0))
@@ -482,7 +423,7 @@ p11 <- analyse_modobs2(sitemean,"pred_nmass","obs_nmass", type = "points")$gg + 
   labs(y = ~paste("Forest leaf ", N[obs.], " (g g"^-1,")")) +labs(x = ~paste("Forest leaf ", N[pred.], " (g g"^-1,")"))
 
 ###3. NRE model basing site-mean (lm)
-NRE_climate <- read.csv("/Users/yunpeng/data/NRE_various/NRE_dataset.csv")
+NRE_climate <- read.csv("~/data/NRE_various/NRE_dataset.csv")
 NRE_climate$nre_a <- log(NRE_climate$nre/(1-NRE_climate$nre))
 NRE_climate$Tg_a <- NRE_climate$Tg
 NRE_climate$vpd_a <- log(NRE_climate$vpd)
@@ -518,16 +459,11 @@ summary(wood_cn_sitemean$OrigValueStr)
 dim(wood_cn_sitemean)
 
 ##2. For Grassland
-
 #leaf c/n model. median = 18. 
-grassland_sitemean <- aggregate(NPP_grassland,by=list(NPP_grassland$site), FUN=mean, na.rm=TRUE) 
-summary(grassland_sitemean$CN_leaf_final)
-dim(subset(grassland_sitemean,CN_leaf_final>0))
-
 #root c/n model median = 41.
-summary(grassland_sitemean$CN_root_final)
-dim(subset(grassland_sitemean,CN_root_final>0))
-
+#see line 887-888 in Forest_site_org, all derived from "TianDi Grassland", but its BP, ANPP, BNPP data not used in our study
+#summary(aggregate(subset(dataset6,pft=="Grassland"),by=list(subset(dataset6,pft=="Grassland")$site), FUN=mean, na.rm=TRUE)$CN_leaf_final)
+#summary(aggregate(subset(dataset6,pft=="Grassland"),by=list(subset(dataset6,pft=="Grassland")$site), FUN=mean, na.rm=TRUE)$CN_root_final)
 
 #NRE = 69%
 NRE_Du <- read.csv(file="~/data/NRE_various/NRE_Du/NRE_Du.csv")
@@ -560,12 +496,6 @@ NRE_df <- rbind(NRE_Du_df,NRE_Dong_df)
 summary(NRE_df$NRE)
 length(NRE_df$NRE)
 #median of NRE in grassland is 0.69, site  =26
-
-#check largest points
-qq <- subset(NPP_grassland,TNPP_1>2000)
-newmap <- getMap(resolution = "low")
-plot(newmap, xlim = c(-180, 180), ylim = c(-75, 75), asp = 1)
-points(qq$lon,qq$lat, col="red", pch=16,cex=1)
 
 #final model look
 #bp_model,anpp_tnpp_model,anpp_leafnpp_model,bp_grass_model,0.49/0.51,n1,nre_model
@@ -699,10 +629,6 @@ vpd <- as.data.frame(nc_to_df(read_nc_onefile(
   "~/data/nimpl_sofun_inputs/map/Final_ncfile/vpd.nc"),
   varnam = "vpd"))
 
-alpha <- as.data.frame(nc_to_df(read_nc_onefile(
-  "~/data/nimpl_sofun_inputs/map/Final_ncfile/alpha.nc"),
-  varnam = "alpha"))
-
 fAPAR <- as.data.frame(nc_to_df(read_nc_onefile(
   "~/data/nimpl_sofun_inputs/map/Final_ncfile/fAPAR.nc"),
   varnam = "fAPAR"))
@@ -738,7 +664,7 @@ summary(grass_percent + forest_percent) # check - their sum = 1, perfect!
 ###3. calculate weighted-sum
 #firstly - filter na points - so that all output map has same numbers of NA.
 all_predictors <- as.data.frame(cbind(Tg$myvar,PPFD$myvar,vpd$myvar,
-                                      fAPAR$myvar,age$myvar,alpha$myvar,
+                                      fAPAR$myvar,age$myvar,
                                       CNrt$myvar,LMA$myvar,vcmax25_df$myvar))
 all_predictors$available_grid = rowMeans(all_predictors)
 #just to find all na columns
@@ -747,7 +673,7 @@ summary(all_predictors$available_grid)
 available_grid2 <- all_predictors$available_grid
 
 #represent grids when stand-age is especially in NA, but others are fine
-names(all_predictors) <- c("Tg","PPFD","vpd","fAPAR","age","alpha","CNrt","LMA","vcmax25","available_grid")
+names(all_predictors) <- c("Tg","PPFD","vpd","fAPAR","age","CNrt","LMA","vcmax25","available_grid")
 all_predictors$lon <- vcmax25_df$lon
 all_predictors$lat <- vcmax25_df$lat
 summary(all_predictors)
@@ -1133,7 +1059,6 @@ mean_age <- mean(age$myvar[is.na(available_grid2)==FALSE]);mean_age
 mean_CNrt <- mean(CNrt$myvar[is.na(available_grid2)==FALSE]);mean_CNrt
 mean_LMA <- mean(LMA$myvar[is.na(available_grid2)==FALSE]);mean_LMA
 mean_vcmax25 <- mean(vcmax25_df$myvar[is.na(available_grid2)==FALSE]);mean_vcmax25
-mean_alpha <- mean(alpha$myvar[is.na(available_grid2)==FALSE]);mean_alpha
 
 nue_Tg <- cal_nue(rep(mean_Tg,259200),PPFD$myvar,vpd$myvar,fAPAR$myvar,age$myvar,CNrt$myvar,LMA$myvar,vcmax25_df$myvar)
 nue_PPFD <- cal_nue(Tg$myvar,rep(mean_PPFD,259200),vpd$myvar,fAPAR$myvar,age$myvar,CNrt$myvar,LMA$myvar,vcmax25_df$myvar)
@@ -1143,7 +1068,6 @@ nue_age <- cal_nue(Tg$myvar,PPFD$myvar,vpd$myvar,fAPAR$myvar,rep(mean_age,259200
 nue_CNrt <- cal_nue(Tg$myvar,PPFD$myvar,vpd$myvar,fAPAR$myvar,age$myvar,rep(mean_CNrt,259200),LMA$myvar,vcmax25_df$myvar)
 nue_LMA <- cal_nue(Tg$myvar,PPFD$myvar,vpd$myvar,fAPAR$myvar,age$myvar,CNrt$myvar,rep(mean_LMA,259200),vcmax25_df$myvar)
 nue_vcmax25 <- cal_nue(Tg$myvar,PPFD$myvar,vpd$myvar,fAPAR$myvar,age$myvar,CNrt$myvar,LMA$myvar,rep(mean_vcmax25,259200))
-#nue_alpha <- cal_nue(Tg$myvar,PPFD$myvar,vpd$myvar,fAPAR$myvar,age$myvar,CNrt$myvar,LMA$myvar,vcmax25_df$myvar)
 
 nue_all <- as.data.frame(cbind(all_predictors,nue_Tg,nue_PPFD,nue_vpd,nue_fAPAR,nue_age,nue_CNrt,nue_LMA,nue_vcmax25))
 summary(nue_all)
@@ -1276,19 +1200,19 @@ ggsave(paste("~/data/output/newphy_figS2.jpg",sep=""),width = 20, height = 10)
 #trendy
 #model output
 #CABLE-POP
-CABLE_GPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/CABLE-POP_S2_gpp_ANN_mean.nc"), varnam = "gpp"))
-CABLE_NPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/CABLE-POP_S2_npp_ANN_mean.nc"), varnam = "npp"))
+CABLE_GPP <- as.data.frame(nc_to_df(read_nc_onefile("~/data/trendy/v8/CABLE-POP_S2_gpp_ANN_mean.nc"), varnam = "gpp"))
+CABLE_NPP <- as.data.frame(nc_to_df(read_nc_onefile("~/data/trendy/v8/CABLE-POP_S2_npp_ANN_mean.nc"), varnam = "npp"))
 
 #CABLE-POP
-CLASS_GPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/CLASS-CTEM_S2_gpp_ANN_mean.nc"), varnam = "gpp"))
-CLASS_NPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/CLASS-CTEM_S2_npp_ANN_mean.nc"), varnam = "npp"))
+CLASS_GPP <- as.data.frame(nc_to_df(read_nc_onefile("~/data/trendy/v8/CLASS-CTEM_S2_gpp_ANN_mean.nc"), varnam = "gpp"))
+CLASS_NPP <- as.data.frame(nc_to_df(read_nc_onefile("~/data/trendy/v8/CLASS-CTEM_S2_npp_ANN_mean.nc"), varnam = "npp"))
 
 #CLM
-#CLM_fNup <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/CLM5.0_S2_fNup_ANN_mean.nc"), varnam = "fNup")) 
+#CLM_fNup <- as.data.frame(nc_to_df(read_nc_onefile("~/data/trendy/v8/CLM5.0_S2_fNup_ANN_mean.nc"), varnam = "fNup")) 
 #this product is confusing (1) unit needs /1000 to get gn/m2/year? (2)still many values very high
-CLM_GPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/CLM5.0_S2_gpp_ANN_mean.nc"), varnam = "gpp"))
+CLM_GPP <- as.data.frame(nc_to_df(read_nc_onefile("~/data/trendy/v8/CLM5.0_S2_gpp_ANN_mean.nc"), varnam = "gpp"))
 CLM_GPP$lon[CLM_GPP$lon>180] <- CLM_GPP$lon[CLM_GPP$lon>180]-360
-CLM_NPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/CLM5.0_S2_npp_ANN_mean.nc"), varnam = "npp"))
+CLM_NPP <- as.data.frame(nc_to_df(read_nc_onefile("~/data/trendy/v8/CLM5.0_S2_npp_ANN_mean.nc"), varnam = "npp"))
 CLM_NPP$lon[CLM_NPP$lon>180] <- CLM_NPP$lon[CLM_NPP$lon>180]-360
 
 #ISAM
@@ -1296,17 +1220,17 @@ CLM_NPP$lon[CLM_NPP$lon>180] <- CLM_NPP$lon[CLM_NPP$lon>180]-360
 #cdo seltimestep,127/156 ISAM_S2_fNup.nc a1.nc
 #cdo -O timmean a1.nc ISAM_S2_fNup_ANN_mean.nc
 
-ISAM_fNup <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/ISAM_S2_fNup_ANN_mean.nc"), varnam = "fNup"))
+ISAM_fNup <- as.data.frame(nc_to_df(read_nc_onefile("~/data/trendy/v8/ISAM_S2_fNup_ANN_mean.nc"), varnam = "fNup"))
 ISAM_fNup$myvar<- ISAM_fNup$myvar*1000*31556952
 
-ISAM_gpp <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/ISAM_S2_gpp_ANN_mean.nc"), varnam = "gpp"))
+ISAM_gpp <- as.data.frame(nc_to_df(read_nc_onefile("~/data/trendy/v8/ISAM_S2_gpp_ANN_mean.nc"), varnam = "gpp"))
 ISAM_gpp$myvar<- ISAM_gpp$myvar*1000*31556952
 
-ISAM_npp <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/ISAM_S2_npp_ANN_mean.nc"), varnam = "npp"))
+ISAM_npp <- as.data.frame(nc_to_df(read_nc_onefile("~/data/trendy/v8/ISAM_S2_npp_ANN_mean.nc"), varnam = "npp"))
 ISAM_npp$myvar<- ISAM_npp$myvar*1000*31556952
 
 #ISBA
-ncin <- nc_open("/Users/yunpeng/data/trendy/v8/ISBA-CTRIP_S2_gpp_ANN_mean.nc")
+ncin <- nc_open("~/data/trendy/v8/ISBA-CTRIP_S2_gpp_ANN_mean.nc")
 lon <- ncvar_get(ncin,"lon_FULL");nlon <- dim(lon) 
 lat <- ncvar_get(ncin,"lat_FULL");nlat <- dim(lat) 
 ISBA_GPP <- ncvar_get(ncin,"gpp")
@@ -1316,7 +1240,7 @@ lonlat <- expand.grid(lon,lat)
 ISBA_GPP <- as.data.frame(cbind(lonlat,ISBA_GPP))
 names(ISBA_GPP) <- c("lon","lat","GPP")
 
-ncin <- nc_open("/Users/yunpeng/data/trendy/v8/ISBA-CTRIP_S2_npp_ANN_mean.nc")
+ncin <- nc_open("~/data/trendy/v8/ISBA-CTRIP_S2_npp_ANN_mean.nc")
 ISBA_NPP <- ncvar_get(ncin,"npp")
 nc_close(ncin)
 ISBA_NPP <- as.vector(ISBA_NPP)
@@ -1324,27 +1248,27 @@ ISBA_NPP <- as.data.frame(cbind(lonlat,ISBA_NPP))
 names(ISBA_NPP) <- c("lon","lat","NPP")
 
 #JSBACH
-JSBACH_fNup <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/JSBACH_S2_fNup_ANN_mean.nc"), varnam = "fNup"))
-JSBACH_GPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/JSBACH_S2_gpp_ANN_mean.nc"), varnam = "gpp"))
-JSBACH_NPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/JSBACH_S2_npp_ANN_mean.nc"), varnam = "npp"))
+JSBACH_fNup <- as.data.frame(nc_to_df(read_nc_onefile("~/data/trendy/v8/JSBACH_S2_fNup_ANN_mean.nc"), varnam = "fNup"))
+JSBACH_GPP <- as.data.frame(nc_to_df(read_nc_onefile("~/data/trendy/v8/JSBACH_S2_gpp_ANN_mean.nc"), varnam = "gpp"))
+JSBACH_NPP <- as.data.frame(nc_to_df(read_nc_onefile("~/data/trendy/v8/JSBACH_S2_npp_ANN_mean.nc"), varnam = "npp"))
 plot_map3(na.omit(JSBACH_fNup[,c("lon","lat","myvar")]),varnam = "myvar",latmin = -65, latmax = 85)
 
 #JULES
 # data from output/JULES-ES-1.0/JULES-ES.1p0.vn5.4.50.CRUJRA2.TRENDYv8.365.S2_Monthly_npp.nc
-JULES_GPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/jule_gpp.nc"), varnam = "gpp"))
+JULES_GPP <- as.data.frame(nc_to_df(read_nc_onefile("~/data/trendy/v8/jule_gpp.nc"), varnam = "gpp"))
 JULES_GPP$lon[JULES_GPP$lon>180] <- JULES_GPP$lon[JULES_GPP$lon>180]-360
-JULES_NPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/jule_npp.nc"), varnam = "npp"))
+JULES_NPP <- as.data.frame(nc_to_df(read_nc_onefile("~/data/trendy/v8/jule_npp.nc"), varnam = "npp"))
 JULES_NPP$lon[JULES_NPP$lon>180] <- JULES_NPP$lon[JULES_NPP$lon>180]-360
 #looks ok 
 #plot_map3(na.omit(JULES_GPP[,c("lon","lat","myvar")]),varnam = "myvar",latmin = -65, latmax = 85)
 
 #LPJ
-LPJ_GPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/LPJ-GUESS_S2_gpp_ANN_mean.nc"), varnam = "gpp"))
-LPJ_NPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/LPJ-GUESS_S2_npp_ANN_mean.nc"), varnam = "npp"))
+LPJ_GPP <- as.data.frame(nc_to_df(read_nc_onefile("~/data/trendy/v8/LPJ-GUESS_S2_gpp_ANN_mean.nc"), varnam = "gpp"))
+LPJ_NPP <- as.data.frame(nc_to_df(read_nc_onefile("~/data/trendy/v8/LPJ-GUESS_S2_npp_ANN_mean.nc"), varnam = "npp"))
 
 #ORCHIDEE
-ORCHIDEE_GPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/ORCHIDEE_S2_gpp_ANN_mean.nc"), varnam = "gpp"))
-ORCHIDEE_NPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/ORCHIDEE_S2_npp_ANN_mean.nc"), varnam = "npp"))
+ORCHIDEE_GPP <- as.data.frame(nc_to_df(read_nc_onefile("~/data/trendy/v8/ORCHIDEE_S2_gpp_ANN_mean.nc"), varnam = "gpp"))
+ORCHIDEE_NPP <- as.data.frame(nc_to_df(read_nc_onefile("~/data/trendy/v8/ORCHIDEE_S2_npp_ANN_mean.nc"), varnam = "npp"))
 
 #ORCHIDEE-CNP
 nc_flip_lat <- function(nc){
@@ -1363,23 +1287,23 @@ nc_flip_lat <- function(nc){
   
   return(nc)
 }
-ORCHICNP_fNup <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/ORCHIDEE-CNP_S2_fNup_ANN_mean.nc"), varnam = "fNup"))
-ORCHICNP_GPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/ORCHIDEE-CNP_S2_gpp_ANN_mean.nc"), varnam = "gpp"))
-ORCHICNP_NPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/ORCHIDEE-CNP_S2_npp_ANN_mean.nc"), varnam = "npp"))
+ORCHICNP_fNup <- as.data.frame(nc_to_df(read_nc_onefile("~/data/trendy/v8/ORCHIDEE-CNP_S2_fNup_ANN_mean.nc"), varnam = "fNup"))
+ORCHICNP_GPP <- as.data.frame(nc_to_df(read_nc_onefile("~/data/trendy/v8/ORCHIDEE-CNP_S2_gpp_ANN_mean.nc"), varnam = "gpp"))
+ORCHICNP_NPP <- as.data.frame(nc_to_df(read_nc_onefile("~/data/trendy/v8/ORCHIDEE-CNP_S2_npp_ANN_mean.nc"), varnam = "npp"))
 
 #SDGVM
-SDGVM_GPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/SDGVM_S2_gpp_ANN_mean.nc"), varnam = "gpp"))
-SDGVM_NPP <- as.data.frame(nc_to_df(read_nc_onefile("/Users/yunpeng/data/trendy/v8/SDGVM_S2_npp_ANN_mean.nc"), varnam = "npp"))
+SDGVM_GPP <- as.data.frame(nc_to_df(read_nc_onefile("~/data/trendy/v8/SDGVM_S2_gpp_ANN_mean.nc"), varnam = "gpp"))
+SDGVM_NPP <- as.data.frame(nc_to_df(read_nc_onefile("~/data/trendy/v8/SDGVM_S2_npp_ANN_mean.nc"), varnam = "npp"))
 
 #all_maps
 not_used <- list(CLASS_GPP,CLASS_NPP,CLM_GPP,CLM_NPP,JSBACH_fNup,JSBACH_GPP,JSBACH_NPP)
 
-raster_CLASS_npp <- raster("/Users/yunpeng/data/trendy/v8/CLASS-CTEM_S2_npp_ANN_mean.nc")
-raster_CLM_npp <- raster("/Users/yunpeng/data/trendy/v8/CLM5.0_S2_npp_ANN_mean.nc")
-raster_JSBACH_npp <- raster("/Users/yunpeng/data/trendy/v8/JSBACH_S2_npp_ANN_mean.nc")
-raster_JSBACH_fNup <- raster("/Users/yunpeng/data/trendy/v8/JSBACH_S2_fNup_ANN_mean.nc")
-raster_LPX_npp <- raster("/Users/yunpeng/data/trendy/v8/LPX-Bern_S2_npp_ANN_mean.nc")
-raster_LPX_fNup <- raster("/Users/yunpeng/data/trendy/v8/LPX-Bern_S2_fNup_ANN_mean.nc")
+raster_CLASS_npp <- raster("~/data/trendy/v8/CLASS-CTEM_S2_npp_ANN_mean.nc")
+raster_CLM_npp <- raster("~/data/trendy/v8/CLM5.0_S2_npp_ANN_mean.nc")
+raster_JSBACH_npp <- raster("~/data/trendy/v8/JSBACH_S2_npp_ANN_mean.nc")
+raster_JSBACH_fNup <- raster("~/data/trendy/v8/JSBACH_S2_fNup_ANN_mean.nc")
+raster_LPX_npp <- raster("~/data/trendy/v8/LPX-Bern_S2_npp_ANN_mean.nc")
+raster_LPX_fNup <- raster("~/data/trendy/v8/LPX-Bern_S2_fNup_ANN_mean.nc")
 
 allmaps<- list(CABLE_GPP,CABLE_NPP,ISAM_fNup,ISAM_gpp,ISAM_npp,ISBA_GPP,ISBA_NPP,
                JULES_GPP,JULES_NPP,LPJ_GPP,LPJ_NPP,ORCHIDEE_GPP,ORCHIDEE_NPP,
