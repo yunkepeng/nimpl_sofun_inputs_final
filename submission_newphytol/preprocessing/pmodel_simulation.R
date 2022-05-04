@@ -27,13 +27,13 @@ library(cowplot)
 #input the current complete version of NPP_forest
 #before start everything - convert the measurement year before 1980 to 1980-1989 (which is consistent with what we set in climate forcing), so that we can run them sucessfully in rsofun later on.
 #NPP_Forest <- read.csv("/Users/yunpeng/data/NPP_final/fpar_name/forest_fpar_name.csv")
-NPP_Forest <- read.csv("/Users/yunpeng/data/NPP_Yunke/simulated_gpp/forest_fpar_name.csv")
+NPP_Forest <- read.csv("~/data/NPP_Yunke/simulated_gpp/forest_fpar_name.csv")
 
 ####now, input forcing data from two times simulation
-forcing_df <- list.files("/Users/yunpeng/data/NPP_final/reprocessing_climates/",full.names = T)
+forcing_df <- list.files("~/data/NPP_final/reprocessing_climates/",full.names = T)
 length(forcing_df)
 
-fapar_df <- list.files("/Users/yunpeng/data/NPP_final/reprocessing_fpar/",full.names = T)
+fapar_df <- list.files("~/data/NPP_final/reprocessing_fpar/",full.names = T)
 length(fapar_df)
 
 #1. fapar - input
@@ -210,7 +210,7 @@ points(subset(NPP_Forest,is.na(pred_gpp_c3)==TRUE)$lon,subset(NPP_Forest,is.na(p
 #these points were missing, either due to fapar or climate forcing missing
 
 #combine with current dataset
-measurement <- read.csv("/Users/yunpeng/data/NPP_Yunke/NPP_Nmin_dataset.csv")
+measurement <- read.csv("~/data/NPP_Yunke/NPP_Nmin_dataset.csv")
 measurement_forest <- subset(measurement,pft=="Forest" &is.na(Nmin)==TRUE)
 measurement_forest$year_start <- measurement_forest$Begin_year
 measurement_forest$year_end <- measurement_forest$End_year
@@ -237,10 +237,10 @@ ggplot(data=subset(measurement_forest2,rep=="not_repeated"), aes(x=pred_gpp_c3, 
 
 #grassland
 #siteinfo_final <- as.data.frame(read_csv("/Users/yunpeng/data/NPP_final/fpar_name/grassland_fpar_name.csv"))
-siteinfo_final <- as.data.frame(read_csv("/Users/yunpeng/data/NPP_Yunke/simulated_gpp/grassland_fpar_name.csv"))
+siteinfo_final <- as.data.frame(read_csv("~/data/NPP_Yunke/simulated_gpp/grassland_fpar_name.csv"))
 
 #1. input fapar
-fapar_df <- list.files("/Users/yunpeng/data/NPP_Grassland_final/reprocessing_fapar_final/fpar_all/",full.names = T)
+fapar_df <- list.files("~/data/NPP_Grassland_final/reprocessing_fapar_final/fpar_all/",full.names = T)
 length(fapar_df) # expected that 10 points were missing - due to no fapar data available in n_focal = 0, or 1, or 2. See reprocessing_fapar_all15yrs
 
 for (i in 1:length(fapar_df)){
@@ -267,7 +267,7 @@ for (i in 1:length(fapar_df)){
 }
 
 #2. Input climate forcing and cbind with fapar
-forcing_df <- list.files("/Users/yunpeng/data/NPP_Grassland_final/reprocessing_climate/",full.names = T)
+forcing_df <- list.files("~/data/NPP_Grassland_final/reprocessing_climate/",full.names = T)
 length(forcing_df) # siteinfo_final[375,] doesn't work, since its lat/lon has no measurement data - in edges?
 siteinfo_final[375,] 
 #forcing - input
@@ -447,7 +447,7 @@ summary(siteinfo_final$year_start -siteinfo_final$start_date)
 summary(siteinfo_final$year_end -siteinfo_final$end_date)
 
 #combine with current dataset
-measurement <- read.csv("/Users/yunpeng/data/NPP_Yunke/NPP_Nmin_dataset.csv")
+measurement <- read.csv("~/data/NPP_Yunke/NPP_Nmin_dataset.csv")
 measurement_grassland <- subset(measurement,pft!="Forest" &is.na(Nmin)==TRUE)
 measurement_grassland$year_start <- measurement_grassland$Begin_year
 measurement_grassland$year_end <- measurement_grassland$End_year
@@ -484,7 +484,7 @@ merged_data_grassland2 <- na.omit(fill_missing)
 
 #finally, site simulation of N uptake
 #input Filzi's climates
-Finzi <- read.csv("/Users/yunpeng/data/NPP_Yunke/Nmin_Finzi/Nmin_Finzi.csv")
+Finzi <- read.csv("~/data/NPP_Yunke/Nmin_Finzi/Nmin_Finzi.csv")
 names(Finzi)[names(Finzi) == "Lat"] <- "lat"
 names(Finzi)[names(Finzi) == "Long"] <- "lon"
 devtools::load_all("/Users/yunpeng/yunkepeng/Grassland_new_ingestr_rsofun_20210326/ingestr/")
@@ -634,5 +634,5 @@ names(merged_data_Nmin) <- c("lon","lat","z","year_start","year_end","pred_gpp_c
 all_forcing <- dplyr::bind_rows(merged_data_forest, merged_data_grassland,merged_data_grassland2,merged_data_Nmin) 
 summary(all_forcing)
 
-csvfile <- paste("/Users/yunpeng/data/NPP_Yunke/simulated_gpp/site_simulated_gpp_vcmax.csv")
+csvfile <- paste("~/data/NPP_Yunke/simulated_gpp/site_simulated_gpp_vcmax.csv")
 write_csv(all_forcing, path = csvfile)
