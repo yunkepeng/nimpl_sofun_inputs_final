@@ -816,6 +816,33 @@ all_maps <- as.data.frame(cbind(vcmax25_df,npp_pft,npp_forest,npp_grass,
 
 summary(all_maps)
 
+#img?
+all_predictors_input <- all_predictors[,c(1:8)]
+bp_output <- all_maps$npp_pft
+nuptake_output <- all_maps$nuptake_pft
+nue_output <- all_maps$npp_pft/all_maps$nuptake_pft
+
+d11 <- na.omit(as.data.frame(cbind(all_predictors_input,nuptake_output,nue_output)))
+x<-lmg(d11[,1:8], d11$nuptake_output)
+plot(x)
+
+y<-lmg(d11[,1:8], d11$nue_output)
+plot(y)
+
+bp <- all_maps$npp_pft
+anpp_bp <- all_maps$anpp_pft/all_maps$npp_pft
+leafnpp_anpp <- all_maps$lnpp_forest/all_maps$anpp_pft
+leafcn <- all_maps$leafcn_pft
+leafnre <- all_maps$nre_pft
+d22 <- na.omit(as.data.frame(cbind(bp,anpp_bp,leafnpp_anpp,leafcn,leafnre,nuptake_output,nue_output)))
+
+x<-lmg(d22[,1:5], d11$nuptake_output)
+plot(x)
+
+y<-lmg(d22[,1:5], d11$nue_output)
+plot(y)
+
+
 #####area_m2 to show each grid's area in m2
 calc_area <- function( lat, dx=1, dy=1 ){
   r_earth <- 6370499.317638  # to be consistent with how Ferret calculates areas of spheres (https://www.pmel.noaa.gov/maillists/tmap/ferret_users/fu_2016/msg00155.html)

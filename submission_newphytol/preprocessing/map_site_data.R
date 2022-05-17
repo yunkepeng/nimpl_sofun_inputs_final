@@ -280,6 +280,41 @@ NPP_Forest$PPFD_total_fapar[NPP_Forest$PPFD_total_fapar<0] <- NA
 
 summary(NPP_Forest)
 
+#N deposition
+library(hwsdr)
+devtools::load_all("/Users/yunpeng/yunkepeng/compuetational_ingestr/ingestr/")
+
+NPP_Forest2 <- NPP_Forest
+NPP_Forest2$nhx <- NA
+NPP_Forest2$noy <- NA
+
+NPP_Forest2$year_start_n2o <- NPP_Forest2$Begin_year
+NPP_Forest2$year_end_n2o <- NPP_Forest2$End_year
+
+NPP_Forest2$year_start_n2o[NPP_Forest2$Begin_year>=2010] <- 2005
+NPP_Forest2$year_end_n2o[NPP_Forest2$Begin_year>=2010] <- 2009
+
+for (i in 1:nrow(NPP_Forest2)) {
+  tryCatch({
+    print(i)
+    df_ndep <- ingest_bysite(
+      sitename  = paste("a",i,sep=""),
+      source    = "ndep",
+      lon       = NPP_Forest2$lon[i],
+      lat       = NPP_Forest2$lat[i],
+      year_start= NPP_Forest2$year_start_n2o[i],
+      year_end  = NPP_Forest2$year_end_n2o[i],
+      timescale = "y",
+      dir       = "~/data/ndep_lamarque/",
+      verbose   = FALSE
+    )
+    NPP_Forest2$noy[i] <- mean(df_ndep$noy,na.rm=TRUE)
+    NPP_Forest2$nhx[i] <- mean(df_ndep$nhx,na.rm=TRUE)
+  }, error=function(e){})} 
+
+NPP_Forest2$ndep <- NPP_Forest2$noy + NPP_Forest2$nhx
+NPP_Forest3 <- NPP_Forest2[,!(names(NPP_Forest2) %in% c("year_start_n2o","year_end_n2o"))]
+summary(NPP_Forest3)
 csvfile <- paste("/Users/yunpeng/data/NPP_Yunke/predictors/predictors_gwr.csv")
-write_csv(NPP_Forest, path = csvfile)
+write_csv(NPP_Forest3, path = csvfile)
 
