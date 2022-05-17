@@ -1,0 +1,99 @@
+---
+title: "Global input for climates (PPFD, Tg, vpd, alpha)"
+author: "Yunke Peng"
+date: "Nov 18 2020"
+output: html_document
+---
+
+## Vcmax25
+
+
+```{r}
+devtools::load_all("/Users/yunpeng/yunkepeng/rbeni/")
+library(raster)
+library(ncdf4)
+library(maps)
+library(rgdal)
+library(raster)
+library(tidyverse)  # depends
+library(ncmeta)
+library(viridis)
+library(ggthemes)
+library(LSD)
+library(yardstick)
+library(ggplot2)
+library(RColorBrewer)
+library(dplyr)
+library(gplots)
+library(tidyselect)
+library(extrafont)
+library(raster)
+library(maps)
+library(rworldmap)
+library(cowplot)
+library(ncdf4)
+library(scales)
+
+firstyr_data <- 1982 # In data file, which is the first year
+endyr_data <- 2011 # In data file, which is the last year
+location <- "~/data/nimpl_sofun_inputs/map/Final_nc_file_vcmax25_mean"
+alloutput_list <- list.files(location,full.names = T)
+
+#input elevation nc file, which will be cbind with global df directly
+elev_nc <- read_nc_onefile("~/data/watch_wfdei/WFDEI-elevation.nc")
+elev <- as.data.frame(nc_to_df(elev_nc, varnam = "elevation"))
+
+#2. Create a function to specify path, loop many years nc file and output a dataframe (lon, lat, var).
+inputnc <- function(name,start_year,end_year){
+  #-----------------------------------------------------------------------
+  # Input: 
+  # name: gpp, npp, anpp, vcmax25, leafcn, nuptake...
+  # start_year: e.g. 1981
+  # end_year: e.g. 2016
+  # location: e.g "D:/PhD/nimpl_sofun_inputs/Data/output/" or in Euler: "~/yunkebranch_units/outputnc/"
+  #-----------------------------------------------------------------------
+  output_allyears <- data.frame(matrix(NA))
+  # first, include all years annual data into a daframe
+  for (i in firstyr_data:endyr_data){
+    nc <- read_nc_onefile(alloutput_list[i-firstyr_data+1]) #Input nc
+    output_year <- nc_to_df(nc, varnam = name)[,3] #Yearly output
+    output_allyears[1:259200,i-firstyr_data+1] <- output_year #here first column represents first year of data file 's output
+  }
+  names(output_allyears) <- paste(name,firstyr_data:endyr_data,sep="")
+  #this variable above (output_allyears), could be end of the function, which is variable at multiple years. But for our purporses, we need mean of select years
+  #then, only calculate means of selected years
+  output_selected_yrs <- rowMeans(output_allyears[,(start_year-firstyr_data+1):(end_year-firstyr_data+1)],na.rm = TRUE) # only calculated means based on selected start and end year (see function)
+  coord <- nc_to_df(nc, varnam = name)[,1:2] # obtain lon and lat
+  final_output <- cbind(coord,elev[,3],output_selected_yrs) # combine lon, lat,z with rowmeans variable
+  names(final_output) <- c("lon","lat","z",name)
+  return(final_output)
+  #-----------------------------------------------------------------------
+  # Output: output_final: the output data (259200 * 3) including lon, lat and value
+  #-----------------------------------------------------------------------
+}
+
+#3. select data over 30 years, each df includes lon, lat, z, var
+vcmax25_df <- inputnc("vcmax25",1982,2011)
+
+#prepare lon and lat
+library(ncdf4)
+ncin <- nc_open("~/data/watch_wfdei/WFDEI-elevation.nc")
+lon <- ncvar_get(ncin,"lon")
+lat<-ncvar_get(ncin,"lat")
+
+vcmax25_df_output <- vcmax25_df[,c("lon","lat","vcmax25")]
+vcmax25_nc <- list(df_to_grid(vcmax25_df_output,varnam = "vcmax25", lonnam = "lon", latnam = "lat"))
+names(vcmax25_nc) <- "vcmax25"
+varams = "vcmax25"
+test <- list(lon,lat,vcmax25_nc,varams)
+names(test) <- c("lon","lat","vars","varams")
+write_nc2(test,varnams = "vcmax25",long_name = "vcmax25",units = "umol/m2/s",
+          path = "~/data/nimpl_sofun_inputs/map/Final_ncfile/vcmax25_weighted.nc")
+
+coordinates(vcmax25_df) <- ~lon+lat 
+gridded(vcmax25_df) <- TRUE
+r3 <- raster(vcmax25_df, "vcmax25") 
+plot(r3)
+
+
+``` 
