@@ -1079,6 +1079,34 @@ for (i in c(1:nrow(NRE_site))){ #one site does not have elevation (NA), therefor
   NRE_site$alpha[i] <- (gwr(alpha ~ z, NRE_part, bandwidth = 1.06, fit.points =NRE_coord,predictions=TRUE))$SDF$pred
 }
 
+#NRE_site newly including Ndep
+library(hwsdr)
+devtools::load_all("/Users/yunpeng/yunkepeng/compuetational_ingestr/ingestr/")
+
+NRE_site$nhx <- NA
+NRE_site$noy <- NA
+
+#reference of Du and Deng mostly from 1991-2009
+for (i in 1:nrow(NRE_site)) {
+  tryCatch({
+    print(i)
+    df_ndep <- ingest_bysite(
+      sitename  = paste("a",i,sep=""),
+      source    = "ndep",
+      lon       = NRE_site$lon[i],
+      lat       = NRE_site$lat[i],
+      year_start= 1991,
+      year_end  = 2009,
+      timescale = "y",
+      dir       = "~/data/ndep_lamarque/",
+      verbose   = FALSE
+    )
+    NRE_site$noy[i] <- mean(df_ndep$noy,na.rm=TRUE)
+    NRE_site$nhx[i] <- mean(df_ndep$nhx,na.rm=TRUE)
+  }, error=function(e){})} 
+
+NRE_site$ndep <- NRE_site$noy + NRE_site$nhx
+
 #combine NRE with site extracted climate and CNrt (Tg, PPFD, vpd, alpha, CNrt)
 NRE_climate <- cbind(NRE_df[,c("NRE","MAT","MAP","source")],NRE_site)
 summary(NRE_climate)
