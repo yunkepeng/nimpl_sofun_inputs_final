@@ -1,3 +1,5 @@
+rm(list=ls())
+
 library(tidyverse) 
 library(ncmeta)
 library(viridis)
@@ -32,7 +34,6 @@ library(ggpubr)
 library(car)
 library("ggplotify")
 
-rm(list=ls())
 white <- theme(plot.background=element_rect(fill="white", color="white"))
 
 larger_size <- theme(axis.text=element_text(size=20),axis.title=element_text(size=20),
@@ -273,8 +274,10 @@ NPP_all$fAPAR_a <- NPP_all$fAPAR
 NPP_all$CNrt_a <- log(NPP_all$CNrt)
 NPP_all$LMA_a <- log(NPP_all$LMA)
 NPP_all$vcmax25_a <- log(NPP_all$vcmax25)
+NPP_all$ndep_a <- log(NPP_all$ndep)
 
 NPP_forest <- subset(NPP_all,pft=="Forest")
+
 
 BP_dataset <- na.omit(NPP_forest[,c("tnpp_a","obs_age_a","observedfAPAR_a","soilCN_a","Tg_a","PPFD_a","vpd_a","site_a")])
 #model1 <- stepwise(BP_dataset,"tnpp_a")
@@ -282,6 +285,31 @@ BP_dataset <- na.omit(NPP_forest[,c("tnpp_a","obs_age_a","observedfAPAR_a","soil
 #model1[[2]]
 #bp_model <- (lmer(tnpp_a~Tg_a+observedfAPAR_a+obs_age_a+PPFD_a+alpha_a+(1|site_a),data=BP_dataset))
 #summary(bp_model)
+
+#ndep check - BP adding ndep - non.significant
+BP_dataset_ndep <- na.omit(NPP_forest[,c("tnpp_a","ndep_a","age_a","fAPAR_a","CNrt_a","Tg_a","PPFD_a","vpd_a","site_a")])
+dim(BP_dataset_ndep)
+stepwise(BP_dataset_ndep,"tnpp_a")[[1]]
+stepwise(BP_dataset_ndep,"tnpp_a")[[3]]
+bp_model_ndep <- (lmer(tnpp_a~Tg_a+fAPAR_a+PPFD_a+CNrt_a+age_a+ndep_a+(1|site_a),data=BP_dataset_ndep))
+summary(bp_model_ndep)
+r.squaredGLMM(bp_model_ndep)
+#ndep check - ANPP/BP adding ndep - works!
+anpp_tnpp_dataset_ndep <- na.omit(NPP_forest[,c("anpp_tnpp_a","ndep_a","age_a","fAPAR_a","CNrt_a","Tg_a","PPFD_a","vpd_a","site_a")])
+stepwise(anpp_tnpp_dataset_ndep,"anpp_tnpp_a")[[1]]
+anpp_tnpp_model_ndep <- (lmer(anpp_tnpp_a~ndep_a+CNrt_a+PPFD_a+Tg_a+(1|site_a),data=anpp_tnpp_dataset_ndep))
+summary(anpp_tnpp_model_ndep)
+r.squaredGLMM(anpp_tnpp_model_ndep)
+#ndep check - leaf.npp/ANPP adding ndep - 
+anpp_leafnpp_dataset_age_ndep <- na.omit(NPP_forest[,c("anpp_leafnpp_a","ndep_a","age_a","fAPAR_a","CNrt_a","Tg_a","PPFD_a","vpd_a","site_a")])
+stepwise(anpp_leafnpp_dataset_age_ndep,"anpp_leafnpp_a")[[1]]
+anpp_leafnpp_dataset_noage_ndep <- na.omit(NPP_forest[,c("anpp_leafnpp_a","ndep_a","Tg_a","PPFD_a","vpd_a","site_a")])
+stepwise(anpp_leafnpp_dataset_noage_ndep,"anpp_leafnpp_a")[[1]]
+stepwise(anpp_leafnpp_dataset_noage_ndep,"anpp_leafnpp_a")[[3]]
+summary(lmer(anpp_leafnpp_a~ndep_a+vpd_a+Tg_a+(1|site_a),data=anpp_leafnpp_dataset_noage_ndep))
+r.squaredGLMM(lmer(anpp_leafnpp_a~ndep_a+vpd_a+Tg_a+(1|site_a),data=anpp_leafnpp_dataset_noage_ndep))
+
+
 
 BP_dataset2 <- na.omit(NPP_forest[,c("tnpp_a","age_a","fAPAR_a","CNrt_a","Tg_a","PPFD_a","vpd_a","site_a")])
 dim(BP_dataset2)
