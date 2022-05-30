@@ -249,6 +249,8 @@ stepwise_lm <- function(df_input,target_var){
 #(2) D and alpha repeated in model selection
 
 NPP_all <- read.csv("~/data/NPP_Yunke/NPP_Nmin_dataset_with_predictors.csv")
+#summarise number of sites
+dim(NPP_all %>% group_by(site)  %>% summarise(mean = mean(lon)))
 
 NPP_all$NPP.foliage[NPP_all$NPP.foliage==0] <-NA
 NPP_all$NPP.wood[NPP_all$NPP.wood==0] <-NA
@@ -767,6 +769,24 @@ bnf_f <- bnpp_f/94
 #94 is constant root c/n
 nuptake_f <- lnf_f + wnf_f + bnf_f
 
+#LMG test in forest
+df_all <- (as.data.frame(cbind(nuptake_f,npp_f,all_predictors)))
+df_all$nue <- df_all$npp_f/df_all$nuptake_f
+
+#key conponents
+df_all$anpp_bp <- anpp_f/npp_f
+df_all$leafnpp_anpp <- lnpp_f/anpp_f
+df_all$leafcn <- leafnc_f
+df_all$leafnre <- nre_f
+head(df_all)
+df_all <- na.omit(df_all)
+lmg(df_all[,c("Tg","PPFD","vpd","fAPAR","age","CNrt","LMA","vcmax25")],df_all[,c("nuptake_f")])
+lmg(df_all[,c("Tg","PPFD","vpd","fAPAR","age","CNrt","LMA","vcmax25")],df_all[,c("nue")])
+
+lmg(df_all[,c("npp_f","anpp_bp","leafnpp_anpp","leafcn","leafnre")],df_all[,c("nuptake_f")])
+lmg(df_all[,c("npp_f","anpp_bp","leafnpp_anpp","leafcn","leafnre")],df_all[,c("nue")])
+
+
 #grass
 npp_g <- summary(bp_grass_model)$coefficients[1,1] +  
   summary(bp_grass_model)$coefficients[2,1] * log(PPFD$myvar) +
@@ -882,6 +902,28 @@ bootsub <- boot.relimp(nue_output~Tg+PPFD+vpd+fAPAR+age+CNrt+LMA+vcmax25, all_ou
 
 booteval.relimp(bootsub)
 plot(booteval.relimp(bootsub))
+
+grid_data <- na.omit(all_output2)
+lmg(grid_data[,c("Tg","PPFD","vpd","fAPAR","age","CNrt","LMA","vcmax25")],grid_data[,c("nue_output")])
+
+#all forest data
+all_output2 <- all_predictors[,c(1:8)]
+all_output2$forest_nuptake <- all_maps$nuptake_forest
+all_output2$forest_nue <- all_maps$npp_forest/all_maps$nuptake_forest
+all_output2$bp <- all_maps$npp_forest
+all_output2$anpp_bp <- all_maps$anpp_forest/all_maps$npp_forest
+all_output2$leafnpp_anpp <- all_maps$lnpp_forest/all_maps$anpp_forest
+all_output2$leafcn <- all_maps$leafcn_forest
+all_output2$leafnre <- all_maps$nre_forest
+grid_data2 <- na.omit(all_output2)
+
+#forest N uptake
+lmg(grid_data2[,c("Tg","PPFD","vpd","fAPAR","age","CNrt","LMA","vcmax25")],grid_data2[,c("forest_nuptake")])
+lmg(grid_data2[,c("bp","anpp_bp","leafnpp_anpp","leafcn","leafnre")],grid_data2[,c("forest_nuptake")])
+
+#forest NUE
+lmg(grid_data2[,c("Tg","PPFD","vpd","fAPAR","age","CNrt","LMA","vcmax25")],grid_data2[,c("forest_nue")])
+lmg(grid_data2[,c("bp","anpp_bp","leafnpp_anpp","leafcn","leafnre")],grid_data2[,c("forest_nue")])
 
 #nue at plot-level
 #forest_NUE <- NPP_forest[,c("lon","lat","pred_nuptake","pred_npp","Tg","PPFD","vpd","vcmax25","LMA","CNrt","fAPAR","mapped_age")]
@@ -1451,8 +1493,9 @@ sitemean_final$JULES_NPP[sitemean_final$JULES_NPP==0] <- NA
 sitemean_final$LPX_NPP[sitemean_final$LPX_NPP==0] <- NA
 sitemean_final$LPX_fNup[sitemean_final$LPX_fNup==0] <- NA
 
-#first, our model 
-bp_model_ours <- (lmer(tnpp_a~Tg_a+PPFD_a+vpd_a+(1|site_a),data=BP_dataset2))
+#first, our model - using predicted data
+BP_dataset3 <- na.omit(NPP_forest[,c("pred_npp","age_a","fAPAR_a","CNrt_a","Tg_a","PPFD_a","vpd_a","site_a")])
+bp_model_ours <- (lmer(pred_npp~Tg_a+PPFD_a+vpd_a+(1|site_a),data=BP_dataset3))
 summary(bp_model_ours)
 
 bp1a <- visreg(bp_model_ours,"Tg_a",type="contrast")
@@ -1564,14 +1607,14 @@ fits_PPFD <- dplyr::bind_rows(mutate(bp1b$fit, plt = "Measurement"),mutate(p1a$f
 
 fits_vpd <- dplyr::bind_rows(mutate(bp1c$fit, plt = "Measurement"),mutate(v1a$fit, plt = "CABLE"),mutate(v2a$fit, plt = "ISAM"),mutate(v3a$fit, plt = "ISBA"),mutate(v4a$fit, plt = "JULES"),mutate(v5a$fit, plt = "LPJ"),mutate(v6a$fit, plt = "ORCHIDEE"),mutate(v7a$fit, plt = "ORCHICNP"),mutate(v8a$fit, plt = "SDGVM"),mutate(v9a$fit, plt = "CLASS"),mutate(v10a$fit, plt = "CLM"),mutate(v11a$fit, plt = "JSBACH"),mutate(v12a$fit, plt = "LPX"))
 
-final1 <- ggplot() +geom_line(data = subset(fits_tg,plt=="Measurement"), aes(Tg_a, visregFit, group=plt, color=plt),size=2)+geom_line(data = fits_tg, aes(Tg_a, visregFit, group=plt, color=plt),size=1) + xlab("Tg") + ylab("BP")+theme_classic()+theme(text = element_text(size=20),legend.position="none")+  geom_ribbon(data = bp1a$fit,aes(Tg_a, ymin=visregLwr, ymax=visregUpr),fill="gray",alpha=0.5)+scale_colour_manual(values=c(Measurement="black",CABLE="pink",ISAM="red",ISBA="#339999",JULES="#663399",LPJ="#0066CC",ORCHIDEE="#FF9933",ORCHICNP="cyan",SDGVM="yellow",CLASS="brown",CLM="darkgoldenrod",JSBACH="burlywood1",LPX="darkgreen"))
-final2 <- ggplot()+geom_line(data = subset(fits_PPFD,plt=="Measurement"), aes(PPFD_a, visregFit, group=plt, color=plt),size=2) +geom_line(data = fits_PPFD, aes(PPFD_a, visregFit, group=plt, color=plt),size=1) + xlab("ln PPFD") + ylab(" ")+theme_classic()+theme(text = element_text(size=20),legend.position="none")+geom_ribbon(data = bp1b$fit,aes(PPFD_a, ymin=visregLwr, ymax=visregUpr),fill="gray",alpha=0.5)+ scale_colour_manual(values=c(Measurement="black",CABLE="pink",ISAM="red",ISBA="#339999",JULES="#663399",LPJ="#0066CC",ORCHIDEE="#FF9933",ORCHICNP="cyan",SDGVM="yellow",CLASS="brown",CLM="darkgoldenrod",JSBACH="burlywood1",LPX="darkgreen"))
-final3 <- ggplot() +geom_line(data = subset(fits_vpd,plt=="Measurement"), aes(vpd_a, visregFit, group=plt, color=plt),size=2)+geom_line(data = fits_vpd, aes(vpd_a, visregFit, group=plt, color=plt),size=1)+ xlab("ln D") + ylab(" ") +theme_classic()+theme(text = element_text(size=20),legend.position="none")+ geom_ribbon(data = bp1c$fit,aes(vpd_a, ymin=visregLwr, ymax=visregUpr),fill="gray",alpha=0.5)+scale_colour_manual(values=c(Measurement="black",CABLE="pink",ISAM="red",ISBA="#339999",JULES="#663399",LPJ="#0066CC",ORCHIDEE="#FF9933",ORCHICNP="cyan",SDGVM="yellow",CLASS="brown",CLM="darkgoldenrod",JSBACH="burlywood1",LPX="darkgreen"))
+final1 <- ggplot() +xlim(8,30)+geom_line(data = subset(fits_tg,plt=="Measurement"), aes(Tg_a, visregFit, group=plt, color=plt),size=4)+geom_line(data = fits_tg, aes(Tg_a, visregFit, group=plt, color=plt),size=1) + xlab("Tg") + ylab("BP")+theme_classic()+theme(text = element_text(size=20),legend.position="none")+  geom_ribbon(data = bp1a$fit,aes(Tg_a, ymin=visregLwr, ymax=visregUpr),fill="gray",alpha=0.5)+scale_colour_manual(values=c(Measurement="black",CABLE="pink",ISAM="red",ISBA="#339999",JULES="#663399",LPJ="#0066CC",ORCHIDEE="#FF9933",ORCHICNP="cyan",SDGVM="yellow",CLASS="brown",CLM="darkgoldenrod",JSBACH="burlywood1",LPX="darkgreen"))
+final2 <- ggplot()+xlim(5.5,6.3)+geom_line(data = subset(fits_PPFD,plt=="Measurement"), aes(PPFD_a, visregFit, group=plt, color=plt),size=4) +geom_line(data = fits_PPFD, aes(PPFD_a, visregFit, group=plt, color=plt),size=1) + xlab("ln PPFD") + ylab(" ")+theme_classic()+theme(text = element_text(size=20),legend.position="none")+geom_ribbon(data = bp1b$fit,aes(PPFD_a, ymin=visregLwr, ymax=visregUpr),fill="gray",alpha=0.5)+ scale_colour_manual(values=c(Measurement="black",CABLE="pink",ISAM="red",ISBA="#339999",JULES="#663399",LPJ="#0066CC",ORCHIDEE="#FF9933",ORCHICNP="cyan",SDGVM="yellow",CLASS="brown",CLM="darkgoldenrod",JSBACH="burlywood1",LPX="darkgreen"))
+final3 <- ggplot()+xlim(-1,1) +geom_line(data = subset(fits_vpd,plt=="Measurement"), aes(vpd_a, visregFit, group=plt, color=plt),size=4)+geom_line(data = fits_vpd, aes(vpd_a, visregFit, group=plt, color=plt),size=1)+ xlab("ln D") + ylab(" ") +theme_classic()+theme(text = element_text(size=20),legend.position="none")+ geom_ribbon(data = bp1c$fit,aes(vpd_a, ymin=visregLwr, ymax=visregUpr),fill="gray",alpha=0.5)+scale_colour_manual(values=c(Measurement="black",CABLE="pink",ISAM="red",ISBA="#339999",JULES="#663399",LPJ="#0066CC",ORCHIDEE="#FF9933",ORCHICNP="cyan",SDGVM="yellow",CLASS="brown",CLM="darkgoldenrod",JSBACH="burlywood1",LPX="darkgreen"))
 
 #show legend
 final1_legend <- ggplot() +geom_line(data = fits_PPFD, aes(PPFD_a, visregFit, group=plt, color=plt),size=2) + xlab("ln PPFD") + ylab(" ")+theme_classic()+theme(text = element_text(size=20))+
   scale_colour_manual(" ",values=c(Measurement="black",CABLE="pink",ISAM="red",ISBA="#339999",JULES="#663399",LPJ="#0066CC",ORCHIDEE="#FF9933",ORCHICNP="cyan",SDGVM="yellow",CLASS="brown",CLM="darkgoldenrod",JSBACH="burlywood1",LPX="darkgreen"), 
-                      labels = c(~paste(BP[obs.]," or N ",uptake[obs.], " or ", NUE[pred.],sep=""),"CABLE","ISAM","ISBA","JULES","LPJ","ORCHIDEE","ORCHICNP","SDGVM","CLASS","CLM","JSBACH","LPX"))
+                      labels = c("Our model","CABLE","ISAM","ISBA","JULES","LPJ","ORCHIDEE","ORCHICNP","SDGVM","CLASS","CLM","JSBACH","LPX"))
 
 legend_info <- as_ggplot(get_legend(final1_legend))
 
@@ -1611,7 +1654,7 @@ sitemean2_final$ISAM_fNup[sitemean2_final$ISAM_fNup==0] <- NA
 
 Nmin_statistical <- merge(Nmin_statistical,sitemean2_final,by=c("lon","lat"),all.x=TRUE)
 Nmin_statistical$Nmin_a <- Nmin_statistical$Nmin
-Nmin_statistical_final <- na.omit(Nmin_statistical[,c("Nmin_a","Tg_a","PPFD_a","vpd_a","site_a")])
+Nmin_statistical_final <- na.omit(Nmin_statistical[,c("pred_nuptake","Tg_a","PPFD_a","vpd_a","site_a")])
 
 #TRENDY1
 m1 <- na.omit(Nmin_statistical[,c("lon","lat","ORCHICNP_fNup","Tg_a","PPFD_a","vpd_a","site_a")])
@@ -1628,7 +1671,7 @@ m4<- aggregate(m4,by=list(m4$lon,m4$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select
 
 
 #final figure for Nup
-mod_n1 <- lmer(Nmin_a~Tg_a+PPFD_a+vpd_a+(1|site_a),data=Nmin_statistical_final)
+mod_n1 <- lmer(pred_nuptake~Tg_a+PPFD_a+vpd_a+(1|site_a),data=Nmin_statistical_final)
 r.squaredGLMM(mod_n1)
 summary(mod_n1)
 nn1b <- visreg(mod_n1,"Tg_a",type="contrast")
@@ -1673,19 +1716,19 @@ fits_vpd1 <- dplyr::bind_rows(mutate(nn1d$fit, plt = "Measurement"),
                               mutate(nn4d$fit, plt = "JSBACH"),
                               mutate(nn5d$fit, plt = "LPX"))
 
-final1b <- ggplot() + geom_line(data = subset(fits_tg,plt=="Measurement"),aes(Tg_a, visregFit, group=plt, color=plt),size=2) +geom_line(data = fits_tg, aes(Tg_a, visregFit, group=plt, color=plt),size=1) + 
+final1b <- ggplot() + geom_line(data = subset(fits_tg,plt=="Measurement"),aes(Tg_a, visregFit, group=plt, color=plt),size=4) +geom_line(data = fits_tg, aes(Tg_a, visregFit, group=plt, color=plt),size=1) + 
   geom_ribbon(data=nn1b$fit,aes(Tg_a, ymin=visregLwr, ymax=visregUpr),fill="gray",alpha=0.5)+
   xlab("Tg") + ylab("N uptake")+
   theme_classic()+theme(text = element_text(size=20),legend.position="none")+
   scale_colour_manual(values=c(Measurement="black",ISAM="red",ORCHICNP="cyan",JSBACH="burlywood1",LPX="darkgreen"))
 
-final1c <- ggplot() +geom_line(data = subset(fits_ppfd,plt=="Measurement"),aes(PPFD_a, visregFit, group=plt, color=plt),size=2) +geom_line(data = fits_ppfd, aes(PPFD_a, visregFit, group=plt, color=plt),size=1) + 
+final1c <- ggplot() +geom_line(data = subset(fits_ppfd,plt=="Measurement"),aes(PPFD_a, visregFit, group=plt, color=plt),size=4) +geom_line(data = fits_ppfd, aes(PPFD_a, visregFit, group=plt, color=plt),size=1) + 
   geom_ribbon(data=nn1c$fit,aes(PPFD_a, ymin=visregLwr, ymax=visregUpr),fill="gray",alpha=0.5)+
   xlab("ln PPFD") + ylab(" ")+
   theme_classic()+theme(text = element_text(size=20),legend.position="none")+
   scale_colour_manual(values=c(Measurement="black",ISAM="red",ORCHICNP="cyan",JSBACH="burlywood1",LPX="darkgreen"))
 
-final1d <- ggplot()+geom_line(data = subset(fits_vpd1,plt=="Measurement"),aes(vpd_a, visregFit, group=plt, color=plt),size=2) +geom_line(data = fits_vpd1, aes(vpd_a, visregFit, group=plt, color=plt),size=1) + 
+final1d <- ggplot()+geom_line(data = subset(fits_vpd1,plt=="Measurement"),aes(vpd_a, visregFit, group=plt, color=plt),size=4) +geom_line(data = fits_vpd1, aes(vpd_a, visregFit, group=plt, color=plt),size=1) + 
   geom_ribbon(data=nn1d$fit,aes(vpd_a, ymin=visregLwr, ymax=visregUpr),fill="gray",alpha=0.5)+
   xlab("ln D") + ylab(" ")+
   theme_classic()+theme(text = element_text(size=20),legend.position="none")+
