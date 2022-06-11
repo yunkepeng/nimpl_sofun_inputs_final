@@ -1,5 +1,5 @@
 rm(list=ls())
-
+library(MLmetrics)
 library(tidyverse) 
 library(ncmeta)
 library(viridis)
@@ -33,6 +33,186 @@ library(visreg)
 library(ggpubr)
 library(car)
 library("ggplotify")
+
+#reset validation metrics info
+
+analyse_modobs2 <- function(
+    df,
+    mod,
+    obs,
+    type       = "points",
+    filnam     = NA,
+    relative   = FALSE,
+    xlim       = NULL,
+    ylim       = NULL,
+    use_factor = NULL,
+    shortsubtitle = FALSE,
+    plot_subtitle = TRUE,
+    plot_linmod = TRUE,
+    ...
+){
+  
+  require(ggplot2)
+  require(dplyr)
+  require(LSD)
+  require(ggthemes)
+  require(RColorBrewer)
+  
+  #if (identical(filnam, NA)) filnam <- "analyse_modobs.pdf"
+  
+  ## rename to 'mod' and 'obs' and remove rows with NA in mod or obs
+  df <- df %>%
+    as_tibble() %>%
+    ungroup() %>%
+    dplyr::select(mod=mod, obs=obs) %>%
+    tidyr::drop_na(mod, obs)
+  
+  ## get linear regression (coefficients)
+  linmod <- lm( obs ~ mod, data=df )
+  
+  ## construct metrics table using the 'yardstick' library
+  df_metrics <- df %>%
+    yardstick::metrics(obs, mod) %>%
+    dplyr::bind_rows( tibble( .metric = "n",        .estimator = "standard", .estimate = summarise(df, numb=n()) %>% unlist() ) ) %>%
+    dplyr::bind_rows( tibble( .metric = "slope",    .estimator = "standard", .estimate = coef(linmod)[2]) ) %>%
+    # dplyr::bind_rows( tibble( .metric = "nse",      .estimator = "standard", .estimate = hydroGOF::NSE( obs, mod, na.rm=TRUE ) ) ) %>%
+    dplyr::bind_rows( tibble( .metric = "mean_obs", .estimator = "standard", .estimate = summarise(df, mean=mean(obs, na.rm=TRUE)) %>% unlist() ) ) %>%
+    dplyr::bind_rows( tibble( .metric = "prmse",    .estimator = "standard",
+                              .estimate = dplyr::filter(., .metric=="rmse") %>% dplyr::select(.estimate) %>% unlist() /
+                                dplyr::filter(., .metric=="mean_obs") %>% dplyr::select(.estimate) %>% unlist() ) ) %>%
+    dplyr::bind_rows( tibble( .metric = "pmae",    .estimator = "standard",
+                              .estimate = dplyr::filter(., .metric=="mae") %>% dplyr::select(.estimate) %>% unlist() /
+                                dplyr::filter(., .metric=="mean_obs") %>% dplyr::select(.estimate) %>% unlist() ) ) %>%
+    dplyr::bind_rows( tibble( .metric = "bias",        .estimator = "standard", .estimate = dplyr::summarise(df, mean((mod-obs), na.rm=TRUE    )) %>% unlist() ) ) %>%
+    dplyr::bind_rows( tibble( .metric = "pbias",       .estimator = "standard", .estimate = dplyr::summarise(df, mean((mod-obs)/obs, na.rm=TRUE)) %>% unlist() ) )
+  
+  rsq_val <- df_metrics %>% dplyr::filter(.metric=="rsq") %>% dplyr::select(.estimate) %>% unlist() %>% unname()
+  rmse_val <- df_metrics %>% dplyr::filter(.metric=="rmse") %>% dplyr::select(.estimate) %>% unlist() %>% unname()
+  mae_val <- df_metrics %>% dplyr::filter(.metric=="mae") %>% dplyr::select(.estimate) %>% unlist() %>% unname()
+  bias_val <- df_metrics %>% dplyr::filter(.metric=="bias") %>% dplyr::select(.estimate) %>% unlist() %>% unname()
+  slope_val <- df_metrics %>% dplyr::filter(.metric=="slope") %>% dplyr::select(.estimate) %>% unlist() %>% unname()
+  n_val <- df_metrics %>% dplyr::filter(.metric=="n") %>% dplyr::select(.estimate) %>% unlist() %>% unname()
+  
+  if (relative){
+    rmse_val <- rmse_val / mean(df$obs, na.rm = TRUE)
+    bias_val <- bias_val / mean(df$obs, na.rm = TRUE)
+  }
+  
+  rsq_lab <- format( rsq_val, digits = 2 )
+  rmse_lab <- format( rmse_val, digits = 3 )
+  mae_lab <- format( mae_val, digits = 3 )
+  bias_lab <- format( bias_val, digits = 3 )
+  slope_lab <- format( slope_val, digits = 3 )
+  n_lab <- format( n_val, digits = 3 )
+  
+  results <- tibble( rsq = rsq_val, rmse = rmse_val, mae = mae_val, bias = bias_val, slope = slope_val, n = n_val )
+  
+  if (shortsubtitle){
+    subtitle <- bquote( italic(R)^2 == .(rsq_lab) ~~
+                          RRMSE == .(rmse_lab) )
+  } else {
+    subtitle <- bquote( italic(R)^2 == .(rsq_lab) ~~
+                          RRMSE == .(rmse_lab) ~~
+                          bias == .(bias_lab) ~~
+                          slope == .(slope_lab) ~~
+                          italic(N) == .(n_lab) )
+  }
+  
+  if (type=="heat"){
+    
+    # if (!identical(filnam, NA)) dev.off()
+    # source("~/LSD/R/LSD.heatscatter.R")
+    
+    gg <- heatscatter(
+      df$mod,
+      df$obs,
+      xlim=xlim,
+      ylim=ylim,
+      main="",
+      ggplot=TRUE )
+    
+    gg <- gg +
+      geom_abline(intercept=0, slope=1, linetype="dotted") +
+      theme_classic() +
+      labs(x = mod, y = obs)
+    
+    if (plot_linmod) gg <- gg + geom_smooth(method='lm', color="red", size=0.5, se=FALSE)
+    if (plot_subtitle) gg <- gg + labs(subtitle = subtitle)
+    
+    if (!identical(filnam, NA)) {
+      ggsave(filnam, width=5, height=5)
+    }
+    
+  } else if (type=="hex"){
+    
+    ## ggplot hexbin
+    gg <- df %>%
+      ggplot2::ggplot(aes(x=mod, y=obs)) +
+      geom_hex() +
+      scale_fill_gradientn(
+        colours = colorRampPalette( c("gray65", "navy", "red", "yellow"))(5)) +
+      geom_abline(intercept=0, slope=1, linetype="dotted") +
+      # coord_fixed() +
+      # xlim(0,NA) +
+      # ylim(0,NA) +
+      theme_classic() +
+      labs(x = mod, y = obs)
+    
+    if (plot_subtitle) gg <- gg + labs(subtitle = subtitle)
+    if (plot_linmod) gg <- gg + geom_smooth(method='lm', color="red", size=0.5, se=FALSE)
+    
+    if (!identical(filnam, NA)) {
+      ggsave(filnam, width=5, height=5)
+    }
+    
+  } else if (type=="points") {
+    
+    ## points
+    gg <- df %>%
+      ggplot(aes(x=mod, y=obs)) +
+      geom_point() +
+      geom_abline(intercept=0, slope=1, linetype="dotted") +
+      # coord_fixed() +
+      # xlim(0,NA) +
+      # ylim(0,NA) +
+      theme_classic() +
+      labs(x = mod, y = obs)
+    
+    if (plot_subtitle) gg <- gg + labs(subtitle = subtitle)
+    if (plot_linmod) gg <- gg + geom_smooth(method='lm', color="red", size=0.5, se=FALSE)
+    
+    if (!identical(filnam, NA)) {
+      ggsave(filnam, width=5, height=5)
+    }
+    
+  } else if (type=="density") {
+    
+    ## points
+    gg <- df %>%
+      ggplot(aes(x=mod, y=obs)) +
+      
+      stat_density_2d(aes(fill = after_stat(nlevel)), geom = "polygon") +
+      scale_fill_gradientn(colours = colorRampPalette( c("gray65", "navy", "red", "yellow"))(5),
+                           guide = "legend") +
+      
+      geom_abline(intercept=0, slope=1, linetype="dotted") +
+      # coord_fixed() +
+      # xlim(0,NA) +
+      # ylim(0,NA) +
+      theme_classic() +
+      labs(x = mod, y = obs)
+    
+    if (plot_subtitle) gg <- gg + labs(subtitle = subtitle)
+    if (plot_linmod) gg <- gg + geom_smooth(method='lm', color="red", size=0.5, se=FALSE)
+    
+    if (!identical(filnam, NA)) {
+      ggsave(filnam, width=5, height=5)
+    }
+    
+  }
+  
+  return(list(df_metrics=df_metrics, gg=gg, linmod=linmod, results = results))
+}
 
 white <- theme(plot.background=element_rect(fill="white", color="white"))
 
@@ -456,7 +636,7 @@ summary(n1)
 #validation directly
 sitemean$pred_nmass <- (summary(n1)$coefficients[1,1]) + (summary(n1)$coefficients[2,1])* sitemean$Vcmax.25/sitemean$lma
 sitemean$obs_nmass <- sitemean$narea/sitemean$lma
-p11 <- analyse_modobs2(sitemean,"pred_nmass","obs_nmass", type = "points")$gg + larger_size+
+p11 <- analyse_modobs2(sitemean,"pred_nmass","obs_nmass", type = "points",relative=TRUE)$gg + larger_size+
   labs(y = ~paste("Forest leaf ", N[obs.], " (g g"^-1,")")) +labs(x = ~paste("Forest leaf ", N[pred.], " (g g"^-1,")"))
 
 ###3. NRE model basing site-mean (lm)
@@ -475,7 +655,7 @@ summary(nre_model)
 NRE_climate$pred_nre <- (1/(1+exp(-(summary(nre_model)$coefficients[1,1] + summary(nre_model)$coefficients[2,1] *NRE_climate$Tg_a + 
                                       summary(nre_model)$coefficients[3,1] * NRE_climate$vpd_a))))
 
-p12 <- analyse_modobs2(NRE_climate,"pred_nre","nre", type = "points")$gg + larger_size+
+p12 <- analyse_modobs2(NRE_climate,"pred_nre","nre", type = "points",relative=TRUE)$gg + larger_size+
   labs(y = ~paste("Forest ", NRE[obs.])) +labs(x = ~paste("Forest ", NRE[pred.]))
 
 
@@ -598,26 +778,26 @@ NPP_forest$wnf_obs_final  <- NPP_forest$NPP.wood/NPP_forest$CN_wood_final
 
 #aggregate
 
-p1 <- analyse_modobs2(NPP_forest, "pred_npp","TNPP_1",type = "points")$gg + larger_size+
+p1 <- analyse_modobs2(NPP_forest, "pred_npp","TNPP_1",type = "points",relative=TRUE)$gg + larger_size+
   labs(y = ~paste("Forest ", BP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest ", BP[pred.], " (gC m"^-2,"yr"^-1,")"))
 
-p2 <- analyse_modobs2(NPP_forest,"pred_anpp", "ANPP_2",type = "points")$gg+ larger_size+
+p2 <- analyse_modobs2(NPP_forest,"pred_anpp", "ANPP_2",type = "points",relative=TRUE)$gg+ larger_size+
   labs(y = ~paste("Forest ", ANPP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest ", ANPP[pred.], " (gC m"^-2,"yr"^-1,")"))
 
-p3 <- analyse_modobs2(NPP_forest,"pred_lnpp","NPP.foliage", type = "points")$gg + larger_size+
+p3 <- analyse_modobs2(NPP_forest,"pred_lnpp","NPP.foliage", type = "points",relative=TRUE)$gg + larger_size+
   labs(y = ~paste("Forest leaf ", NPP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest leaf ", NPP[pred.], " (gC m"^-2,"yr"^-1,")"))
 
-p4 <- analyse_modobs2(NPP_forest, "pred_wnpp","NPP.wood",type = "points")$gg+ larger_size+
+p4 <- analyse_modobs2(NPP_forest, "pred_wnpp","NPP.wood",type = "points",relative=TRUE)$gg+ larger_size+
   labs(y = ~paste("Forest wood ", NPP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest wood ", NPP[pred.], " (gC m"^-2,"yr"^-1,")"))
 
-p5 <- analyse_modobs2(NPP_forest,"pred_bnpp","BNPP_1", type = "points")$gg+ larger_size+
+p5 <- analyse_modobs2(NPP_forest,"pred_bnpp","BNPP_1", type = "points",relative=TRUE)$gg+ larger_size+
   labs(y = ~paste("Forest ", BNPP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest ", BNPP[pred.], " (gC m"^-2,"yr"^-1,")"))
 
-p6 <- analyse_modobs2(NPP_forest,"pred_lnf","lnf_obs_final", type = "points")$gg+ larger_size+
+p6 <- analyse_modobs2(NPP_forest,"pred_lnf","lnf_obs_final", type = "points",relative=TRUE)$gg+ larger_size+
   labs(y = ~paste("Forest leaf N ", flux[obs.], " (gN m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest leaf N ", flux[pred.], " (gN m"^-2,"yr"^-1,")"))
 
-p7 <- analyse_modobs2(NPP_forest,"pred_nuptake","Nmin", type = "points")$gg+ larger_size+
-  labs(y = ~paste("Forest N ", uptake[obs.], " (gN m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest N ", uptake[pred.], " (gN m"^-2,"yr"^-1,")"))
+p7 <- analyse_modobs2(NPP_forest,"pred_nuptake","Nmin", type = "points",relative=TRUE)$gg+ larger_size+
+  labs(y = ~paste("Net ", minerlization[obs.], " (gN m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest N ", uptake[pred.], " (gN m"^-2,"yr"^-1,")"))
 
 #grass validation
 NPP_grassland$grassland_pred_npp <- summary(bp_grass_model)$coefficients[1,1] +  
@@ -630,16 +810,30 @@ NPP_grassland$grassland_pred_bnpp <- NPP_grassland$grassland_pred_npp - NPP_gras
 NPP_grassland$grassland_pred_bnf <- NPP_grassland$grassland_pred_bnpp/41
 NPP_grassland$grassland_pred_nuptake <- NPP_grassland$grassland_pred_lnf*(1-0.69)+NPP_grassland$grassland_pred_bnf
 
-p8 <- analyse_modobs2(NPP_grassland,"grassland_pred_npp","TNPP_1", type = "points")$gg + larger_size+
+p8 <- analyse_modobs2(NPP_grassland,"grassland_pred_npp","TNPP_1", type = "points",relative=TRUE)$gg + larger_size+
   labs(y = ~paste("Grassland ", BP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Grassland ", BP[pred.], " (gC m"^-2,"yr"^-1,")"))
 
-p9 <- analyse_modobs2(NPP_grassland,"grassland_pred_anpp","ANPP_2", type = "points")$gg + larger_size+
+p9 <- analyse_modobs2(NPP_grassland,"grassland_pred_anpp","ANPP_2", type = "points",relative=TRUE)$gg + larger_size+
   labs(y = ~paste("Grassland ", ANPP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Grassland ", ANPP[pred.], " (gC m"^-2,"yr"^-1,")"))
 
-p10 <- analyse_modobs2(NPP_grassland,"grassland_pred_bnpp","BNPP_1", type = "points")$gg + larger_size+
+p10 <- analyse_modobs2(NPP_grassland,"grassland_pred_bnpp","BNPP_1", type = "points",relative=TRUE)$gg + larger_size+
   labs(y = ~paste("Grassland ", BNPP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Grassland ", BNPP[pred.], " (gC m"^-2,"yr"^-1,")"))
 
 white <- theme(plot.background=element_rect(fill="white", color="white"))
+
+#check mabe
+mean(abs((NPP_forest$TNPP_1-NPP_forest$pred_npp)/NPP_forest$TNPP_1),na.rm=TRUE) * 100
+mean(abs((NPP_forest$ANPP_2-NPP_forest$pred_anpp)/NPP_forest$ANPP_2),na.rm=TRUE) * 100
+mean(abs((NPP_forest$NPP.foliage-NPP_forest$pred_lnpp)/NPP_forest$NPP.foliage),na.rm=TRUE) * 100
+mean(abs((NPP_forest$NPP.wood-NPP_forest$pred_wnpp)/NPP_forest$NPP.wood),na.rm=TRUE) * 100
+mean(abs((NPP_forest$BNPP_1-NPP_forest$pred_bnpp)/NPP_forest$BNPP_1),na.rm=TRUE) * 100
+mean(abs((NPP_forest$lnf_obs_final-NPP_forest$pred_lnf)/NPP_forest$lnf_obs_final),na.rm=TRUE) * 100
+mean(abs((NPP_forest$Nmin-NPP_forest$pred_nuptake)/NPP_forest$Nmin),na.rm=TRUE) * 100
+mean(abs((NPP_grassland$TNPP_1-NPP_grassland$grassland_pred_npp)/NPP_grassland$TNPP_1),na.rm=TRUE) * 100
+mean(abs((NPP_grassland$ANPP_2-NPP_grassland$grassland_pred_anpp)/NPP_grassland$ANPP_2),na.rm=TRUE) * 100
+mean(abs((NPP_grassland$BNPP_1-NPP_grassland$grassland_pred_bnpp)/NPP_grassland$BNPP_1),na.rm=TRUE) * 100
+mean(abs((NRE_climate$nre-NRE_climate$pred_nre)/NRE_climate$nre),na.rm=TRUE) * 100
+mean(abs((sitemean$obs_nmass-sitemean$pred_nmass)/sitemean$obs_nmass),na.rm=TRUE) * 100
 
 #fig.2 validation
 plot_grid(p1,p2,p5,
@@ -1453,6 +1647,10 @@ allmaps<- list(CABLE_GPP,CABLE_NPP,ISAM_fNup,ISAM_gpp,ISAM_npp,ISBA_GPP,ISBA_NPP
 obj_name <- c("CABLE_GPP","CABLE_NPP","ISAM_fNup","ISAM_gpp","ISAM_npp","ISBA_GPP","ISBA_NPP",
               "JULES_GPP","JULES_NPP","LPJ_GPP","LPJ_NPP","ORCHIDEE_GPP","ORCHIDEE_NPP",
               "ORCHICNP_fNup","ORCHICNP_GPP","ORCHICNP_NPP","SDGVM_GPP","SDGVM_NPP")
+#calculate nue 
+summary( ISAM_npp$myvar/ISAM_fNup$myvar)
+summary(na.omit(ORCHICNP_NPP$myvar/ORCHICNP_fNup$myvar))
+
 #aggregate based on lon and lat firstly
 sitemean <- unique(NPP_forest[,c("lon","lat")])
 sp_sites <- SpatialPoints(sitemean) # only select lon and lat
@@ -1925,43 +2123,43 @@ ggsave(paste("~/data/output/newphy_add2.jpg",sep=""), width = 20, height = 10)
 #validation - BP
 NPP_statistical$Measured_BP <- NPP_statistical$TNPP_1
 
-pp2 <- analyse_modobs2(NPP_statistical,"pred_npp","Measured_BP", type = "points")$gg + larger_size+
+pp2 <- analyse_modobs2(NPP_statistical,"pred_npp","Measured_BP", type = "points",relative=TRUE)$gg + larger_size+
   labs(y = ~paste("Forest ", BP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest ", BP[pred.], " (gC m"^-2,"yr"^-1,")"))
 
-pp4 <- analyse_modobs2(NPP_statistical,"CABLE_NPP","Measured_BP", type = "points")$gg + larger_size+
+pp4 <- analyse_modobs2(NPP_statistical,"CABLE_NPP","Measured_BP", type = "points",relative=TRUE)$gg + larger_size+
   labs(y = ~paste("Forest ", BP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("CABLE ", BP[pred.], " (gC m"^-2,"yr"^-1,")"))
 
-pp5 <- analyse_modobs2(NPP_statistical,"ISAM_npp","Measured_BP", type = "points")$gg + larger_size+
+pp5 <- analyse_modobs2(NPP_statistical,"ISAM_npp","Measured_BP", type = "points",relative=TRUE)$gg + larger_size+
   labs(y = ~paste("Forest ", BP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("ISAM ", BP[pred.], " (gC m"^-2,"yr"^-1,")"))
 
-pp6 <- analyse_modobs2(NPP_statistical,"ISBA_NPP","Measured_BP", type = "points")$gg + larger_size+
+pp6 <- analyse_modobs2(NPP_statistical,"ISBA_NPP","Measured_BP", type = "points",relative=TRUE)$gg + larger_size+
   labs(y = ~paste("Forest ", BP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("ISBA ", BP[pred.], " (gC m"^-2,"yr"^-1,")"))
 
-pp7 <- analyse_modobs2(NPP_statistical,"JULES_NPP","Measured_BP", type = "points")$gg + larger_size+
+pp7 <- analyse_modobs2(NPP_statistical,"JULES_NPP","Measured_BP", type = "points",relative=TRUE)$gg + larger_size+
   labs(y = ~paste("Forest ", BP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("JULES ", BP[pred.], " (gC m"^-2,"yr"^-1,")"))
 
-pp8 <- analyse_modobs2(NPP_statistical,"LPJ_NPP","Measured_BP", type = "points")$gg + larger_size+
+pp8 <- analyse_modobs2(NPP_statistical,"LPJ_NPP","Measured_BP", type = "points",relative=TRUE)$gg + larger_size+
   labs(y = ~paste("Forest ", BP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("LPJ ", BP[pred.], " (gC m"^-2,"yr"^-1,")"))
 
-pp9 <- analyse_modobs2(NPP_statistical,"ORCHIDEE_NPP","Measured_BP", type = "points")$gg + larger_size+
+pp9 <- analyse_modobs2(NPP_statistical,"ORCHIDEE_NPP","Measured_BP", type = "points",relative=TRUE)$gg + larger_size+
   labs(y = ~paste("Forest ", BP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("ORCHIDEE ", BP[pred.], " (gC m"^-2,"yr"^-1,")"))
 
-pp10 <- analyse_modobs2(NPP_statistical,"ORCHICNP_NPP","Measured_BP", type = "points")$gg + larger_size+
+pp10 <- analyse_modobs2(NPP_statistical,"ORCHICNP_NPP","Measured_BP", type = "points",relative=TRUE)$gg + larger_size+
   labs(y = ~paste("Forest ", BP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("ORCHICNP ", BP[pred.], " (gC m"^-2,"yr"^-1,")"))
 
-pp11 <- analyse_modobs2(NPP_statistical,"SDGVM_NPP","Measured_BP", type = "points")$gg + larger_size+
+pp11 <- analyse_modobs2(NPP_statistical,"SDGVM_NPP","Measured_BP", type = "points",relative=TRUE)$gg + larger_size+
   labs(y = ~paste("Forest ", BP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("SDGVM ", BP[pred.], " (gC m"^-2,"yr"^-1,")"))
 
-pp12 <- analyse_modobs2(NPP_statistical,"CLASS_NPP","Measured_BP", type = "points")$gg + larger_size+
+pp12 <- analyse_modobs2(NPP_statistical,"CLASS_NPP","Measured_BP", type = "points",relative=TRUE)$gg + larger_size+
   labs(y = ~paste("Forest ", BP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("CLASS ", BP[pred.], " (gC m"^-2,"yr"^-1,")"))
 
-pp13 <- analyse_modobs2(NPP_statistical,"CLM_NPP","Measured_BP", type = "points")$gg + larger_size+
+pp13 <- analyse_modobs2(NPP_statistical,"CLM_NPP","Measured_BP", type = "points",relative=TRUE)$gg + larger_size+
   labs(y = ~paste("Forest ", BP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("CLM ", BP[pred.], " (gC m"^-2,"yr"^-1,")"))
 
-pp14 <- analyse_modobs2(NPP_statistical,"JSBACH_NPP","Measured_BP", type = "points")$gg + larger_size+
+pp14 <- analyse_modobs2(NPP_statistical,"JSBACH_NPP","Measured_BP", type = "points",relative=TRUE)$gg + larger_size+
   labs(y = ~paste("Forest ", BP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("JSBACH ", BP[pred.], " (gC m"^-2,"yr"^-1,")"))
 
-pp15 <- analyse_modobs2(NPP_statistical,"LPX_NPP","Measured_BP", type = "points")$gg + larger_size+
+pp15 <- analyse_modobs2(NPP_statistical,"LPX_NPP","Measured_BP", type = "points",relative=TRUE)$gg + larger_size+
   labs(y = ~paste("Forest ", BP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("LPX ", BP[pred.], " (gC m"^-2,"yr"^-1,")"))
 
 plot_grid(pp2,pp4,pp5,pp6,pp7,pp8,pp9,pp10,pp11,pp12,pp13,pp14,pp15,
@@ -1978,23 +2176,23 @@ Nmin_statistical$Nuptake_from_Nup_model <- summary(mod_n1)$coef[1,1]+
   summary(mod_n1)$coef[3,1]*Nmin_statistical$Tg_a+
   summary(mod_n1)$coef[4,1]*Nmin_statistical$LMA_a
 
-ppp1 <- analyse_modobs2(Nmin_statistical,"pred_nuptake","Nmin", type = "points")$gg +larger_size+
-  labs(y = ~paste("Forest N ", uptake[obs.], " (gN m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest N ", uptake[pred.], " (gN m"^-2,"yr"^-1,")"))
+ppp1 <- analyse_modobs2(Nmin_statistical,"pred_nuptake","Nmin", type = "points",relative=TRUE)$gg +larger_size+
+  labs(y = ~paste("Net ", minerlization[obs.], " (gN m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest N ", uptake[pred.], " (gN m"^-2,"yr"^-1,")"))
 
 #remove direct nuptake model since it is irrelevant
 #ppp2 <- analyse_modobs2(Nmin_statistical,"Nuptake_from_Nup_model","Nmin", type = "points")
 
-ppp3 <- analyse_modobs2(Nmin_statistical,"ORCHICNP_fNup","Nmin", type = "points")$gg +larger_size+
-  labs(y = ~paste("Forest N ", uptake[obs.], " (gN m"^-2,"yr"^-1,")")) +labs(x = ~paste("ORCHICNP N ", uptake[pred.], " (gN m"^-2,"yr"^-1,")"))
+ppp3 <- analyse_modobs2(Nmin_statistical,"ORCHICNP_fNup","Nmin", type = "points",relative=TRUE)$gg +larger_size+
+  labs(y = ~paste("Net ", minerlization[obs.], " (gN m"^-2,"yr"^-1,")")) +labs(x = ~paste("ORCHICNP N ", uptake[pred.], " (gN m"^-2,"yr"^-1,")"))
 
-ppp4 <- analyse_modobs2(Nmin_statistical,"ISAM_fNup","Nmin", type = "points")$gg +larger_size+
-  labs(y = ~paste("Forest N ", uptake[obs.], " (gN m"^-2,"yr"^-1,")")) +labs(x = ~paste("ISAM N ", uptake[pred.], " (gN m"^-2,"yr"^-1,")"))
+ppp4 <- analyse_modobs2(Nmin_statistical,"ISAM_fNup","Nmin", type = "points",relative=TRUE)$gg +larger_size+
+  labs(y = ~paste("Net ", minerlization[obs.], " (gN m"^-2,"yr"^-1,")")) +labs(x = ~paste("ISAM N ", uptake[pred.], " (gN m"^-2,"yr"^-1,")"))
 
-ppp5 <- analyse_modobs2(Nmin_statistical,"JSBACH_fNup","Nmin", type = "points")$gg +larger_size+
-  labs(y = ~paste("Forest N ", uptake[obs.], " (gN m"^-2,"yr"^-1,")")) +labs(x = ~paste("JSBACH N ", uptake[pred.], " (gN m"^-2,"yr"^-1,")"))
+ppp5 <- analyse_modobs2(Nmin_statistical,"JSBACH_fNup","Nmin", type = "points",relative=TRUE)$gg +larger_size+
+  labs(y = ~paste("Net ", minerlization[obs.], " (gN m"^-2,"yr"^-1,")")) +labs(x = ~paste("JSBACH N ", uptake[pred.], " (gN m"^-2,"yr"^-1,")"))
 
-ppp6 <- analyse_modobs2(Nmin_statistical,"LPX_fNup","Nmin", type = "points")$gg +larger_size+
-  labs(y = ~paste("Forest N ", uptake[obs.], " (gN m"^-2,"yr"^-1,")")) +labs(x = ~paste("LPX N ", uptake[pred.], " (gN m"^-2,"yr"^-1,")"))
+ppp6 <- analyse_modobs2(Nmin_statistical,"LPX_fNup","Nmin", type = "points",relative=TRUE)$gg +larger_size+
+  labs(y = ~paste("Net ", minerlization[obs.], " (gN m"^-2,"yr"^-1,")")) +labs(x = ~paste("LPX N ", uptake[pred.], " (gN m"^-2,"yr"^-1,")"))
 
 
 plot_grid(ppp1,ppp3,ppp4,ppp5,ppp6,
@@ -2002,6 +2200,29 @@ plot_grid(ppp1,ppp3,ppp4,ppp5,ppp6,
           nrow=2,label_x = 0.9,label_y=0.92,label_size = 20)+white
 
 ggsave(paste("~/data/output/newphy_figs6.jpg",sep=""), width = 20, height = 10)
+
+#MAPE
+mean(abs((NPP_statistical$TNPP_1-NPP_statistical$CLM_NPP)/NPP_statistical$TNPP_1),na.rm=TRUE) * 100
+mean(abs((NPP_statistical$TNPP_1-NPP_statistical$ISAM_npp)/NPP_statistical$TNPP_1),na.rm=TRUE) * 100
+mean(abs((NPP_statistical$TNPP_1-NPP_statistical$LPJ_NPP)/NPP_statistical$TNPP_1),na.rm=TRUE) * 100
+mean(abs((NPP_statistical$TNPP_1-NPP_statistical$LPX_NPP)/NPP_statistical$TNPP_1),na.rm=TRUE) * 100
+mean(abs((NPP_statistical$TNPP_1-NPP_statistical$ISBA_NPP)/NPP_statistical$TNPP_1),na.rm=TRUE) * 100
+mean(abs((NPP_statistical$TNPP_1-NPP_statistical$CABLE_NPP)/NPP_statistical$TNPP_1),na.rm=TRUE) * 100
+mean(abs((NPP_statistical$TNPP_1-NPP_statistical$CLASS_NPP)/NPP_statistical$TNPP_1),na.rm=TRUE) * 100
+mean(abs((NPP_statistical$TNPP_1-NPP_statistical$JULES_NPP)/NPP_statistical$TNPP_1),na.rm=TRUE) * 100
+mean(abs((NPP_statistical$TNPP_1-NPP_statistical$SDGVM_NPP)/NPP_statistical$TNPP_1),na.rm=TRUE) * 100
+mean(abs((NPP_statistical$TNPP_1-NPP_statistical$JSBACH_NPP)/NPP_statistical$TNPP_1),na.rm=TRUE) * 100
+mean(abs((NPP_statistical$TNPP_1-NPP_statistical$ORCHICNP_NPP)/NPP_statistical$TNPP_1),na.rm=TRUE) * 100
+mean(abs((NPP_statistical$TNPP_1-NPP_statistical$ORCHIDEE_NPP)/NPP_statistical$TNPP_1),na.rm=TRUE) * 100
+mean(abs((NPP_statistical$TNPP_1-NPP_statistical$pred_npp)/NPP_statistical$TNPP_1),na.rm=TRUE) * 100
+
+
+mean(abs((Nmin_statistical$Nmin-Nmin_statistical$ORCHICNP_fNup)/Nmin_statistical$Nmin),na.rm=TRUE) * 100
+mean(abs((Nmin_statistical$Nmin-Nmin_statistical$ISAM_fNup)/Nmin_statistical$Nmin),na.rm=TRUE) * 100
+mean(abs((Nmin_statistical$Nmin-Nmin_statistical$JSBACH_fNup)/Nmin_statistical$Nmin),na.rm=TRUE) * 100
+mean(abs((Nmin_statistical$Nmin-Nmin_statistical$LPX_fNup)/Nmin_statistical$Nmin),na.rm=TRUE) * 100
+mean(abs((Nmin_statistical$Nmin-Nmin_statistical$pred_nuptake)/Nmin_statistical$Nmin),na.rm=TRUE) * 100
+
 
 #visreg
 
@@ -2232,3 +2453,74 @@ sqrt(sum(uncertainty_nuptake*(forest_percent *conversion)*available_grid2,na.rm=
 (16.37/0.34) * sqrt( (9.65/16.37)^2 +(0.15/0.34)^2)
 #pft
 (72.03/1.13) * sqrt( (14.38/72.03)^2 +(0.27/1.13)^2)
+
+
+#partial residual figure
+BP_dataset <- na.omit(NPP_forest[,c("tnpp_a","obs_age_a","observedfAPAR_a","soilCN_a","Tg_a","PPFD_a","vpd_a","site_a")])
+#model1 <- stepwise(BP_dataset,"tnpp_a")
+#model1[[1]]
+#model1[[2]]
+bp_model <- (lmer(tnpp_a~Tg_a+PPFD_a+soilCN_a+obs_age_a+observedfAPAR_a+(1|site_a),data=BP_dataset))
+summary(bp_model)
+
+anpp_tnpp_dataset <- na.omit(NPP_forest[,c("anpp_tnpp_a","obs_age_a","observedfAPAR_a","soilCN_a","Tg_a","PPFD_a","vpd_a","site_a")])
+dim(anpp_tnpp_dataset)
+#model2 <- stepwise(anpp_tnpp_dataset,"anpp_tnpp_a")
+#model2[[1]]
+#model2[[2]]
+anpp_tnpp_model <- (lmer(anpp_tnpp_a~Tg_a+PPFD_a+soilCN_a+obs_age_a++(1|site_a),data=anpp_tnpp_dataset))
+summary(anpp_tnpp_model)
+
+
+a1 <- ~{
+  p1a <- visreg(bp_model,"Tg_a",type="contrast")
+  plot(p1a,ylab="Forest BP",xlab="Tg",
+       cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+
+a2 <- ~{
+  p1a <- visreg(bp_model,"PPFD_a",type="contrast")
+  plot(p1a,ylab="Forest BP",xlab="ln PPFD",
+       cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+
+a3 <- ~{
+  p1a <- visreg(bp_model,"soilCN_a",type="contrast")
+  plot(p1a,ylab="Forest BP",xlab="ln soil C/N",
+       cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+
+a4 <- ~{
+  p1a <- visreg(bp_model,"obs_age_a",type="contrast")
+  plot(p1a,ylab="Forest BP",xlab="ln age",
+       cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+
+a5 <- ~{
+  p1a <- visreg(bp_model,"observedfAPAR_a",type="contrast")
+  plot(p1a,ylab="Forest BP",xlab="fAPAR",
+       cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+
+a6 <- ~{
+  p1a <- visreg(anpp_tnpp_model,"Tg_a",type="contrast")
+  plot(p1a,ylab="logit ANPP/BP",xlab="Tg",
+       cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+
+a7 <- ~{
+  p1a <- visreg(anpp_tnpp_model,"PPFD_a",type="contrast")
+  plot(p1a,ylab="logit ANPP/BP",xlab="ln PPFD",
+       cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+
+a8 <- ~{
+  p1a <- visreg(anpp_tnpp_model,"soilCN_a",type="contrast")
+  plot(p1a,ylab="logit ANPP/BP",xlab="ln soil C/N",
+       cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+
+a9 <- ~{
+  p1a <- visreg(anpp_tnpp_model,"obs_age_a",type="contrast")
+  plot(p1a,ylab="logit ANPP/BP",xlab="ln age",
+       cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
+
+
+
+plot_grid(a1,a2,a3,a4,a5,
+          a6,a7,a8,a9,white,
+          nrow=2)+white
+
+ggsave(paste("~/data/output/newphy_figs1b.jpg",sep=""), width = 20, height = 10)
