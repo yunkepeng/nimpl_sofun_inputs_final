@@ -468,12 +468,12 @@ BP_dataset <- na.omit(NPP_forest[,c("tnpp_a","obs_age_a","observedfAPAR_a","soil
 #bp_model <- (lmer(tnpp_a~Tg_a+observedfAPAR_a+obs_age_a+PPFD_a+alpha_a+(1|site_a),data=BP_dataset))
 #summary(bp_model)
 
-#ndep check - BP adding ndep - non.significant
+#ndep check - BP adding ndep - significant
 BP_dataset_ndep <- na.omit(NPP_forest[,c("tnpp_a","ndep_a","age_a","fAPAR_a","CNrt_a","Tg_a","PPFD_a","vpd_a","site_a")])
 dim(BP_dataset_ndep)
 stepwise(BP_dataset_ndep,"tnpp_a")[[1]]
 stepwise(BP_dataset_ndep,"tnpp_a")[[3]]
-bp_model_ndep <- (lmer(tnpp_a~Tg_a+fAPAR_a+PPFD_a+CNrt_a+age_a+ndep_a+(1|site_a),data=BP_dataset_ndep))
+bp_model_ndep <- (lmer(tnpp_a~Tg_a+fAPAR_a+ndep_a+CNrt_a+age_a+(1|site_a),data=BP_dataset_ndep))
 summary(bp_model_ndep)
 r.squaredGLMM(bp_model_ndep)
 #ndep check - ANPP/BP adding ndep - works!
@@ -532,17 +532,17 @@ model3a[[3]]
 test <- (lmer(anpp_leafnpp_a~age_a+PPFD_a+vpd_a+(1|site_a),data=anpp_leafnpp_dataset_age)) 
 summary(test)
 
-#1347
+#
 r.squaredGLMM(test)
 AIC(test)
 BIC(test)
 
-#1339
+#
 r.squaredGLMM(lmer(anpp_leafnpp_a~Tg_a+PPFD_a+vpd_a+(1|site_a),data=anpp_leafnpp_dataset_age)) 
 AIC(lmer(anpp_leafnpp_a~Tg_a+PPFD_a+vpd_a+(1|site_a),data=anpp_leafnpp_dataset_age)) 
 BIC(lmer(anpp_leafnpp_a~Tg_a+PPFD_a+vpd_a+(1|site_a),data=anpp_leafnpp_dataset_age)) 
 
-#1330
+#
 r.squaredGLMM(lmer(anpp_leafnpp_a~fAPAR_a+PPFD_a+vpd_a+(1|site_a),data=anpp_leafnpp_dataset_age)) 
 AIC(lmer(anpp_leafnpp_a~fAPAR_a+PPFD_a+vpd_a+(1|site_a),data=anpp_leafnpp_dataset_age)) 
 BIC(lmer(anpp_leafnpp_a~fAPAR_a+PPFD_a+vpd_a+(1|site_a),data=anpp_leafnpp_dataset_age)) 
@@ -1869,7 +1869,7 @@ m4<- aggregate(m4,by=list(m4$lon,m4$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select
 
 
 #final figure for Nup
-mod_n1 <- lmer(pred_nuptake~Tg_a+PPFD_a+vpd_a+(1|site_a),data=Nmin_statistical_final)
+mod_n1 <- lm(pred_nuptake~Tg_a+PPFD_a+vpd_a,data=Nmin_statistical_final)
 r.squaredGLMM(mod_n1)
 summary(mod_n1)
 nn1b <- visreg(mod_n1,"Tg_a",type="contrast")
