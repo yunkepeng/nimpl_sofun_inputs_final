@@ -532,17 +532,17 @@ model3a[[3]]
 test <- (lmer(anpp_leafnpp_a~age_a+PPFD_a+vpd_a+(1|site_a),data=anpp_leafnpp_dataset_age)) 
 summary(test)
 
-#
+#AIC: 1359
 r.squaredGLMM(test)
 AIC(test)
 BIC(test)
 
-#
+#AIC: 1351
 r.squaredGLMM(lmer(anpp_leafnpp_a~Tg_a+PPFD_a+vpd_a+(1|site_a),data=anpp_leafnpp_dataset_age)) 
 AIC(lmer(anpp_leafnpp_a~Tg_a+PPFD_a+vpd_a+(1|site_a),data=anpp_leafnpp_dataset_age)) 
 BIC(lmer(anpp_leafnpp_a~Tg_a+PPFD_a+vpd_a+(1|site_a),data=anpp_leafnpp_dataset_age)) 
 
-#
+#AIC: 1343
 r.squaredGLMM(lmer(anpp_leafnpp_a~fAPAR_a+PPFD_a+vpd_a+(1|site_a),data=anpp_leafnpp_dataset_age)) 
 AIC(lmer(anpp_leafnpp_a~fAPAR_a+PPFD_a+vpd_a+(1|site_a),data=anpp_leafnpp_dataset_age)) 
 BIC(lmer(anpp_leafnpp_a~fAPAR_a+PPFD_a+vpd_a+(1|site_a),data=anpp_leafnpp_dataset_age)) 
@@ -1692,8 +1692,9 @@ sitemean_final$LPX_NPP[sitemean_final$LPX_NPP==0] <- NA
 sitemean_final$LPX_fNup[sitemean_final$LPX_fNup==0] <- NA
 
 #first, our model - using predicted data
-BP_dataset3 <- na.omit(NPP_forest[,c("pred_npp","age_a","fAPAR_a","CNrt_a","Tg_a","PPFD_a","vpd_a","site_a")])
-bp_model_ours <- (lmer(pred_npp~Tg_a+PPFD_a+vpd_a+(1|site_a),data=BP_dataset3))
+BP_dataset3 <- na.omit(NPP_forest[,c("pred_npp","age_a","fAPAR_a","CNrt_a","Tg_a","PPFD_a","vpd_a","site_a","lon","lat")])
+BP_dataset3<- aggregate(BP_dataset3,by=list(BP_dataset3$lon,BP_dataset3$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
+bp_model_ours <- (lm(pred_npp~Tg_a+PPFD_a+vpd_a,data=BP_dataset3))
 summary(bp_model_ours)
 
 bp1a <- visreg(bp_model_ours,"Tg_a",type="contrast")
@@ -1852,7 +1853,8 @@ sitemean2_final$ISAM_fNup[sitemean2_final$ISAM_fNup==0] <- NA
 
 Nmin_statistical <- merge(Nmin_statistical,sitemean2_final,by=c("lon","lat"),all.x=TRUE)
 Nmin_statistical$Nmin_a <- Nmin_statistical$Nmin
-Nmin_statistical_final <- na.omit(Nmin_statistical[,c("pred_nuptake","Tg_a","PPFD_a","vpd_a","site_a")])
+Nmin_statistical_final <- na.omit(Nmin_statistical[,c("pred_nuptake","Tg_a","PPFD_a","vpd_a","site_a","lon","lat")])
+Nmin_statistical_final<- aggregate(Nmin_statistical_final,by=list(Nmin_statistical_final$lon,Nmin_statistical_final$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
 
 #TRENDY1
 m1 <- na.omit(Nmin_statistical[,c("lon","lat","ORCHICNP_fNup","Tg_a","PPFD_a","vpd_a","site_a")])
@@ -2018,7 +2020,9 @@ grassland_NUE <- NPP_grassland_remove[,c("lon","lat","grassland_pred_nuptake","g
 names(grassland_NUE) <- c("lon","lat","pred_nuptake","pred_npp","Tg_a","PPFD_a","vpd_a")
 nue_allplots <- as.data.frame(rbind(forest_NUE,grassland_NUE))
 nue_allplots$nue <-nue_allplots$pred_npp/nue_allplots$pred_nuptake
-nue_allplots <- na.omit(nue_allplots[,c("nue","Tg_a","vpd_a","PPFD_a")])
+nue_allplots <- na.omit(nue_allplots[,c("nue","Tg_a","vpd_a","PPFD_a","lon","lat")])
+nue_allplots <- aggregate(nue_allplots,by=list(nue_allplots$lon,nue_allplots$lat), FUN=mean, na.rm=TRUE)
+
 mod_nue3 <- (lm(nue~vpd_a+Tg_a+PPFD_a,data=nue_allplots))
 summary(mod_nue3)
 nue4c <- visreg(mod_nue3,"vpd_a",type="contrast")
@@ -2029,19 +2033,19 @@ fits_vpd <- dplyr::bind_rows(mutate(nue4c$fit, plt = "Measurement"),mutate(nue4b
 fits_Tg <- dplyr::bind_rows(mutate(nue6c$fit, plt = "Measurement"),mutate(nue6b$fit, plt = "ORCHICNP"),mutate(nue6a$fit, plt = "ISAM"),mutate(nue6d$fit, plt = "JSBACH"),mutate(nue6e$fit, plt = "LPX"))
 fits_PPFD <- dplyr::bind_rows(mutate(nue8c$fit, plt = "Measurement"),mutate(nue8b$fit, plt = "ORCHICNP"),mutate(nue8a$fit, plt = "ISAM"),mutate(nue8d$fit, plt = "JSBACH"),mutate(nue8e$fit, plt = "LPX"))
 
-final1_nue4 <- ggplot() +geom_line(data = nue4c$fit, aes(vpd_a, visregFit),size=2) +
+final1_nue4 <- ggplot() +geom_line(data = nue4c$fit, aes(vpd_a, visregFit),size=4) +
   geom_line(data = fits_vpd, aes(vpd_a, visregFit, group=plt, color=plt),size=1) +
   xlab("ln D") + ylab(" ")+
   geom_ribbon(data=nue4c$fit,aes(vpd_a, ymin=visregLwr, ymax=visregUpr),fill="gray",alpha=0.5)+xlim(-1.85,1)+
   theme_classic()+theme(text = element_text(size=20),legend.position="none")+scale_colour_manual(values=c(Measurement="black",ISAM="red",ORCHICNP="cyan",JSBACH="burlywood1",LPX="darkgreen"))
 
-final1_nue6 <- ggplot() +geom_line(data = nue6c$fit, aes(Tg_a, visregFit),size=2) +
+final1_nue6 <- ggplot() +geom_line(data = nue6c$fit, aes(Tg_a, visregFit),size=4) +
   geom_line(data = fits_Tg, aes(Tg_a, visregFit, group=plt, color=plt),size=1) +
   xlab("Tg") + ylab("NUE")+
   geom_ribbon(data=nue6c$fit,aes(Tg_a, ymin=visregLwr, ymax=visregUpr),fill="gray",alpha=0.5)+
   theme_classic()+theme(text = element_text(size=20),legend.position="none")+scale_colour_manual(values=c(Measurement="black",ISAM="red",ORCHICNP="cyan",JSBACH="burlywood1",LPX="darkgreen"))
 
-final1_nue8 <- ggplot() +geom_line(data = nue8c$fit, aes(PPFD_a, visregFit),size=2) +
+final1_nue8 <- ggplot() +geom_line(data = nue8c$fit, aes(PPFD_a, visregFit),size=4) +
   geom_line(data = fits_PPFD, aes(PPFD_a, visregFit, group=plt, color=plt),size=1) +
   xlab("ln PPFD") + ylab(" ")+
   geom_ribbon(data=nue8c$fit,aes(PPFD_a, ymin=visregLwr, ymax=visregUpr),fill="gray",alpha=0.5)+
