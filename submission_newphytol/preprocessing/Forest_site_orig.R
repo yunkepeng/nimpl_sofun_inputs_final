@@ -664,7 +664,7 @@ NPP$rep <- "not_repeated"
 NPP$rep[NPP$site=="Waring's Woods"] <- "repeated"
 
 
-#remove rep data (from Keith, where repeated to Campioli, see below) - 14 removed
+#remove rep data (from Keith, where repeated to Campioli or Vicca, see below, by comparing either npp or gpp) 
 NPP$rep[NPP$site=="CA-Let-F01"&NPP$file=="Keith"] <- "repeated"
 NPP$rep[NPP$site=="CG-tch-D01"&NPP$file=="Keith"] <- "repeated"
 NPP$rep[NPP$site=="CN-Inn-D01"&NPP$file=="Keith"] <- "repeated"
