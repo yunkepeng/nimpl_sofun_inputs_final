@@ -650,17 +650,17 @@ NPP$TNPP_1[NPP$TNPP_1==0] <- NA
 #remove repeated data
 NPP$rep <- "not_repeated"
 
-#remove rep data (GPP itself was repeated)
-NPP$rep[NPP$site=="Bartlett"] <- "repeated"
-NPP$rep[NPP$site=="Cascade Head (1)"] <- "repeated"
-NPP$rep[NPP$site=="Cascade Head (1A)"] <- "repeated"
-NPP$rep[NPP$site=="Frazer old"] <- "repeated"
-NPP$rep[NPP$site=="Frazer young"] <- "repeated"
-NPP$rep[NPP$site=="Guyaflux"] <- "repeated"
-NPP$rep[NPP$site=="Hesse"] <- "repeated"
+#remove rep data 
+#NPP$rep[NPP$site=="Bartlett"] <- "repeated"
+#NPP$rep[NPP$site=="Cascade Head (1)"] <- "repeated"
+#NPP$rep[NPP$site=="Cascade Head (1A)"] <- "repeated"
+#NPP$rep[NPP$site=="Frazer old"] <- "repeated"
+#NPP$rep[NPP$site=="Frazer young"] <- "repeated"
+#NPP$rep[NPP$site=="Guyaflux"] <- "repeated"
+#NPP$rep[NPP$site=="Hesse"] <- "repeated"
 #NPP$rep[NPP$site=="Santiam Pass"] <- "repeated"
-#NPP$rep[NPP$site=="Scio"] <- "repeated" - not repeated
-NPP$rep[NPP$site=="Takayama 2"] <- "repeated"
+#NPP$rep[NPP$site=="Scio"] <- "repeated"
+#NPP$rep[NPP$site=="Takayama 2"] <- "repeated"
 NPP$rep[NPP$site=="Waring's Woods"] <- "repeated"
 
 
@@ -679,9 +679,13 @@ NPP$rep[NPP$site=="US-jas-D01"&NPP$file=="Keith"] <- "repeated"
 NPP$rep[NPP$site=="US-kbs-D01"&NPP$file=="Keith"] <- "repeated"
 NPP$rep[NPP$site=="US-kon-D05"&NPP$file=="Keith"] <- "repeated"
 NPP$rep[NPP$site=="US-osg-D01"&NPP$file=="Keith"] <- "repeated"
+NPP$rep[NPP$site=="Morgan Monroe"&NPP$file=="Keith"] <- "repeated"
+NPP$rep[NPP$site=="Bornhoved Alder"&NPP$file=="Keith"] <- "repeated"
+NPP$rep[NPP$site=="Bornhoved Beech"&NPP$file=="Keith"] <- "repeated"
+NPP$rep[NPP$site=="Davos"&NPP$file=="Keith"] <- "repeated"
 
 #remove rep data (paired repeated measurements between ForC and Sara Vicca) - 13 removed
-NPP$rep[NPP$site=="FLONA Tapajos Km 83"&NPP$file=="ForC"] <- "repeated"
+#NPP$rep[NPP$site=="FLONA Tapajos Km 83"&NPP$file=="ForC"] <- "repeated"
 #NPP$rep[NPP$site=="Metolius Old Pine"&NPP$file=="ForC"&NPP$GPP==1120] <- "repeated"
 NPP$rep[NPP$site=="Thompson dry chronosequence d12"&NPP$file=="ForC"] <- "repeated"
 NPP$rep[NPP$site=="Thompson dry chronosequence d131"&NPP$file=="ForC"] <- "repeated"
@@ -690,7 +694,7 @@ NPP$rep[NPP$site=="Thompson dry chronosequence d37"&NPP$file=="ForC"] <- "repeat
 NPP$rep[NPP$site=="Thompson dry chronosequence d71"&NPP$file=="ForC"] <- "repeated"
 NPP$rep[NPP$site=="Willow Creek (WC)-Chequamegon National Forest"&NPP$file=="ForC"] <- "repeated"
 NPP$rep[NPP$site=="Wind River Canopy Crane"&NPP$file=="ForC"] <- "repeated"
-NPP$rep[NPP$site=="UMBS harvest and fire chronosequence"&NPP$file=="ForC"] <- "repeated"
+NPP$rep[NPP$site=="Qianyanzhou"&NPP$file=="ForC"] <- "repeated"
 
 #NPP <- subset(NPP,rep=="not_repeated")
 
@@ -809,7 +813,7 @@ dataset1 <- subset(NPP_Nuptake_gpp_vcmax25_climates_gwr,rep=="not_repeated") #re
 dataset1[grep("elevated", dataset1$Management),]$rep <- "elevated_co2" #remove with co2 elevated measurements
 dataset1[grep("Elevated", dataset1$Management),]$rep <- "elevated_co2" 
 
-#remove repeated data!
+#remove co2 data!
 dataset2 <- subset(dataset1,rep=="not_repeated")
 
 #convert grassland anpp = npp.foliage
@@ -833,7 +837,7 @@ dataset2$TNPP_1[is.na(dataset2$ANPP_2)==FALSE&is.na(dataset2$BNPP_1)==FALSE] <- 
 summary(dataset2$ANPP_2+dataset2$BNPP_1-dataset2$TNPP_1)
 summary(dataset2$NPP.foliage+dataset2$NPP.wood-dataset2$ANPP_2)
 
-#check if it is balanced and witho special NA (e.g. have npp and anpp but missed bnpp)
+#check if it is balanced and without special NA (e.g. have npp and anpp but missed bnpp)
 subset(dataset2,is.na(ANPP_2)==F &is.na(NPP.wood)==F &pft=="Forest"&is.na(NPP.foliage)==T)
 dataset2$NPP.foliage[is.na(dataset2$ANPP_2)==F &is.na(dataset2$NPP.wood)==F &dataset2$pft=="Forest"&is.na(dataset2$NPP.foliage)==T] <- 
   dataset2$ANPP_2[is.na(dataset2$ANPP_2)==F &is.na(dataset2$NPP.wood)==F &dataset2$pft=="Forest"&is.na(dataset2$NPP.foliage)==T] -
