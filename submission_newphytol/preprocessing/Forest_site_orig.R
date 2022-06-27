@@ -514,11 +514,6 @@ summary(NPP_final2)
 
 # (1) Add Schulz - unit: all in g/m2
 
-#XXX is this m2 ground area? Please specify units in the README.
-#YYY Done
-
-#XXX Distinction between stem and branches appears quite important (very different C:N ratios!). Is this disinction made in other datasets? What does ‘wood’ represent in the other datasets?
-#Yes, agree that stem and branch is quite important here with different C/N so I have included them both. For wood or stem C/N ratio, this is the ONLY dataset we hold.
 CN_Schulz <- read.csv(file="~/data/NPP_Yunke/npp_cn/CN_Schulze.csv")
 CN_Schulz2 <- CN_Schulz[,c(5,48:58)]
 
@@ -663,8 +658,8 @@ NPP$rep[NPP$site=="Frazer old"] <- "repeated"
 NPP$rep[NPP$site=="Frazer young"] <- "repeated"
 NPP$rep[NPP$site=="Guyaflux"] <- "repeated"
 NPP$rep[NPP$site=="Hesse"] <- "repeated"
-NPP$rep[NPP$site=="Santiam Pass"] <- "repeated"
-NPP$rep[NPP$site=="Scio"] <- "repeated"
+#NPP$rep[NPP$site=="Santiam Pass"] <- "repeated"
+#NPP$rep[NPP$site=="Scio"] <- "repeated" - not repeated
 NPP$rep[NPP$site=="Takayama 2"] <- "repeated"
 NPP$rep[NPP$site=="Waring's Woods"] <- "repeated"
 
@@ -687,7 +682,7 @@ NPP$rep[NPP$site=="US-osg-D01"&NPP$file=="Keith"] <- "repeated"
 
 #remove rep data (paired repeated measurements between ForC and Sara Vicca) - 13 removed
 NPP$rep[NPP$site=="FLONA Tapajos Km 83"&NPP$file=="ForC"] <- "repeated"
-NPP$rep[NPP$site=="Metolius Old Pine"&NPP$file=="ForC"&NPP$GPP==1120] <- "repeated"
+#NPP$rep[NPP$site=="Metolius Old Pine"&NPP$file=="ForC"&NPP$GPP==1120] <- "repeated"
 NPP$rep[NPP$site=="Thompson dry chronosequence d12"&NPP$file=="ForC"] <- "repeated"
 NPP$rep[NPP$site=="Thompson dry chronosequence d131"&NPP$file=="ForC"] <- "repeated"
 NPP$rep[NPP$site=="Thompson dry chronosequence d20"&NPP$file=="ForC"] <- "repeated"
@@ -695,6 +690,7 @@ NPP$rep[NPP$site=="Thompson dry chronosequence d37"&NPP$file=="ForC"] <- "repeat
 NPP$rep[NPP$site=="Thompson dry chronosequence d71"&NPP$file=="ForC"] <- "repeated"
 NPP$rep[NPP$site=="Willow Creek (WC)-Chequamegon National Forest"&NPP$file=="ForC"] <- "repeated"
 NPP$rep[NPP$site=="Wind River Canopy Crane"&NPP$file=="ForC"] <- "repeated"
+NPP$rep[NPP$site=="UMBS harvest and fire chronosequence"&NPP$file=="ForC"] <- "repeated"
 
 #NPP <- subset(NPP,rep=="not_repeated")
 
@@ -812,6 +808,8 @@ dataset1 <- subset(NPP_Nuptake_gpp_vcmax25_climates_gwr,rep=="not_repeated") #re
 
 dataset1[grep("elevated", dataset1$Management),]$rep <- "elevated_co2" #remove with co2 elevated measurements
 dataset1[grep("Elevated", dataset1$Management),]$rep <- "elevated_co2" 
+
+#remove repeated data!
 dataset2 <- subset(dataset1,rep=="not_repeated")
 
 #convert grassland anpp = npp.foliage
