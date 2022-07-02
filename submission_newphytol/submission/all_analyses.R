@@ -994,11 +994,19 @@ df_all$leafcn <- leafnc_f
 df_all$leafnre <- nre_f
 head(df_all)
 df_all <- na.omit(df_all)
-lmg(df_all[,c("Tg","PPFD","vpd","fAPAR","age","CNrt","LMA","vcmax25")],df_all[,c("nuptake_f")])
-lmg(df_all[,c("Tg","PPFD","vpd","fAPAR","age","CNrt","LMA","vcmax25")],df_all[,c("nue")])
 
-lmg(df_all[,c("npp_f","anpp_bp","leafnpp_anpp","leafcn","leafnre")],df_all[,c("nuptake_f")])
-lmg(df_all[,c("npp_f","anpp_bp","leafnpp_anpp","leafcn","leafnre")],df_all[,c("nue")])
+gpa.model<-lm(nuptake_f~npp_f+anpp_bp+leafnpp_anpp+leafcn+leafnre, data=df_all)
+calc.relimp(gpa.model, rela=TRUE)
+
+gpa.model<-lm(nuptake_f~Tg+PPFD+vpd+fAPAR+age+CNrt+LMA+vcmax25, data=df_all)
+calc.relimp(gpa.model, rela=TRUE)
+
+gpa.model<-lm(nue~npp_f+anpp_bp+leafnpp_anpp+leafcn+leafnre, data=df_all)
+calc.relimp(gpa.model, rela=TRUE)
+
+gpa.model<-lm(nue~Tg+PPFD+vpd+fAPAR+age+CNrt+LMA+vcmax25, data=df_all)
+calc.relimp(gpa.model, rela=TRUE)
+
 
 
 #grass
@@ -1085,93 +1093,6 @@ all_maps <- as.data.frame(cbind(vcmax25_df,npp_pft,npp_forest,npp_grass,
                                 nuptake_pft,nuptake_forest,nuptake_grass))
 
 summary(all_maps)
-
-#img?
-all_predictors_input <- all_predictors[,c(1:8)]
-bp_output <- all_maps$npp_pft
-nuptake_output <- all_maps$nuptake_pft
-nue_output <- all_maps$npp_pft/all_maps$nuptake_pft
-
-#d11 <- na.omit(as.data.frame(cbind(all_predictors_input,nuptake_output,nue_output)))
-#x<-lmg(d11[,1:8], d11$nuptake_output)
-#print(x)
-#y<-lmg(d11[,1:8], d11$nue_output)
-#print(y)
-
-
-all_output <- as.data.frame(cbind(all_predictors_input,nuptake_output))
-names(all_output)
-bootsub <- boot.relimp(nuptake_output~Tg+PPFD+vpd+fAPAR+age+CNrt+LMA+vcmax25, all_output,
-                       b = 100, type = c("lmg"),
-                       rank = TRUE, diff = TRUE)
-
-booteval.relimp(bootsub)
-plot(booteval.relimp(bootsub))
-
-all_output2 <- as.data.frame(cbind(all_predictors_input,nue_output))
-names(all_output2)
-bootsub <- boot.relimp(nue_output~Tg+PPFD+vpd+fAPAR+age+CNrt+LMA+vcmax25, all_output2,
-                       b = 100, type = c("lmg"),
-                       rank = TRUE, diff = TRUE)
-
-booteval.relimp(bootsub)
-plot(booteval.relimp(bootsub))
-
-grid_data <- na.omit(all_output2)
-lmg(grid_data[,c("Tg","PPFD","vpd","fAPAR","age","CNrt","LMA","vcmax25")],grid_data[,c("nue_output")])
-
-#all forest data
-all_output2 <- all_predictors[,c(1:8)]
-all_output2$forest_nuptake <- all_maps$nuptake_forest
-all_output2$forest_nue <- all_maps$npp_forest/all_maps$nuptake_forest
-all_output2$bp <- all_maps$npp_forest
-all_output2$anpp_bp <- all_maps$anpp_forest/all_maps$npp_forest
-all_output2$leafnpp_anpp <- all_maps$lnpp_forest/all_maps$anpp_forest
-all_output2$leafcn <- all_maps$leafcn_forest
-all_output2$leafnre <- all_maps$nre_forest
-grid_data2 <- na.omit(all_output2)
-
-#forest N uptake
-lmg(grid_data2[,c("Tg","PPFD","vpd","fAPAR","age","CNrt","LMA","vcmax25")],grid_data2[,c("forest_nuptake")])
-lmg(grid_data2[,c("bp","anpp_bp","leafnpp_anpp","leafcn","leafnre")],grid_data2[,c("forest_nuptake")])
-
-#forest NUE
-lmg(grid_data2[,c("Tg","PPFD","vpd","fAPAR","age","CNrt","LMA","vcmax25")],grid_data2[,c("forest_nue")])
-lmg(grid_data2[,c("bp","anpp_bp","leafnpp_anpp","leafcn","leafnre")],grid_data2[,c("forest_nue")])
-
-#nue at plot-level
-#forest_NUE <- NPP_forest[,c("lon","lat","pred_nuptake","pred_npp","Tg","PPFD","vpd","vcmax25","LMA","CNrt","fAPAR","mapped_age")]
-#grassland_NUE <- NPP_grassland[,c("lon","lat","grassland_pred_nuptake","grassland_pred_npp","Tg","PPFD","vpd","vcmax25","LMA","CNrt","fAPAR","mapped_age")]
-#names(grassland_NUE) <- c("lon","lat","pred_nuptake","pred_npp","Tg","PPFD","vpd","vcmax25","LMA","CNrt","fAPAR","mapped_age")
-#nue_allplots <- as.data.frame(rbind(forest_NUE,grassland_NUE))
-#nue_allplots$nue <-nue_allplots$pred_npp/nue_allplots$pred_nuptake
-#bootsub <- boot.relimp(nue~Tg+PPFD+vpd+fAPAR+mapped_age+CNrt+LMA+vcmax25, nue_allplots,
-#                       b = 100, type = c("lmg"),
-#                       rank = TRUE, diff = TRUE)
-#
-#booteval.relimp(bootsub)
-#plot(booteval.relimp(bootsub))
-
-bp <- all_maps$npp_pft
-anpp_bp <- all_maps$anpp_pft/all_maps$npp_pft
-leafnpp_anpp <- all_maps$lnpp_forest/all_maps$anpp_pft
-leafcn <- all_maps$leafcn_pft
-leafnre <- all_maps$nre_pft
-all_output3 <- na.omit(as.data.frame(cbind(bp,anpp_bp,leafnpp_anpp,leafcn,leafnre,nuptake_output,nue_output)))
-#n uptake
-bootsub <- boot.relimp(nuptake_output~bp+anpp_bp+leafnpp_anpp+leafcn+leafnre, all_output3,
-                       b = 100, type = c("lmg"),
-                       rank = TRUE, diff = TRUE)
-
-booteval.relimp(bootsub)
-plot(booteval.relimp(bootsub))
-#nue
-bootsub <- boot.relimp(nue_output~bp+anpp_bp+leafnpp_anpp+leafcn+leafnre, all_output3,
-                       b = 100, type = c("lmg"),
-                       rank = TRUE, diff = TRUE)
-
-booteval.relimp(bootsub)
-plot(booteval.relimp(bootsub))
 
 #####area_m2 to show each grid's area in m2
 calc_area <- function( lat, dx=1, dy=1 ){
@@ -1365,15 +1286,6 @@ plot_grid(a3,a4,a5,a6,a7,a8,
           labels = c('(a)',' ','(b)',' ','(c)',' ',
                      '(d)',' ','(e)',' ','(f)',' '))
 ggsave(paste("~/data/output/newphy_fig3.jpg",sep=""),width = 20, height = 10*(2/3))
-
-plot_grid(a3,a4,a5,a6,a7,a8,
-          a9,a10,a11,a12,a13,a14,
-          nrow=2,
-          rel_widths = c(3/12, 1/12,3/12,1/12,3/12,1/12),
-          labels = c('(a)',' ','(b)',' ','(c)',' ',
-                     '(d)',' ','(e)',' ','(f)',' '))
-ggsave(paste("~/data/output/test.jpg",sep=""),width = 20, height = 1.5*10*(2/3))
-
 
 #work on effect of each factor on NUE
 #now, work on NUE
