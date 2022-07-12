@@ -752,7 +752,7 @@ b4 <- as.ggplot(~barplot(vif_bp_grass, main = "VIF of Grassland BP model", horiz
 plot_grid(b1,b2,b3,b4,
           labels = c('(a)','(b)','(c)','(d)'),
           ncol=2,label_x = 0.9,label_y=0.92)+white
-ggsave(paste("~/data/output/newphy_vif_figs.jpg",sep=""),width = 10, height = 13)
+ggsave(paste("~/data/output/newphy_figs6.jpg",sep=""),width = 10, height = 13)
 
 #forest validation
 NPP_forest$pred_npp <- summary(bp_model)$coefficients[1,1] +  
@@ -866,7 +866,7 @@ plot_grid(p1,p2,p5,
           p6,p12,p7, 
           labels = c('(a)','(b)','(c)','(d)','(e)','(f)','(g)','(h)','(i)','(j)','(k)','(l)'),
           ncol=3,label_x = 0.9,label_y=0.92,label_size = 25)+white
-ggsave(paste("~/data/output/newphy_fig2.jpg",sep=""),width = 24, height = 25)
+ggsave(paste("~/data/output/newphy_fig1.jpg",sep=""),width = 24, height = 25)
 
 #now, inputting all predictors
 vcmax25_df <- as.data.frame(nc_to_df(read_nc_onefile(
@@ -1218,7 +1218,7 @@ plot_grid(a3,a4,a5,a6,a7,a8,
                      '(d)',' ','(e)',' ','(f)',' '))
 
 #this is for showing points
-ggsave(paste("~/data/output/newphy_fig3_SI.jpg",sep=""),width = 20, height = 10*(2/3))
+ggsave(paste("~/data/output/newphy_figs5.jpg",sep=""),width = 20, height = 10*(2/3))
 
 
 #preparing one without showing points - in MS
@@ -1289,7 +1289,7 @@ plot_grid(a3,a4,a5,a6,a7,a8,
           rel_widths = c(3/12, 1/12,3/12,1/12,3/12,1/12),
           labels = c('(a)',' ','(b)',' ','(c)',' ',
                      '(d)',' ','(e)',' ','(f)',' '))
-ggsave(paste("~/data/output/newphy_fig3.jpg",sep=""),width = 20, height = 10*(2/3))
+ggsave(paste("~/data/output/newphy_fig2.jpg",sep=""),width = 20, height = 10*(2/3))
 
 #work on effect of each factor on NUE
 #now, work on NUE
@@ -1458,62 +1458,11 @@ aa8 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = LMA),fu
 
 plot_grid(a1,a2,a3,a4,a5,a6,a7,a8,a9,
           labels = c('(a)','(b)','(c)','(d)','(e)','(f)','(g)','(h)','(i)'),label_size = 15)+white
-ggsave(paste("~/data/output/newphy_fig4.jpg",sep=""),width = 22, height = 10)
+ggsave(paste("~/data/output/newphy_fig3.jpg",sep=""),width = 22, height = 10)
 
 plot_grid(aa1,aa2,aa3,aa4,aa5,aa6,aa7,aa8,
           labels = c('(a)','(b)','(c)','(d)','(e)','(f)','(g)','(h)','(i)'),label_size = 15)+white
-ggsave(paste("~/data/output/newphy_fig4_parallel.jpg",sep=""),width = 22, height = 10)
-
-gg <- plot_map3(na.omit(nue_all[,c("lon","lat","nue_CNrt")]),varnam = "nue_CNrt",latmin = -65, latmax = 85,combine=FALSE,
-                colorscale = c( "royalblue4", "wheat","tomato3"),
-                breaks = seq(-0.05,0.05,0.01))
-g1 <- gg$ggmap +labs(title = "Soil C/N")+theme_grey(base_size = 15);g2 <- gg$gglegend
-
-gg <- plot_map3(na.omit(nue_all[,c("lon","lat","nue_age")]),varnam = "nue_age",latmin = -65, latmax = 85,combine=FALSE,
-                colorscale = c( "royalblue4","royalblue3","wheat","tomato3"),
-                breaks = seq(-0.05,0.05,0.01))
-g3 <- gg$ggmap +labs(title = "Age")+theme_grey(base_size = 15);g4 <- gg$gglegend+labs(title = ~paste("years"))
-
-gg <- plot_map3(na.omit(nue_all[,c("lon","lat","nue_fAPAR")]),varnam = "nue_fAPAR",latmin = -65, latmax = 85,combine=FALSE,
-                colorscale = c( "royalblue4","royalblue3", "wheat","tomato3"),
-                breaks = seq(-0.04,0.04,0.01))
-g5 <- gg$ggmap +labs(title = "fAPAR")+theme_grey(base_size = 15);g6 <- gg$gglegend
-
-gg <- plot_map3(na.omit(nue_all[,c("lon","lat","nue_PPFD")]),varnam = "nue_PPFD",latmin = -65, latmax = 85,combine=FALSE,
-                colorscale = c( "royalblue4", "wheat","tomato3","tomato4"),
-                breaks = seq(-0.08,0.12,0.02))
-g7 <- gg$ggmap +labs(title = "PPFD")+theme_grey(base_size = 15);g8 <- gg$gglegend + labs(title =~paste(mu, "mol m"^-2,"s"^-1))
-
-gg <- plot_map3(na.omit(nue_all[,c("lon","lat","nue_Tg")]),varnam = "nue_Tg",latmin = -65, latmax = 85,combine=FALSE,
-                colorscale = c( "royalblue4", "wheat","tomato3"),
-                breaks = seq(-0.30,0.30,0.10))
-g9 <- gg$ggmap +labs(title =~paste(T[g]))+theme_grey(base_size = 15);g10 <- gg$gglegend + labs(title =~paste("\u00B0C"))
-
-gg <- plot_map3(na.omit(nue_all[,c("lon","lat","nue_vpd")]),varnam = "nue_vpd",latmin = -65, latmax = 85,combine=FALSE,
-                colorscale = c( "royalblue4", "wheat","tomato3"),
-                breaks = seq(-0.20,0.30,0.05))
-g11 <- gg$ggmap +labs(title = "D")+theme_grey(base_size = 15);g12 <- gg$gglegend+ labs(title =~paste("kPa"))
-
-gg <- plot_map3(na.omit(nue_all[,c("lon","lat","nue_vcmax25")]), varnam = "nue_vcmax25",latmin = -65, latmax = 85,combine=FALSE,
-                colorscale = c( "royalblue4", "wheat","tomato3"),
-                breaks = seq(-0.2,0.2,0.04))
-g15 <- gg$ggmap +labs(title =~paste(V[cmax25]))+theme_grey(base_size = 15);g16 <- gg$gglegend+ labs(title =~paste(mu, "mol m"^-2,"s"^-1))
-
-gg <- plot_map3(na.omit(nue_all[,c("lon","lat","nue_LMA")]),varnam = "nue_LMA",latmin = -65, latmax = 85,combine=FALSE,
-                colorscale = c( "royalblue4", "wheat","tomato3"),
-                breaks = seq(-0.05,0.05,0.01))
-g17 <- gg$ggmap +labs(title = "LMA")+theme_grey(base_size = 15);g18 <- gg$gglegend+ labs(title =~paste("g ","m"^-2))
-
-plot_grid(g1,g2,g3,g4,g5,g6,
-          g7,g8,g9,g10,g11,g12,
-          g15,g16,g17,g18,
-          nrow=3,rel_widths = c(3/12, 1/12,3/12,1/12,3/12,1/12),
-          labels = c('(a)',' ','(b)',' ','(c)',' ',
-                     '(d)',' ','(e)',' ','(f)',' ',
-                     '(g)',' ','(h)',' '),label_size = 15)+white
-
-ggsave(paste("~/data/output/newphy_fig4_not_used.jpg",sep=""),width = 20, height = 10)
-
+ggsave(paste("~/data/output/newphy_figs7.jpg",sep=""),width = 22, height = 10)
 
 #figs2 representing all predictors
 gg <- plot_map3(na.omit(CNrt[,c("lon","lat","myvar")]),varnam = "myvar",latmin = -65, latmax = 85,combine=FALSE)
@@ -1731,87 +1680,62 @@ NPP_statistical <- subset(NPP_statistical,TNPP_1>0)
 #not fitting model basing on stepwise, just directly include all
 d1 <- na.omit(NPP_statistical[,c("lon","lat","CABLE_NPP","Tg_a","PPFD_a","vpd_a","site_a")])
 d1<- aggregate(d1,by=list(d1$lon,d1$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
-t1 <- stepwise_lm(d1,"CABLE_NPP")
-t1[[2]]
 #mod1 <- (lm(CABLE_NPP~fAPAR_a+Tg_a+vpd_a,data=d1))
 mod1 <- (lm(CABLE_NPP~Tg_a+PPFD_a+vpd_a,data=d1))
 summary(mod1)
 
 d2 <- na.omit(NPP_statistical[,c("lon","lat","ISAM_npp","Tg_a","PPFD_a","vpd_a","site_a")])
 d2<- aggregate(d2,by=list(d2$lon,d2$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
-t2 <- stepwise_lm(d2,"ISAM_npp")
-t2[[1]]
-t2[[2]]
 mod2 <- (lm(ISAM_npp~Tg_a+PPFD_a+vpd_a,data=d2))
 summary(mod2)
 
 d3 <- na.omit(NPP_statistical[,c("lon","lat","ISBA_NPP","Tg_a","PPFD_a","vpd_a","site_a")])
 d3<- aggregate(d3,by=list(d3$lon,d3$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
-t3 <- stepwise_lm(d3,"ISBA_NPP")
-t3[[2]]
 mod3 <- (lm(ISBA_NPP~Tg_a+PPFD_a+vpd_a,data=d3))
 summary(mod3)
 
 d4 <- na.omit(NPP_statistical[,c("lon","lat","JULES_NPP","Tg_a","PPFD_a","vpd_a","site_a")])
 d4<- aggregate(d4,by=list(d4$lon,d4$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
-t4 <- stepwise_lm(d4,"JULES_NPP")
-t4[[2]]
 mod4 <- (lm(JULES_NPP~Tg_a+PPFD_a+vpd_a,data=d4))
 summary(mod4)
 
 d5 <- na.omit(NPP_statistical[,c("lon","lat","LPJ_NPP","Tg_a","PPFD_a","vpd_a","site_a")])
 d5<- aggregate(d5,by=list(d5$lon,d5$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
-t5 <- stepwise_lm(d5,"LPJ_NPP")
-t5[[2]]
 mod5<- (lm(LPJ_NPP~Tg_a+PPFD_a+vpd_a,data=d5))
 summary(mod5)
 
 d6 <- na.omit(NPP_statistical[,c("lon","lat","ORCHIDEE_NPP","Tg_a","PPFD_a","vpd_a","site_a")])
 d6<- aggregate(d6,by=list(d6$lon,d6$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
-t6 <- stepwise_lm(d6,"ORCHIDEE_NPP")
-t6[[2]]
 mod6<- (lm(ORCHIDEE_NPP~Tg_a+PPFD_a+vpd_a,data=d6))
 summary(mod6)
 
 d7 <- na.omit(NPP_statistical[,c("lon","lat","ORCHICNP_NPP","Tg_a","PPFD_a","vpd_a","site_a")])
 d7<- aggregate(d7,by=list(d7$lon,d7$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
-t7 <- stepwise_lm(d7,"ORCHICNP_NPP")
-t7[[2]]
 mod7 <- (lm(ORCHICNP_NPP~Tg_a+PPFD_a+vpd_a,data=d7))
 summary(mod7)
 
 d8 <- na.omit(NPP_statistical[,c("lon","lat","SDGVM_NPP","Tg_a","PPFD_a","vpd_a","site_a")])
 d8<- aggregate(d8,by=list(d8$lon,d8$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
-t8 <- stepwise_lm(d8,"SDGVM_NPP")
-t8[[2]]
 mod8<- (lm(SDGVM_NPP~Tg_a+PPFD_a+vpd_a,data=d8))
 summary(mod8)
 
 d9 <- na.omit(NPP_statistical[,c("lon","lat","CLASS_NPP","Tg_a","PPFD_a","vpd_a","site_a")])
 d9<- aggregate(d9,by=list(d9$lon,d9$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
-t9 <- stepwise_lm(d9,"CLASS_NPP")
-t9[[2]]
 mod9<- (lm(CLASS_NPP~Tg_a+PPFD_a+vpd_a,data=d9))
 summary(mod9)
 
 d10 <- na.omit(NPP_statistical[,c("lon","lat","CLM_NPP","Tg_a","PPFD_a","vpd_a","site_a")])
 d10<- aggregate(d10,by=list(d10$lon,d10$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
-t10 <- stepwise_lm(d10,"CLM_NPP")
-t10[[2]]
 mod10<- (lm(CLM_NPP~Tg_a+PPFD_a+vpd_a,data=d10))
 summary(mod10)
 
 d11 <- na.omit(NPP_statistical[,c("lon","lat","JSBACH_NPP","Tg_a","PPFD_a","vpd_a","site_a")])
 d11<- aggregate(d11,by=list(d11$lon,d11$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
-t11 <- stepwise_lm(d11,"JSBACH_NPP")
-t11[[2]]
 mod11<- (lm(JSBACH_NPP~Tg_a+PPFD_a+vpd_a,data=d11))
 summary(mod11)
 
 d12 <- na.omit(NPP_statistical[,c("lon","lat","LPX_NPP","Tg_a","PPFD_a","vpd_a","site_a")])
 d12<- aggregate(d12,by=list(d12$lon,d12$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
-t12 <- stepwise_lm(d12,"LPX_NPP")
-t12[[2]]
 mod12<- (lm(LPX_NPP~Tg_a+PPFD_a+vpd_a,data=d12))
 summary(mod12)
 
@@ -2080,7 +2004,7 @@ plot_grid(final1,final2,final3,legend_info,
           final1_nue6,final1_nue8,final1_nue4,white,
           nrow=3,label_x = 0.8, label_y = 0.8)+white
 
-ggsave(paste("~/data/output/newphy_fig5.jpg",sep=""), width = 20, height = 15)
+ggsave(paste("~/data/output/newphy_fig4.jpg",sep=""), width = 20, height = 15)
 
 #nue and nuptake relation
 #also, our simulations
@@ -2118,7 +2042,7 @@ plot_grid(final1_nue1,final1_nue2,final1_nue3,final1_nue4,
           final1_nue5,final1_nue6,final1_nue7,final1_nue8,
           nrow=2,label_x = 0.8, label_y = 0.8)+white
 
-ggsave(paste("~/data/output/newphy_add1.jpg",sep=""), width = 20, height = 10)
+ggsave(paste("~/data/output/newphy_figs8.jpg",sep=""), width = 20, height = 10)
 
 # n uptake
 mod_nue3 <- (lm(pred_nuptake~LMA_a+fAPAR_a+age_a+vpd_a+CNrt_a+Tg_a+vcmax25_a+PPFD_a,data=nue_allplots))
@@ -2141,11 +2065,9 @@ final1_nue6 <- ggplot() +geom_line(data = nue6c$fit, aes(Tg_a, visregFit),size=2
 final1_nue7 <- ggplot() +geom_line(data = nue7c$fit, aes(vcmax25_a, visregFit),size=2) + xlab("ln vcmax25") + ylab(" ")+theme_classic()+theme(text = element_text(size=20),legend.position="none")
 final1_nue8 <- ggplot() +geom_line(data = nue8c$fit, aes(PPFD_a, visregFit),size=2) + xlab("ln PPFD") + ylab(" ")+theme_classic()+theme(text = element_text(size=20),legend.position="none")
 
-plot_grid(final1_nue1,final1_nue2,final1_nue3,final1_nue4,
-          final1_nue5,final1_nue6,final1_nue7,final1_nue8,
-          nrow=2,label_x = 0.8, label_y = 0.8)+white
-
-ggsave(paste("~/data/output/newphy_add2.jpg",sep=""), width = 20, height = 10)
+#plot_grid(final1_nue1,final1_nue2,final1_nue3,final1_nue4,
+#          final1_nue5,final1_nue6,final1_nue7,final1_nue8,
+#          nrow=2,label_x = 0.8, label_y = 0.8)+white
 
 #validation - BP
 NPP_statistical$Measured_BP <- NPP_statistical$TNPP_1
@@ -2193,7 +2115,7 @@ plot_grid(pp2,pp4,pp5,pp6,pp7,pp8,pp9,pp10,pp11,pp12,pp13,pp14,pp15,
           labels = c('(a)','(b)','(c)','(d)','(e)','(f)','(g)','(h)','(i)','(j)','(k)','(l)','(m)'),
           nrow=5,label_x = 0.9,label_y=0.92,label_size = 20)+white
 
-ggsave(paste("~/data/output/newphy_figs5.jpg",sep=""), width = 23, height = 25)
+ggsave(paste("~/data/output/newphy_fortable2a.jpg",sep=""), width = 23, height = 25)
 
 #validation - N uptake
 Nmin_statistical$pred_nuptake
@@ -2226,7 +2148,7 @@ plot_grid(ppp1,ppp3,ppp4,ppp5,ppp6,
           labels = c('(a)','(b)','(c)','(d)','(e)'),
           nrow=2,label_x = 0.9,label_y=0.92,label_size = 20)+white
 
-ggsave(paste("~/data/output/newphy_figs6.jpg",sep=""), width = 20, height = 10)
+ggsave(paste("~/data/output/newphy_fortable2b.jpg",sep=""), width = 20, height = 10)
 
 #MAPE
 mean(abs((NPP_statistical$TNPP_1-NPP_statistical$CLM_NPP)/NPP_statistical$TNPP_1),na.rm=TRUE) * 100
@@ -2341,7 +2263,7 @@ plot_grid(a1,a2,a3,a4,a5,
           a15,a16,white,white,white,
           nrow=5)+white
 
-ggsave(paste("~/data/output/newphy_figs1.jpg",sep=""), width = 20, height = 20)
+ggsave(paste("~/data/output/newphy_figs3.jpg",sep=""), width = 20, height = 20)
 
 #table s1
 names(all_maps)
@@ -2482,7 +2404,7 @@ sqrt(sum(uncertainty_nuptake*(forest_percent *conversion)*available_grid2,na.rm=
 #forest nue uncertainty:
 (55.74/0.79) * sqrt( (10.62/55.74)^2 +(0.23/0.79)^2)
 #grassland nue uncertainty:
-(16.37/0.34) * sqrt( (9.65/16.37)^2 +(0.15/0.34)^2)
+(16.32/0.34) * sqrt( (9.65/16.32)^2 +(0.15/0.34)^2)
 #pft
 (72.06/1.13) * sqrt( (14.35/72.06)^2 +(0.27/1.13)^2)
 
@@ -2557,4 +2479,4 @@ plot_grid(a1,a2,a3,a4,a5,
           a6,a7,a8,a9,white,
           nrow=2)+white
 
-ggsave(paste("~/data/output/newphy_figs1b.jpg",sep=""), width = 20, height = 10)
+ggsave(paste("~/data/output/newphy_figs4.jpg",sep=""), width = 20, height = 10)
