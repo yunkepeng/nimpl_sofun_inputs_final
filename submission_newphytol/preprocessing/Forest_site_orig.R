@@ -899,6 +899,13 @@ dataset6 <- subset(dataset5,file!="NPP_Schulze")
 summary(aggregate(subset(dataset6,pft=="Grassland"),by=list(subset(dataset6,pft=="Grassland")$site), FUN=mean, na.rm=TRUE)$CN_leaf_final)
 summary(aggregate(subset(dataset6,pft=="Grassland"),by=list(subset(dataset6,pft=="Grassland")$site), FUN=mean, na.rm=TRUE)$CN_root_final)
 
+#check how many sites (in lon and lat or site - no big difference! just use site-defined version)
+dim(unique(subset(dataset6,pft=="Grassland" & CN_leaf_final>0)[,c("lon","lat")]))
+length(unique(subset(dataset6,pft=="Grassland" & CN_leaf_final>0)$site))
+
+dim(unique(subset(dataset6,pft=="Grassland" & CN_root_final>0)[,c("lon","lat")]))
+length(unique(subset(dataset6,pft=="Grassland" & CN_root_final>0)$site))
+
 #REMOVE Tiandi Grassland's npp and bnpp
 dataset6 <- subset(dataset6,file!="Tiandi Grassland")
 
