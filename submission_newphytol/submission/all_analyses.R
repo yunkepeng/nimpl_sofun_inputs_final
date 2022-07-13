@@ -1614,8 +1614,8 @@ obj_name <- c("CABLE_GPP","CABLE_NPP","ISAM_fNup","ISAM_gpp","ISAM_npp","ISBA_GP
               "JULES_GPP","JULES_NPP","LPJ_GPP","LPJ_NPP","ORCHIDEE_GPP","ORCHIDEE_NPP",
               "ORCHICNP_fNup","ORCHICNP_GPP","ORCHICNP_NPP","SDGVM_GPP","SDGVM_NPP")
 #calculate nue 
-summary( ISAM_npp$myvar/ISAM_fNup$myvar)
-summary(na.omit(ORCHICNP_NPP$myvar/ORCHICNP_fNup$myvar))
+summary( ISAM_npp$npp/ISAM_fNup$fNup)
+summary(na.omit(ORCHICNP_NPP$npp/ORCHICNP_fNup$fNup))
 
 #aggregate based on lon and lat firstly
 sitemean <- unique(NPP_forest[,c("lon","lat")])
