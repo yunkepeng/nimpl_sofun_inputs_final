@@ -588,7 +588,7 @@ summary(bp_grass_model)
 r.squaredGLMM(bp_grass_model)
 
 vif_bp_grass <- vif((lm(tnpp_a~Tg_a+PPFD_a+vpd_a+CNrt_a+fAPAR_a,data=BP_dataset_grass)))
-
+ 
 #anpp/tnpp
 dim(subset(grassland_sitemean,TNPP_1>0))
 dim(subset(grassland_sitemean,TNPP_1>0 & ANPP_2>0))
