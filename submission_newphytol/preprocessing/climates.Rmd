@@ -21,6 +21,8 @@ PPFD is instantaneous photosynthetic photon flux density (umol/m2/s). We used th
 
 PPFD (umol/m2/s) = SWdown (w/m2) * 4.6 * 0.5 
 
+Then, additionally PPFD + Tg - Tg so that it considered growth season's month (i.e. remove NA in those non-growing seasons's month.
+
 where Solar radiation was converted to incident PPFD assuming a flux : energy ratio of 4.6 umol/J and a photosynthetically active fraction of 0.50 (Peng et al. 2020; New Phytologist).
 
 The code below will represent the global map of final output:
@@ -93,7 +95,7 @@ output_vpd <- 0.611*exp(17.27*(output_Tg)/((output_Tg)+237.3))-monthly_vap[,3:(t
 output_vpd[output_vpd =="NaN"] <- NA
 output_vpd[output_vpd < 0] <- NA
 
-output_PPFD <- monthly_radi[,3:(total_month+2)]*0.5*4.6 +output_Tg - output_Tg # here + Tg - Tg means it considered 
+output_PPFD <- monthly_radi[,3:(total_month+2)]*0.5*4.6 +output_Tg - output_Tg # here + Tg - Tg means it considered growth seasons' month 
 output_PPFD[output_PPFD =="NaN"] <- NA
 
 #now, all done. Primarily calculated each year's average - then avaerage of years. Calculate na.rm=TRUE average.

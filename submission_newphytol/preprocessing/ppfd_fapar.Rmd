@@ -12,6 +12,8 @@ PPFD is instantaneous photosynthetic photon flux density (umol/m2/s). We used th
 
 PPFD (umol/m2/s) = SWdown (w/m2) * 4.6 * 0.5 
 
+Then, additionally PPFD + Tg - Tg so that it considered growth season's month (i.e. remove NA in those non-growing seasons's month.
+
 where Solar radiation was converted to incident PPFD assuming a flux : energy ratio of 4.6 umol/J and a photosynthetically active fraction of 0.50 (Peng et al. 2020; New Phytologist).
 
 Additionally, we calculate total PPFD * fapar at growth season (mol/m2)
