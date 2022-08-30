@@ -11,8 +11,8 @@ library(dplyr)
 library(gplots)
 library(tidyselect)
 library(extrafont)
-devtools::load_all("/Users/yunpeng/yunkepeng/rbeni/")
-#library(rbeni)
+devtools::load_all("/Users/yunpeng/yunkepeng/latest_packages/rbeni/") 
+devtools::load_all("/Users/yunpeng/yunkepeng/latest_packages/ingestr/")
 library(raster)
 library(maps)
 library(rworldmap)
@@ -62,7 +62,7 @@ Sara_NPP2_elv_missing <- subset(Sara_NPP2,is.na(Elevation)==TRUE)
 Sara_NPP2_elv_missing_Plot <- aggregate(Sara_NPP2_elv_missing,by=list(Sara_NPP2_elv_missing$Plot), FUN=mean, na.rm=TRUE)
 Sara_NPP2_elv_missing_Plot <-Sara_NPP2_elv_missing_Plot[,c("Group.1","lon","lat")]
 names(Sara_NPP2_elv_missing_Plot) <- c("sitename","lon","lat")
-devtools::load_all("~/yunkepeng/Grassland_new_ingestr_rsofun_20210326/ingestr/")
+#devtools::load_all("~/yunkepeng/Grassland_new_ingestr_rsofun_20210326/ingestr/")
 df_etopo <- ingest(
   Sara_NPP2_elv_missing_Plot,
   source = "etopo1",
@@ -651,20 +651,11 @@ NPP$TNPP_1[NPP$TNPP_1==0] <- NA
 NPP$rep <- "not_repeated"
 
 #remove rep data 
-#NPP$rep[NPP$site=="Bartlett"] <- "repeated"
-#NPP$rep[NPP$site=="Cascade Head (1)"] <- "repeated"
-#NPP$rep[NPP$site=="Cascade Head (1A)"] <- "repeated"
-#NPP$rep[NPP$site=="Frazer old"] <- "repeated"
-#NPP$rep[NPP$site=="Frazer young"] <- "repeated"
-#NPP$rep[NPP$site=="Guyaflux"] <- "repeated"
-#NPP$rep[NPP$site=="Hesse"] <- "repeated"
-#NPP$rep[NPP$site=="Santiam Pass"] <- "repeated"
-#NPP$rep[NPP$site=="Scio"] <- "repeated"
-#NPP$rep[NPP$site=="Takayama 2"] <- "repeated"
-NPP$rep[NPP$site=="Waring's Woods"] <- "repeated"
+NPP$rep[NPP$site=="Waring's Woods"] <- "repeated" #npp, bnpp, anpp all repeated
 
-
-#remove rep data (from Keith, where repeated to Campioli or Vicca, see below, by comparing either npp or gpp) 
+#remove rep data from Keith, where repeated to Campioli or Vicca, the definition of repeatation is:
+#below are those samples with the same site-name to Campioli, Vicca or ForC dataset
+#because Keith's dataset was actually derived from Sara Vicca - we don't want repeat here - if Keith and Vicca's file has the same site-name, remove data from Keith and only keep Sara's data
 NPP$rep[NPP$site=="CA-Let-F01"&NPP$file=="Keith"] <- "repeated"
 NPP$rep[NPP$site=="CG-tch-D01"&NPP$file=="Keith"] <- "repeated"
 NPP$rep[NPP$site=="CN-Inn-D01"&NPP$file=="Keith"] <- "repeated"
@@ -695,8 +686,6 @@ NPP$rep[NPP$site=="UCI-1998"&NPP$file=="Keith"] <- "repeated"
 NPP$rep[NPP$site=="Takayama"&NPP$file=="Keith"] <- "repeated"
 
 #remove rep data (paired repeated measurements between ForC and Sara Vicca) 
-#NPP$rep[NPP$site=="FLONA Tapajos Km 83"&NPP$file=="ForC"] <- "repeated"
-#NPP$rep[NPP$site=="Metolius Old Pine"&NPP$file=="ForC"&NPP$GPP==1120] <- "repeated"
 NPP$rep[NPP$site=="Thompson dry chronosequence d12"&NPP$file=="ForC"] <- "repeated"
 NPP$rep[NPP$site=="Thompson dry chronosequence d131"&NPP$file=="ForC"] <- "repeated"
 NPP$rep[NPP$site=="Thompson dry chronosequence d20"&NPP$file=="ForC"] <- "repeated"
@@ -711,13 +700,13 @@ NPP$rep[NPP$site=="Qianyanzhou"&NPP$file=="ForC"] <- "repeated"
 #removing part for collecting c3,c4 (too confusing and not used in this submission). For info see submission/Forest_site_org.R 
 
 #additional step: 
-#add more gpp data from Compioli et al. SI table 1, and remove repeated data (see above, already removed)
+#add more gpp data from Compioli et al. SI table 1
 NPP$GPP[NPP$site=="IT-bea-D02"] <- 1568
 NPP$GPP[NPP$site=="US-che-D01"] <- 626
-NPP$GPP[NPP$site=="DE-gri-D01"] <- 1233#repeated
+NPP$GPP[NPP$site=="DE-gri-D01"] <- 1233
 NPP$GPP[NPP$site=="CN-Hab-F01"] <- 634
-NPP$GPP[NPP$site=="RU-ha1-F01"] <- 519 #repeated
-NPP$GPP[NPP$site=="RU-ha3-F01"] <- 526 #repeated
+NPP$GPP[NPP$site=="RU-ha1-F01"] <- 519
+NPP$GPP[NPP$site=="RU-ha3-F01"] <- 526
 NPP$GPP[NPP$site=="CN-Inn-D01_C"] <- 182
 NPP$GPP[NPP$site=="US-kbs-D01"] <- 1015
 NPP$GPP[NPP$site=="US-kbs-D04"] <- 512
@@ -748,7 +737,6 @@ NPP$BNPP_1[NPP$site=="US-Kon-D03"] <- NPP$TNPP_1[NPP$site=="US-Kon-D03"] - NPP$A
 Finzi <- read.csv("~/data/NPP_Yunke/Nmin_Finzi/Nmin_Finzi.csv")
 names(Finzi)[names(Finzi) == "Lat"] <- "lat"
 names(Finzi)[names(Finzi) == "Long"] <- "lon"
-devtools::load_all("~/yunkepeng/Grassland_new_ingestr_rsofun_20210326/ingestr/")
 
 #Forest - only merging forest this time
 Finzi_Forest <- subset(Finzi, Biome!="temp grass")
@@ -840,7 +828,7 @@ bb <-subset(dataset2,check_anpp< -5 |check_anpp>5 )[c(1:8,9,11,14,27,53)]
 dim(bb)
 dataset2$outlier[dataset2$check_anpp< -5 |dataset2$check_anpp >5  ] <- "ANPP!=NPP.foliage+NPP.wood"
 
-#they need figured out
+#they need figured out - anpp= wood +leaf; npp = anpp + bnpp
 dataset2$ANPP_2[is.na(dataset2$NPP.foliage)==FALSE&is.na(dataset2$NPP.wood)==FALSE] <- dataset2$NPP.foliage[is.na(dataset2$NPP.foliage)==FALSE&is.na(dataset2$NPP.wood)==FALSE] +dataset2$NPP.wood[is.na(dataset2$NPP.foliage)==FALSE&is.na(dataset2$NPP.wood)==FALSE]
 dataset2$TNPP_1[is.na(dataset2$ANPP_2)==FALSE&is.na(dataset2$BNPP_1)==FALSE] <- dataset2$ANPP_2[is.na(dataset2$ANPP_2)==FALSE&is.na(dataset2$BNPP_1)==FALSE] +dataset2$BNPP_1[is.na(dataset2$ANPP_2)==FALSE&is.na(dataset2$BNPP_1)==FALSE]
 
@@ -913,6 +901,7 @@ dataset6 <- subset(dataset6,file!="Tiandi Grassland")
 dataset6$lnf_obs_final <-dataset6$NPP.foliage/dataset6$CN_leaf_final
 dataset6$bnf_obs_final  <- dataset6$BNPP_1/dataset6$CN_root_final
 dataset6$wnf_obs_final  <- dataset6$NPP.wood/dataset6$CN_wood_final
+
 
 #remove columns not used
 dataset6 <- dataset6[,!(names(dataset6) %in% c("Evergreen.Deciduous","Management.code",
@@ -1036,8 +1025,8 @@ fAPAR <- as.data.frame(nc_to_df(read_nc_onefile(
   varnam = "fAPAR"))
 
 #cbind all predictors, and its lon, lat, z
-all_predictors <- cbind(elev,Tg$myvar,PPFD$myvar,vpd$myvar,
-                        alpha$myvar,fAPAR$myvar)
+all_predictors <- cbind(elev,Tg$Tg,PPFD$PPFD,vpd$vpd,
+                        alpha$alpha,fAPAR$fAPAR)
 
 names(all_predictors) <- c("lon","lat","z","Tg","PPFD","vpd",
                            "alpha","fAPAR")
@@ -1100,7 +1089,7 @@ for (i in c(1:nrow(NRE_site))){ #one site does not have elevation (NA), therefor
 
 #NRE_site newly including Ndep
 library(hwsdr)
-devtools::load_all("/Users/yunpeng/yunkepeng/compuetational_ingestr/ingestr/")
+#devtools::load_all("/Users/yunpeng/yunkepeng/compuetational_ingestr/ingestr/")
 
 NRE_site$nhx <- NA
 NRE_site$noy <- NA

@@ -44,7 +44,7 @@ The original Rdata was based on code /Users/yunpeng/yunkepeng/nimpl_sofun_inputs
 
 ```{r}
 load(file = "/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/climates_30yrs_monthly/WFDEI_CRU_1980_2016.Rdata")
-devtools::load_all("/Users/yunpeng/yunkepeng/rbeni/")
+devtools::load_all("/Users/yunpeng/yunkepeng/latest_packages/rbeni/") 
 library(dplyr)
 library(raster)
 library(ncdf4)

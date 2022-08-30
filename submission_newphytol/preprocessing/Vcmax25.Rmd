@@ -9,7 +9,7 @@ output: html_document
 
 
 ```{r}
-devtools::load_all("/Users/yunpeng/yunkepeng/rbeni/")
+devtools::load_all("/Users/yunpeng/yunkepeng/latest_packages/rbeni/") 
 library(raster)
 library(ncdf4)
 library(maps)

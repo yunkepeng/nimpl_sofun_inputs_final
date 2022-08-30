@@ -24,7 +24,7 @@ The steps include
 ## First time
 1. Input original raster (1/120 resolution), aggregate to half degree resolution, combine with soil csv data to get soil C/N map.
 ```{r}
-devtools::load_all("/Users/yunpeng/yunkepeng/rbeni/")
+devtools::load_all("/Users/yunpeng/yunkepeng/latest_packages/rbeni/") 
 library(tidyverse)  # depends
 library(ncmeta)
 library(viridis)
@@ -224,7 +224,6 @@ library(dplyr)
 library(gplots)
 library(tidyselect)
 library(extrafont)
-devtools::load_all("/Users/yunpeng/yunkepeng/rbeni/")
 library(raster)
 library(spgwr)
 library(maps)
@@ -412,7 +411,6 @@ library(dplyr)
 library(gplots)
 library(tidyselect)
 library(extrafont)
-devtools::load_all("/Users/yunpeng/yunkepeng/rbeni/")
 library(raster)
 library(spgwr)
 library(maps)
