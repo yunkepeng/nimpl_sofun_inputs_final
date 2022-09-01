@@ -72,8 +72,8 @@ s12 <- (-21.6 + -23.1)/2
 s <- c(s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12)
 
 lat <- monthly_tmn[,2]
-xx <- data.frame(matrix(, nrow=259200, ncol=total_month))
-output_Tg <- data.frame(matrix(, nrow=259200, ncol=total_month))
+xx <- data.frame(matrix( nrow=259200, ncol=total_month))
+output_Tg <- data.frame(matrix( nrow=259200, ncol=total_month))
 
 for (a in 1:12){ 
   month_no <- seq(from = 1, to = total_month, by = 12)+a-1
@@ -99,9 +99,9 @@ output_PPFD <- monthly_radi[,3:(total_month+2)]*0.5*4.6 +output_Tg - output_Tg #
 output_PPFD[output_PPFD =="NaN"] <- NA
 
 #now, all done. Primarily calculated each year's average - then avaerage of years. Calculate na.rm=TRUE average.
-Tg <- data.frame(matrix(, nrow=259200, ncol=12))
-vpd <- data.frame(matrix(, nrow=259200, ncol=12))
-PPFD <- data.frame(matrix(, nrow=259200, ncol=12))
+Tg <- data.frame(matrix( nrow=259200, ncol=12))
+vpd <- data.frame(matrix( nrow=259200, ncol=12))
+PPFD <- data.frame(matrix( nrow=259200, ncol=12))
 
 #firstly calculate based on years (37 years to one year) - then calculate monthly average of one year
 for (a in 1:12){ 

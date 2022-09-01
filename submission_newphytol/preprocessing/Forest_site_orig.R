@@ -534,7 +534,7 @@ CN_Malhi$CN_leaf_alt_malhi <- CN_Malhi$cmass/CN_Malhi$nmass
 CN_Malhi <- subset(CN_Malhi,CN_leaf_alt_malhi>0)
 CN_Malhi2 <- CN_Malhi[,c("site","CN_leaf_alt_malhi")]
 
-# YYY: The step is (see comment below):
+#The step is (see comment below):
 #(1) aggregate leaf C/N based on lon + lat, according to a leaf traits dataset provided by Sara Vicca. There are more than one 1 record in a site, beacuse it measured many trees (individuals) in one site. See their original csv.
 CN_SaraVicca <- read.csv(file="~/data/NPP_Yunke/NPP_Vicca/orig/NACP_TERRA_PNW_leaf_trait.csv")
 CN_SaraVicca <- CN_SaraVicca[,c("LONGITUDE","LATITUDE","LEAF_CN")]
@@ -552,7 +552,7 @@ summary(CN_SaraVicca2)
 test <- merge(NPP_final2,CN_SaraVicca2,by=c("lon","lat"),all.x=TRUE)
 test1 <- subset(test,CN_leaf_sara>0)
 test1 <- test1[,c("lon","lat","z","CN_leaf_sara")]
-dim(test1)
+dim(test1) # make them aggregate basing on lon + lat + z, to prepare for merge then
 test1 <- aggregate(test1, by=list(test1$lon,test1$lat,test1$z), mean,na.rm=TRUE)
 dim(test1)
 test1<- test1[,c("lon","lat","z","CN_leaf_sara")]
@@ -655,7 +655,7 @@ NPP$rep[NPP$site=="Waring's Woods"] <- "repeated" #npp, bnpp, anpp all repeated
 
 #remove rep data from Keith, where repeated to Campioli or Vicca, the definition of repeatation is:
 #below are those samples with the same site-name to Campioli, Vicca or ForC dataset
-#because Keith's dataset was actually derived from Sara Vicca - we don't want repeat here - if Keith and Vicca's file has the same site-name, remove data from Keith and only keep Sara's data
+#because Keith's dataset was actually derived from Sara Vicca - we don't want repeat here - if Keith and others file has the same site-name (or coordinates data), remove data from Keith and only keep others data
 NPP$rep[NPP$site=="CA-Let-F01"&NPP$file=="Keith"] <- "repeated"
 NPP$rep[NPP$site=="CG-tch-D01"&NPP$file=="Keith"] <- "repeated"
 NPP$rep[NPP$site=="CN-Inn-D01"&NPP$file=="Keith"] <- "repeated"
@@ -675,6 +675,7 @@ NPP$rep[NPP$site=="Bornhoved Alder"&NPP$file=="Keith"] <- "repeated"
 NPP$rep[NPP$site=="Bornhoved Beech"&NPP$file=="Keith"] <- "repeated"
 NPP$rep[NPP$site=="Davos"&NPP$file=="Keith"] <- "repeated"
 NPP$rep[NPP$site=="Flagstaff, USA"&NPP$file=="Keith"] <- "repeated"
+NPP$rep[NPP$site=="Tapajos, Brazil"&NPP$file=="Keith"] <- "repeated"
 NPP$rep[NPP$site=="Oregon, USA"&NPP$file=="Keith"] <- "repeated"
 NPP$rep[NPP$site=="Metolius"&NPP$file=="Keith"] <- "repeated"
 NPP$rep[NPP$site=="Caxiuana, Brazil"&NPP$file=="Keith"] <- "repeated"
@@ -684,6 +685,8 @@ NPP$rep[NPP$site=="Turkey Point TP89"&NPP$file=="Keith"] <- "repeated"
 NPP$rep[NPP$site=="Turkey Point TP02"&NPP$file=="Keith"] <- "repeated"
 NPP$rep[NPP$site=="UCI-1998"&NPP$file=="Keith"] <- "repeated"
 NPP$rep[NPP$site=="Takayama"&NPP$file=="Keith"] <- "repeated"
+
+#finally, all forest plots in Keith was removed, only keep a few grassland sites
 
 #remove rep data (paired repeated measurements between ForC and Sara Vicca) 
 NPP$rep[NPP$site=="Thompson dry chronosequence d12"&NPP$file=="ForC"] <- "repeated"
@@ -695,42 +698,31 @@ NPP$rep[NPP$site=="Willow Creek (WC)-Chequamegon National Forest"&NPP$file=="For
 NPP$rep[NPP$site=="Wind River Canopy Crane"&NPP$file=="ForC"] <- "repeated"
 NPP$rep[NPP$site=="Qianyanzhou"&NPP$file=="ForC"] <- "repeated"
 
-#NPP <- subset(NPP,rep=="not_repeated")
-
 #removing part for collecting c3,c4 (too confusing and not used in this submission). For info see submission/Forest_site_org.R 
 
-#additional step: 
-#add more gpp data from Compioli et al. SI table 1
-NPP$GPP[NPP$site=="IT-bea-D02"] <- 1568
-NPP$GPP[NPP$site=="US-che-D01"] <- 626
-NPP$GPP[NPP$site=="DE-gri-D01"] <- 1233
-NPP$GPP[NPP$site=="CN-Hab-F01"] <- 634
-NPP$GPP[NPP$site=="RU-ha1-F01"] <- 519
-NPP$GPP[NPP$site=="RU-ha3-F01"] <- 526
-NPP$GPP[NPP$site=="CN-Inn-D01_C"] <- 182
-NPP$GPP[NPP$site=="US-kbs-D01"] <- 1015
-NPP$GPP[NPP$site=="US-kbs-D04"] <- 512
-NPP$GPP[NPP$site=="US-kbs-D05"] <- 374
-NPP$GPP[NPP$site=="US-kbs-D03"] <- 793
-NPP$GPP[NPP$site=="US-jas-D01"] <- 516
-NPP$GPP[NPP$site=="US-kon-D05"] <- 1151
-NPP$GPP[NPP$site=="RU-krs-D01"] <- 1611
-NPP$GPP[NPP$site=="CA-Let-F01"] <- 280
-NPP$GPP[NPP$site=="CA-mat-D01"] <- 786
-NPP$GPP[NPP$site=="US-osg-D01"] <- 1890
-NPP$GPP[NPP$site=="CG-tch-D01"] <- 1572
-NPP$GPP[NPP$site=="US-Spe-D01"] <- 829
-
-#interpolate gpp to Cambioli's data from keith's source (with same site name)
-NPP$GPP[NPP$site=="CN-Inn-F01"] <- 204 #this value is reasonable comparing with NPP/GPP
-
-#add more data from ~/data/NPP_Yunke/NPP_Keith/orig/Bremer and Ham 2010.pdf from keith's grassland data
-#based on its Table 3 - GPP, for example, at the site below, was calculated as averages of 2 values (at 2 period) from site BA, so does site BB. 
-NPP$TNPP_1[NPP$site=="US-Kon-D02"] <- ((1669-1354) + (2269-1666))/2
-NPP$TNPP_1[NPP$site=="US-Kon-D03"] <- ((1368-1185) + (1997-1495))/2
-
-NPP$BNPP_1[NPP$site=="US-Kon-D02"] <- NPP$TNPP_1[NPP$site=="US-Kon-D02"] - NPP$ANPP_2[NPP$site=="US-Kon-D02"]
-NPP$BNPP_1[NPP$site=="US-Kon-D03"] <- NPP$TNPP_1[NPP$site=="US-Kon-D03"] - NPP$ANPP_2[NPP$site=="US-Kon-D03"]
+#additional step: not yet confirmed - so not included it now - and gpp will not be used in this dataset
+#add more gpp data from Compioli et al. SI table 1 
+#NPP$GPP[NPP$site=="IT-bea-D02"] <- 1568
+#NPP$GPP[NPP$site=="US-che-D01"] <- 626
+#NPP$GPP[NPP$site=="DE-gri-D01"] <- 1233
+#NPP$GPP[NPP$site=="CN-Hab-F01"] <- 634
+#NPP$GPP[NPP$site=="RU-ha1-F01"] <- 519
+#NPP$GPP[NPP$site=="RU-ha3-F01"] <- 526
+#NPP$GPP[NPP$site=="CN-Inn-D01_C"] <- 182
+#NPP$GPP[NPP$site=="US-kbs-D01"] <- 1015
+#NPP$GPP[NPP$site=="US-kbs-D04"] <- 512
+#NPP$GPP[NPP$site=="US-kbs-D05"] <- 374
+#NPP$GPP[NPP$site=="US-kbs-D03"] <- 793
+#NPP$GPP[NPP$site=="US-jas-D01"] <- 516
+#NPP$GPP[NPP$site=="US-kon-D05"] <- 1151
+#NPP$GPP[NPP$site=="RU-krs-D01"] <- 1611
+#NPP$GPP[NPP$site=="CA-Let-F01"] <- 280
+#NPP$GPP[NPP$site=="CA-mat-D01"] <- 786
+#NPP$GPP[NPP$site=="US-osg-D01"] <- 1890
+#NPP$GPP[NPP$site=="CG-tch-D01"] <- 1572
+#NPP$GPP[NPP$site=="US-Spe-D01"] <- 829
+#add more gpp data from keith's source (with same site name)
+#NPP$GPP[NPP$site=="CN-Inn-F01"] <- 204 
 
 ##### Finally Input N uptake
 #(1) newly added Nmin rate data from Finzi
@@ -740,6 +732,7 @@ names(Finzi)[names(Finzi) == "Long"] <- "lon"
 
 #Forest - only merging forest this time
 Finzi_Forest <- subset(Finzi, Biome!="temp grass")
+unique(Finzi_Forest$Biome)
 Finzi_Forest_sitemean <- aggregate(Finzi_Forest,by=list(Finzi_Forest$lon,Finzi_Forest$lat), FUN=mean, na.rm=TRUE) #site-mean
 dim(Finzi_Forest_sitemean)
 for (i in 1:nrow(Finzi_Forest_sitemean)){
@@ -828,30 +821,34 @@ bb <-subset(dataset2,check_anpp< -5 |check_anpp>5 )[c(1:8,9,11,14,27,53)]
 dim(bb)
 dataset2$outlier[dataset2$check_anpp< -5 |dataset2$check_anpp >5  ] <- "ANPP!=NPP.foliage+NPP.wood"
 
-#they need figured out - anpp= wood +leaf; npp = anpp + bnpp
+#they need figured out
+###Make sure anpp= wood +leaf; npp = anpp + bnpp
 dataset2$ANPP_2[is.na(dataset2$NPP.foliage)==FALSE&is.na(dataset2$NPP.wood)==FALSE] <- dataset2$NPP.foliage[is.na(dataset2$NPP.foliage)==FALSE&is.na(dataset2$NPP.wood)==FALSE] +dataset2$NPP.wood[is.na(dataset2$NPP.foliage)==FALSE&is.na(dataset2$NPP.wood)==FALSE]
 dataset2$TNPP_1[is.na(dataset2$ANPP_2)==FALSE&is.na(dataset2$BNPP_1)==FALSE] <- dataset2$ANPP_2[is.na(dataset2$ANPP_2)==FALSE&is.na(dataset2$BNPP_1)==FALSE] +dataset2$BNPP_1[is.na(dataset2$ANPP_2)==FALSE&is.na(dataset2$BNPP_1)==FALSE]
 
 summary(dataset2$ANPP_2+dataset2$BNPP_1-dataset2$TNPP_1)
 summary(dataset2$NPP.foliage+dataset2$NPP.wood-dataset2$ANPP_2)
 
-#check if it is balanced and without special NA (e.g. have npp and anpp but missed bnpp)
+#check if it is balanced and without special NA
+# npp.foliage is missing, but has anpp and wood - filling them
 subset(dataset2,is.na(ANPP_2)==F &is.na(NPP.wood)==F &pft=="Forest"&is.na(NPP.foliage)==T)
 dataset2$NPP.foliage[is.na(dataset2$ANPP_2)==F &is.na(dataset2$NPP.wood)==F &dataset2$pft=="Forest"&is.na(dataset2$NPP.foliage)==T] <- 
   dataset2$ANPP_2[is.na(dataset2$ANPP_2)==F &is.na(dataset2$NPP.wood)==F &dataset2$pft=="Forest"&is.na(dataset2$NPP.foliage)==T] -
   dataset2$NPP.wood[is.na(dataset2$ANPP_2)==F &is.na(dataset2$NPP.wood)==F &dataset2$pft=="Forest"&is.na(dataset2$NPP.foliage)==T]
 
+# npp.wood is missing, but has anpp and npp.foliage - filling them
 subset(dataset2,is.na(ANPP_2)==F &is.na(NPP.foliage)==F &pft=="Forest"&is.na(NPP.wood)==T)
 dataset2$NPP.wood[is.na(dataset2$ANPP_2)==F &is.na(dataset2$NPP.foliage)==F &dataset2$pft=="Forest"&is.na(dataset2$NPP.wood)==T] <- 
   dataset2$ANPP_2[is.na(dataset2$ANPP_2)==F &is.na(dataset2$NPP.foliage)==F &dataset2$pft=="Forest"&is.na(dataset2$NPP.wood)==T] -
   dataset2$NPP.foliage[is.na(dataset2$ANPP_2)==F &is.na(dataset2$NPP.foliage)==F &dataset2$pft=="Forest"&is.na(dataset2$NPP.wood)==T]
 
+# anpp is missing, but has NPP and BNPP - filling them
 subset(dataset2,is.na(TNPP_1)==F &is.na(BNPP_1)==F &is.na(ANPP_2)==T)
 dataset2$ANPP_2[is.na(dataset2$TNPP_1)==F &is.na(dataset2$BNPP_1)==F &is.na(dataset2$ANPP_2)==T] <- 
   dataset2$TNPP_1[is.na(dataset2$TNPP_1)==F &is.na(dataset2$BNPP_1)==F &is.na(dataset2$ANPP_2)==T] -
   dataset2$BNPP_1[is.na(dataset2$TNPP_1)==F &is.na(dataset2$BNPP_1)==F &is.na(dataset2$ANPP_2)==T]
 
-
+# bnpp is missing, but has NPP and ANPP - filling them
 subset(dataset2,is.na(TNPP_1)==F &is.na(ANPP_2)==F &is.na(BNPP_1)==T)
 dataset2$BNPP_1[is.na(dataset2$TNPP_1)==F &is.na(dataset2$ANPP_2)==F &is.na(dataset2$BNPP_1)==T] <- 
   dataset2$TNPP_1[is.na(dataset2$TNPP_1)==F &is.na(dataset2$ANPP_2)==F &is.na(dataset2$BNPP_1)==T] -
