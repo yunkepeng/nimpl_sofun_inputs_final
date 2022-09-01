@@ -11,7 +11,7 @@ library(dplyr)
 library(gplots)
 library(tidyselect)
 library(extrafont)
-devtools::load_all("/Users/yunpeng/yunkepeng/rbeni/")
+devtools::load_all("/Users/yunpeng/yunkepeng/latest_packages/rbeni/") 
 #library(rbeni)
 library(raster)
 library(maps)
@@ -118,9 +118,9 @@ summary(vcmax25_df$lon -elev$lon)
 summary(gpp_df$lat -gpp_df$lat)
 
 #cbind all predictors, and its lon, lat, z
-all_predictors <- cbind(elev,PPFD_total_fapar$myvar,PPFD_total$myvar,Tg$myvar,PPFD$myvar,vpd$myvar,
-                        alpha$myvar,fAPAR$myvar,age$myvar,
-                        CNrt$myvar,LMA$myvar,vcmax25_df$vcmax25,gpp_df$gpp)
+all_predictors <- cbind(elev,PPFD_total_fapar$PPFD_total_fapar,PPFD_total$PPFD_total,Tg$Tg,PPFD$PPFD,vpd$vpd,
+                        alpha$alpha,fAPAR$fAPAR,age$age,
+                        CNrt$CNrt,LMA$LMA,vcmax25_df$vcmax25,gpp_df$gpp)
 
 names(all_predictors) <- c("lon","lat","z","PPFD_total_fapar","PPFD_total","Tg","PPFD","vpd",
                            "alpha","fAPAR","age","CNrt","LMA","vcmax25","gpp")
@@ -282,7 +282,7 @@ summary(NPP_Forest)
 
 #N deposition
 library(hwsdr)
-devtools::load_all("/Users/yunpeng/yunkepeng/compuetational_ingestr/ingestr/")
+devtools::load_all("/Users/yunpeng/yunkepeng/latest_packages/ingestr/")
 
 NPP_Forest2 <- NPP_Forest
 NPP_Forest2$nhx <- NA

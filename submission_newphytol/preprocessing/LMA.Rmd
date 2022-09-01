@@ -24,6 +24,11 @@ A brief information about LMA, and three main predictors that will be used in kn
 
 alpha, PPFD, Tg will directly use 0.5 * 0.5 grids data from final_ncfile/
 
+Training data 19020 grids 
+
+Testing data 44816 grids
+
+
 ## First time LMA output
 ```{r}
 library(raster)

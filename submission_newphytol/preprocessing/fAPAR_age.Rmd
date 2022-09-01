@@ -12,6 +12,18 @@ Elements below are global inputs that will be used in statistical model-based ca
  * stand age (yrs) (Poulter et al. 2019: https://doi.pangaea.de/10.1594/PANGAEA.889943)
  * fAPAR (3g GIMMS: https://developers.google.com/earth-engine/datasets/catalog/NASA_GIMMS_3GV0)
 
+The stand-age processing:
+
+1. First calculate stand-age basing on weighted-mean method
+
+2. Then merged this age data frame to fAPAR data frame (with the same coordinates) - if a certain grid has fAPAR = NA, we considered this grid's age also as NA (because there is no green!) If a certain grid has available fAPAR value, we used their stand-age data in that grid.
+
+3. However, there are still  grids in south AUS and other regions (mostly at the edge of region) has age =0. Here we will gap fill them, by using mean value of north AUS, or the mean value of the local region.
+
+4. convert all age =0 to NA
+
+5. Output
+
 #1. stand age
 ```{r}
 library(raster)
