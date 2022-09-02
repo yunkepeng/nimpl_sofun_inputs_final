@@ -20,7 +20,7 @@ The stand-age processing:
 
 3. However, there are still  grids in south AUS and other regions (mostly at the edge of region) has age =0. Here we will gap-fill them, by using mean value of north AUS, or the mean value of the local region.
 
-  - We have to fill such NA data in the edge of region, because otherwise, those such large empty grids (in the edge of continent or south AUS) will finally lead to completely empty C and N uptake in simulations, which largely affect (reduce) our global estimations. So, all NA values at this stage should be filled by constant value of local continent. On the other hand, I am not worried if some grassland grids are occasionally transferred from NA to constant value - because this will not affect our simulations. If it is a 100% grassland plot, then stand-age map will not be used at all!
+  - We have to fill such NA data in the edge of region, because otherwise, those such large empty grids (in the edge of continent or south AUS) will finally lead to completely empty C and N uptake in simulations, which largely affect (reduce) our global estimations. So, all NA values at this stage should be filled by constant value of local continent. On the other hand, I am not worried if some grassland grids are occasionally transferred from NA to constant value - because  (1) it will only just lead to very low values of age at that region (2) this will not affect our simulations - if it is a 100% grassland plot, then stand-age map will not be used at all!
   
 4. convert all age =0 to NA
 

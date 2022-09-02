@@ -257,16 +257,20 @@ all_predictors_new <- as.data.frame(cbind(Tg$lon,Tg$lat,Tg$Tg, PPFD$PPFD, vpd$vp
                                               fAPAR$fAPAR, final_data2$age,
                                               CNrt$CNrt, LMA$LMA, vcmax25_df$vcmax25 ))
 dim(na.omit(all_predictors_new))
+55993-52105 # these will lose 3888 grids
 
+#check where these "lost" plots located
+all_predictors_old_new <- as.data.frame(cbind(Tg$lon,Tg$lat,Tg$Tg, PPFD$PPFD, vpd$vpd,
+                                          fAPAR$fAPAR,age$age, final_data2$age,
+                                          CNrt$CNrt, LMA$LMA, vcmax25_df$vcmax25 ))
+all_predictors_old_new2 <- subset(all_predictors_old_new,is.na(V7)==F & is.na(V8)==T)
+all_predictors_old_new3 <- all_predictors_old_new2[,c(1:7,9:11)]
+all_predictors_old_new4 <- na.omit(all_predictors_old_new3)
+dim(all_predictors_old_new4)
 gg <- plot_map3(continent_age_fAPAR2, 
                 varnam = "new_age",plot_title = "age before filled by AUS",
                 latmin = -65, latmax = 85,combine=FALSE)
 
 gg$ggmap +
-  geom_point(data=na.omit(all_predictors_current),aes(V1,V2),col="red",size=1.5)+
-  theme_grey(base_size = 12)
-
-
-gg$ggmap +
-  geom_point(data=na.omit(all_predictors_new),aes(V1,V2),col="red",size=1.5)+
+  geom_point(data=all_predictors_old_new4,aes(V1,V2),col="red",size=1.5)+
   theme_grey(base_size = 12)
