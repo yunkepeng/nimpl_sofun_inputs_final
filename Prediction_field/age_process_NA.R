@@ -1,35 +1,3 @@
----
-title: "Global input for stand-age and fAPAR"
-author: "Yunke Peng"
-date: "28 09 2021"
-output: html_document
----
-
-## Introduction about Global nc files
-
-Elements below are global inputs that will be used in statistical model-based calculations. All data has a final resolution as 0.5 * 0.5 degree. It was long-term average according to their paper's description.
-
- * stand age (yrs) (Poulter et al. 2019: https://doi.pangaea.de/10.1594/PANGAEA.889943)
- * fAPAR (3g GIMMS: https://developers.google.com/earth-engine/datasets/catalog/NASA_GIMMS_3GV0)
-
-The stand-age processing:
-
-1. First calculate stand-age basing on weighted-mean method
-
-2. Then merged this age data frame to fAPAR data frame (with the same coordinates) - if a certain grid has fAPAR = NA, we considered this grid's age also as NA (because there is no green!) If a certain grid has available fAPAR value, we used their stand-age data in that grid.
-
-3. However, there are still  grids in south AUS and other regions (mostly at the edge of region) has age =0. Here we will gap-fill them, by using mean value of north AUS, or the mean value of the local region.
-
-  - We have to fill such NA data in the edge of region, because otherwise, those such large empty grids (in the edge of continent or south AUS) will finally lead to completely empty C and N uptake in simulations, which largely affect (reduce) our global estimations. So, all NA values at this stage should be filled by constant value of local continent. On the other hand, I am not worried if some grassland grids are occasionally transferred from NA to constant value - because this will not affect our simulations. If it is a 100% grassland plot, then stand-age map will not be used at all!
-  
-4. convert all age =0 to NA
-
-5. Output
-
-(Some detailed look of map is /nimpl_sofun_inputs_final/Prediction_field/age_process_NA.R)
-
-#1. stand age
-```{r}
 library(raster)
 library(ncdf4)
 library(dplyr)
@@ -61,7 +29,11 @@ names(lonlat) <- c("lon","lat","age")
 
 age_input <- as.data.frame(lonlat)
 summary(age_input)
+plot_map3(age_input, 
+          varnam = "age",plot_title = "age",
+          latmin = -65, latmax = 85)
 dim(age_input)
+# now it shows an empty grid in lower AUS, also in some other regions. We need to interpolate them based on local mean value.
 
 #coordinates(age_input) <- ~lon+lat 
 #gridded(age_input) <- TRUE
@@ -130,7 +102,15 @@ continent_age_fAPAR$new_age <- NA
 continent_age_fAPAR$new_age[is.na(continent_age_fAPAR$fAPAR)==FALSE] <- continent_age_fAPAR$age[is.na(continent_age_fAPAR$fAPAR)==FALSE]
 continent_age_fAPAR$new_age[is.na(continent_age_fAPAR$fAPAR)==TRUE] <- NA
 
+continent_age_fAPAR2 <- continent_age_fAPAR[,c("lon","lat","new_age")]
+
+
+plot_map3(continent_age_fAPAR2, 
+          varnam = "new_age",plot_title = "age before filled by AUS",
+          latmin = -65, latmax = 85)
+
 #we will start working from this map! Because it actually clarfies which grid stand-age = NA (in white), which grid stand-age has missed data (which temporaily considered = 0, and shown in grey, will be interpolated soon) .
+
 
 #4. Now, start interpolating each continent's missing data (when age = 0) as mean value of local continent
 age_final <- as.data.frame(continent_age_fAPAR[,c("lon","lat","area","new_age")])
@@ -158,18 +138,30 @@ all_age2 <- rbind(all_age,South_AUS_empty_age)
 
 all_age3 <- all_age2[,c("lon","lat","final_age")]
 
-#show all 'missing age' grids that has to be interpolated by constant value! Because otherwise, they will lead to big reduction of grids used in global simulations later (because all those NA grids would be empty)
-gg <- plot_map3(age_final, 
-           varnam = "new_age",plot_title = "age before filled ",
-           latmin = -65, latmax = 85,combine=FALSE)
+#this points are filled by mean value
+gg <- plot_map3(continent_age_fAPAR2, 
+          varnam = "new_age",plot_title = "age before filled by AUS",
+          latmin = -65, latmax = 85,combine=FALSE)
 
+NPP_all <- read.csv("~/data/NPP_Yunke/NPP_Nmin_dataset_with_predictors.csv")
+NPP_forest <- subset(NPP_all,pft=="Forest")
+
+#show missing points and forest sites - this missing values have to be interpolated! Because otherwise, these forest plots will finally laed to NA points
 gg$ggmap +
-  geom_point(data=all_age3,aes(lon,lat),col="red",size=1.5)
-```
+  geom_point(data=all_age3,aes(lon,lat),col="red",size=1.5)+
+  geom_point(data=NPP_forest,aes(lon,lat),col="blue",size=1.5)+
+  theme_grey(base_size = 12)
 
-```{r}
+#so our method here is to set mean values of each local continent, which is reasonable.
+
+
+###below no need to run
+
+#1. first check if this alternative method makes a difference - no
+
+#if only merging AUS and don't deal with other plots
 #5. merge new interpolated subset of age dataframe into last complete dataframe, and generating findal data to be used.
-final <- merge(age_final, all_age3, by=c("lon","lat"), all.x = T,sort = T)
+final <- merge(continent_age_fAPAR, South_AUS_empty_age[,c("lon","lat","final_age")], by=c("lon","lat"), all.x = T,sort = T)
 
 final$age_used <- NA
 
@@ -184,78 +176,97 @@ final_data$age[final_data$age == 0] <- NA
 
 summary(final_data)
 
+#now, extracting site values from Tg, alpha, c/n.....
+elev_nc <- read_nc_onefile("~/data/watch_wfdei/WFDEI-elevation.nc")
+elev <- as.data.frame(nc_to_df(elev_nc, varnam = "elevation"))
+
+final_age <- merge(final_data, elev, by=c("lon","lat"), all.x = T,sort = T)
+names(final_age) <- c("lon","lat","age","z")
+
+NPP_forest$new_mapped_age <- NA
+
+library(spgwr)
+a <- 1.5 # which degree (distance) of grid when interpolating gwr from global grids
+#Extract Tg, PPFD, vpd, alpha,fAPAR,age,CNrt,LMA, max-vcmax25
+for (i in 1:nrow(NPP_forest)) {
+  tryCatch({
+    #PPFD_total_fapar
+    #age
+    age_global <- na.omit(final_age)
+    NRE_part <- subset(age_global,lon>(NPP_forest[i,"lon"]-a)&lon<(NPP_forest[i,"lon"]+a)&
+                         lat>(NPP_forest[i,"lat"]-a)&lat<(NPP_forest[i,"lat"]+a))
+    coordinates(NRE_part) <- c("lon","lat")
+    gridded(NRE_part) <- TRUE
+    NRE_coord <- NPP_forest[i,c("lon","lat","z")]
+    coordinates(NRE_coord) <- c("lon","lat")
+    NPP_forest[i,c("new_mapped_age")]  <- (gwr(age ~ z, NRE_part, bandwidth = 1.06, fit.points =NRE_coord,predictions=TRUE))$SDF$pred
+    print(i)
+  }, error=function(e){})} 
+
+NPP_forest$new_mapped_age[NPP_forest$new_mapped_age<=0] <- NA
+summary(NPP_forest)
+
+plot(NPP_forest$mapped_age~NPP_forest$new_mapped_age)
+
+analyse_modobs2(NPP_forest,"mapped_age","new_mapped_age", type = "points",relative=TRUE)$gg 
+
+aa <- subset(NPP_forest,is.na(new_mapped_age)==TRUE)
+
+#show all map
+
+vcmax25_df <- as.data.frame(nc_to_df(read_nc_onefile(
+  "~/data/nimpl_sofun_inputs/map/Final_ncfile/vcmax25.nc"),
+  varnam = "vcmax25"))
+
+Tg <- as.data.frame(nc_to_df(read_nc_onefile(
+  "~/data/nimpl_sofun_inputs/map/Final_ncfile/Tg.nc"),
+  varnam = "Tg"))
+
+PPFD <- as.data.frame(nc_to_df(read_nc_onefile(
+  "~/data/nimpl_sofun_inputs/map/Final_ncfile/PPFD.nc"),
+  varnam = "PPFD"))
+
+vpd <- as.data.frame(nc_to_df(read_nc_onefile(
+  "~/data/nimpl_sofun_inputs/map/Final_ncfile/vpd.nc"),
+  varnam = "vpd"))
+
+fAPAR <- as.data.frame(nc_to_df(read_nc_onefile(
+  "~/data/nimpl_sofun_inputs/map/Final_ncfile/fAPAR.nc"),
+  varnam = "fAPAR"))
+
+age <- as.data.frame(nc_to_df(read_nc_onefile(
+  "~/data/nimpl_sofun_inputs/map/Final_ncfile/age.nc"),
+  varnam = "age"))
+
+CNrt <- as.data.frame(nc_to_df(read_nc_onefile(
+  "~/data/nimpl_sofun_inputs/map/Final_ncfile/CNrt.nc"),
+  varnam = "CNrt"))
+
+LMA <- as.data.frame(nc_to_df(read_nc_onefile(
+  "~/data/nimpl_sofun_inputs/map/Final_ncfile/LMA.nc"),
+  varnam = "LMA"))
+
+all_predictors_current <- as.data.frame(cbind(Tg$lon,Tg$lat,Tg$Tg, PPFD$PPFD, vpd$vpd,
+                                      fAPAR$fAPAR, age$age,
+                                      CNrt$CNrt, LMA$LMA, vcmax25_df$vcmax25 ))
+dim(na.omit(all_predictors_current))
+
 final_data2 <- final_data[order(final_data[,2],final_data[,1]),]
 
-df_age <- final_data2
+all_predictors_new <- as.data.frame(cbind(Tg$lon,Tg$lat,Tg$Tg, PPFD$PPFD, vpd$vpd,
+                                              fAPAR$fAPAR, final_data2$age,
+                                              CNrt$CNrt, LMA$LMA, vcmax25_df$vcmax25 ))
+dim(na.omit(all_predictors_new))
 
-plot_map3(df_age, 
-          varnam = "age",plot_title = "final output age",
-          latmin = -65, latmax = 85)
+gg <- plot_map3(continent_age_fAPAR2, 
+                varnam = "new_age",plot_title = "age before filled by AUS",
+                latmin = -65, latmax = 85,combine=FALSE)
 
-#output nc file - In Euler its path is same: "~/data/nimpl_sofun_inputs/map/Final_ncfile"
-summary(df_age)
-age_nc <- list(df_to_grid(df_age,varnam = "age", lonnam = "lon", latnam = "lat"))
-names(age_nc) <- "age"
-varams = "age"
-test <- list(lon,lat,age_nc,varams)
-names(test) <- c("lon","lat","vars","varams")
-write_nc2(test,varnams = "age",long_name = "stand age",units = "years",
-          path = "~/data/nimpl_sofun_inputs/map/Final_ncfile/age.nc")
-``` 
+gg$ggmap +
+  geom_point(data=na.omit(all_predictors_current),aes(V1,V2),col="red",size=1.5)+
+  theme_grey(base_size = 12)
 
-#2. fAPAR
-```{r}
-library(raster)
-library(ncdf4)
-library(dplyr)
-library(maps)
-library(rgdal)
 
-ncfname <- paste ("~/data/fAPAR/fAPAR3g_v2/", "fAPAR3g_v2_1982_2016_FILLED", ".nc", sep="")
-
-#ncfname <- paste ("E:/C-N cycling/Carbon allocation/fAPAR/fAPAR HUANYUAN/", "fAPAR3g_v2_1982_2016_FILLED", ".nc", sep="")
-dname <- "FAPAR_FILLED"
-
-ncin <- nc_open(ncfname)
-
-lon <- ncvar_get(ncin,"LON")
-nlon <- dim(lon) 
-
-lat<-ncvar_get(ncin,"LAT")
-nlat <- dim(lat)
-
-FAPAR <- ncvar_get(ncin,"FAPAR_FILLED")
-nc_close(ncin)
-
-pre.vec.long <- as.vector(FAPAR)
-
-pre.mat <- matrix(pre.vec.long, nrow = nlon * nlat, ncol = 420) # 259200 * 420 (420 is 35 years: 1982-2016)
-
-fAPAR1982_2011 <- pre.mat[,c(1:360)] #extrat fAPAR from 1982-2011
-
-final_fAPAR <- rowMeans(fAPAR1982_2011,na.rm = TRUE)
-
-lonlat <- expand.grid(lon, lat)
-fAPAR_input <- as.data.frame(cbind(lonlat,final_fAPAR))
-names(fAPAR_input) <- c("lon","lat","fAPAR")
-
-df_fAPAR <- fAPAR_input
-
-coordinates(fAPAR_input) <- ~lon+lat 
-gridded(fAPAR_input) <- TRUE
-r3 <- raster(fAPAR_input, "fAPAR") 
-plot(r3)
-
-#output nc file - In Euler its path is same: "~/data/nimpl_sofun_inputs/map/Final_ncfile"
-df_fAPAR$fAPAR[df_fAPAR$fAPAR == "NaN"] <- NA
-summary(df_fAPAR)
-
-fAPAR_nc <- list(df_to_grid(df_fAPAR,varnam = "fAPAR", lonnam = "lon", latnam = "lat"))
-names(fAPAR_nc) <- "fAPAR"
-varams = "fAPAR"
-test <- list(lon,lat,fAPAR_nc,varams)
-names(test) <- c("lon","lat","vars","varams")
-write_nc2(test,varnams = "fAPAR",long_name = "fAPAR",units = "unitless",
-          path = "~/data/nimpl_sofun_inputs/map/Final_ncfile/fAPAR.nc")
-```
-
+gg$ggmap +
+  geom_point(data=na.omit(all_predictors_new),aes(V1,V2),col="red",size=1.5)+
+  theme_grey(base_size = 12)
