@@ -894,6 +894,9 @@ length(unique(subset(dataset6,pft=="Grassland" & CN_root_final>0)$site))
 #REMOVE Tiandi Grassland's npp and bnpp
 dataset6 <- subset(dataset6,file!="Tiandi Grassland")
 
+#convert grassland stand-age as NA (e.g. Keith: from 1 to NA)
+dataset6$age[dataset6$pft=="Grassland"] <- NA
+
 #final calculation of lnf, bnf and wnf 
 dataset6$lnf_obs_final <-dataset6$NPP.foliage/dataset6$CN_leaf_final
 dataset6$bnf_obs_final  <- dataset6$BNPP_1/dataset6$CN_root_final
