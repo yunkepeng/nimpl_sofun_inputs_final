@@ -33,6 +33,8 @@ plot_map3(age_input,
           varnam = "age",plot_title = "age",
           latmin = -65, latmax = 85)
 dim(age_input)
+
+plot_map3
 # now it shows an empty grid in lower AUS, also in some other regions. We need to interpolate them based on local mean value.
 
 #coordinates(age_input) <- ~lon+lat 

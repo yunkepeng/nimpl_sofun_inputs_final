@@ -54,9 +54,10 @@ library(purrr)
 library(randomForest)
 
 soil <- raster('~/data/ISRIC/data_orig/data/raster/w001000.adf') # map input from the last 2015 version of ISRIC (Batjes 2015 ISRIC report)
-#original resolution is 0.008333333 (1/120), now we convert to 20 times coarser, that is 1/6 (half_deg) which matches our standard.
+res(soil)
+#original resolution is 0.008333333 (1/120), now we convert to 20 times coarser, that is 1/6.
 b <- aggregate(soil, fact = c(20, 20),na.rm=TRUE,fun=modal)
-
+res(b)
 halfdeg_CN <- as.data.frame(rasterToPoints(b))
 
 names(halfdeg_CN) <- c("lon","lat","SUID")
@@ -97,7 +98,7 @@ gridded(final_CN) <- TRUE
 r <- raster(final_CN, "CNrt")
 plot(r)
 
-#resample
+#resample from 1/6 to 1/2
 elev_nc <- read_nc_onefile("~/data/watch_wfdei/WFDEI-elevation.nc")
 elev <- as.data.frame(nc_to_df(elev_nc, varnam = "elevation"))
 summary(elev)
