@@ -158,8 +158,8 @@ NPP_Malhi$pft <-"Forest"
 
 #3. add Keith (take care about rep)
 NPP_Keith <- read.csv("~/data/NPP_Yunke/NPP_Keith/orig/ABPE.csv")
-NPP_Keith <- NPP_Keith[,c("Site","Ecosystem","age","lat","long","Elevation","Mgmt_code","ANPP","GPP","Source")]
-names(NPP_Keith) <- c("Plot","pft","age","lat","lon","Elevation","Management.code","ANPP_2","GPP","Source_NPP")
+NPP_Keith <- NPP_Keith[,c("Site","Ecosystem","age","lat","long","Elevation","Mgmt_code","ANPP","ANPP","GPP","Source")]
+names(NPP_Keith) <- c("Plot","pft","age","lat","lon","Elevation","Management.code","ANPP_2","NPP.foliage","GPP","Source_NPP")
 NPP_Keith$Begin.year <- 1991
 NPP_Keith$End.year <- 2010
 NPP_Keith$file <- "Keith"
@@ -807,8 +807,8 @@ dataset1[grep("Elevated", dataset1$Management),]$rep <- "elevated_co2"
 #remove co2 data!
 dataset2 <- subset(dataset1,rep=="not_repeated")
 
-#convert grassland anpp = npp.foliage
-dataset2$ANPP_2[dataset2$pft!="Forest"] <-  dataset2$NPP.foliage[dataset2$pft!="Forest"]
+#convert grassland npp.foliage = anpp
+#dataset2$NPP.foliage[dataset2$pft!="Forest"] <- dataset2$ANPP_2[dataset2$pft!="Forest"]
 
 #check npp = anpp + bnpp
 dataset2$check_npp <- dataset2$ANPP_2+dataset2$BNPP_1-dataset2$TNPP_1
