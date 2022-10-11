@@ -429,9 +429,9 @@ b3 <- as.ggplot(~barplot(vif_anpp_leafnpp, main = "VIF of Forest leaf-NPP/ANPP m
                          names.arg = c("Tg", "fAPAR", "ln PPFD", "ln soil C/N", "ln age", "ln vpd")))
 b4 <- as.ggplot(~barplot(vif_bp_grass, main = "VIF of Grassland BP model", horiz = TRUE, col = "steelblue",
                          names.arg = c("Tg", "ln PPFD", "ln vpd", "ln soil C/N", "fAPAR")))
-plot_grid(b1,b2,b3,b4,
-          labels = c('(a)','(b)','(c)','(d)'),
-          ncol=2,label_x = 0.9,label_y=0.92)+white
+#plot_grid(b1,b2,b3,b4,
+#          labels = c('(a)','(b)','(c)','(d)'),
+#          ncol=2,label_x = 0.9,label_y=0.92)+white
 #ggsave(paste("./output/newphy_figs6.jpg",sep=""),width = 10, height = 13)
 
 #forest validation
@@ -544,12 +544,12 @@ mean(abs((NRE_climate$nre-NRE_climate$pred_nre)/NRE_climate$nre),na.rm=TRUE) * 1
 mean(abs((sitemean$obs_nmass-sitemean$pred_nmass)/sitemean$obs_nmass),na.rm=TRUE) * 100
 
 #fig.2 validation
-plot_grid(p1,p2,p5,
-          p8,p9,p10,
-          p3,p4,p11,
-          p6,p12,p7, 
-          labels = c('(a)','(b)','(c)','(d)','(e)','(f)','(g)','(h)','(i)','(j)','(k)','(l)'),
-          ncol=3,label_x = 0.9,label_y=0.92,label_size = 25)+white
+#plot_grid(p1,p2,p5,
+#          p8,p9,p10,
+#          p3,p4,p11,
+#          p6,p12,p7, 
+#          labels = c('(a)','(b)','(c)','(d)','(e)','(f)','(g)','(h)','(i)','(j)','(k)','(l)'),
+#          ncol=3,label_x = 0.9,label_y=0.92,label_size = 25)+white
 #ggsave(paste("./output/newphy_fig1.jpg",sep=""),width = 24, height = 25)
 
 #now, inputting all predictors
@@ -883,12 +883,12 @@ a13 <- gg$ggmap +
 
 a14 <- gg$gglegend+ white
 
-plot_grid(a3,a4,a5,a6,a7,a8,
-          a9,a10,a11,a12,a13,a14,
-          nrow=2,
-          rel_widths = c(3/12, 1/12,3/12,1/12,3/12,1/12),
-          labels = c('(a)',' ','(b)',' ','(c)',' ',
-                     '(d)',' ','(e)',' ','(f)',' '))
+#plot_grid(a3,a4,a5,a6,a7,a8,
+#          a9,a10,a11,a12,a13,a14,
+#          nrow=2,
+#          rel_widths = c(3/12, 1/12,3/12,1/12,3/12,1/12),
+#          labels = c('(a)',' ','(b)',' ','(c)',' ',
+#                     '(d)',' ','(e)',' ','(f)',' '))
 
 #this is for showing points
 #ggsave(paste("./output/newphy_figs5.jpg",sep=""),width = 20, height = 10*(2/3))
@@ -955,12 +955,12 @@ a13 <- gg$ggmap +
 
 a14 <- gg$gglegend+ white
 
-plot_grid(a3,a4,a5,a6,a7,a8,
-          a9,a10,a11,a12,a13,a14,
-          nrow=2,
-          rel_widths = c(3/12, 1/12,3/12,1/12,3/12,1/12),
-          labels = c('(a)',' ','(b)',' ','(c)',' ',
-                     '(d)',' ','(e)',' ','(f)',' '))
+#plot_grid(a3,a4,a5,a6,a7,a8,
+#          a9,a10,a11,a12,a13,a14,
+#          nrow=2,
+#          rel_widths = c(3/12, 1/12,3/12,1/12,3/12,1/12),
+#          labels = c('(a)',' ','(b)',' ','(c)',' ',
+#                     '(d)',' ','(e)',' ','(f)',' '))
 #ggsave(paste("./output/newphy_fig2.jpg",sep=""),width = 20, height = 10*(2/3))
 
 #work on effect of each factor on NUE
@@ -1024,12 +1024,12 @@ aa6 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = PPFD),f
 aa7 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = vcmax25),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="black")+labs(y= " ", x = "Vcmax25") +larger_size
 aa8 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = LMA),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="black")+labs(y= " ", x = "LMA") +larger_size
 
-plot_grid(a1,a2,a3,a4,a5,a6,a7,a8,a9,
-          labels = c('(a)','(b)','(c)','(d)','(e)','(f)','(g)','(h)','(i)'),label_size = 15)+white
+#plot_grid(a1,a2,a3,a4,a5,a6,a7,a8,a9,
+#          labels = c('(a)','(b)','(c)','(d)','(e)','(f)','(g)','(h)','(i)'),label_size = 15)+white
 #ggsave(paste("./output/newphy_fig3.jpg",sep=""),width = 22, height = 10)
 
-plot_grid(aa1,aa2,aa3,aa4,aa5,aa6,aa7,aa8,
-          labels = c('(a)','(b)','(c)','(d)','(e)','(f)','(g)','(h)','(i)'),label_size = 15)+white
+#plot_grid(aa1,aa2,aa3,aa4,aa5,aa6,aa7,aa8,
+#          labels = c('(a)','(b)','(c)','(d)','(e)','(f)','(g)','(h)','(i)'),label_size = 15)+white
 #ggsave(paste("./output/newphy_figs7.jpg",sep=""),width = 22, height = 10)
 
 
@@ -1058,13 +1058,13 @@ d13 <- gg$ggmap +labs(title =~paste(V[cmax25]))+theme_grey(base_size = 15)+ whit
 gg <- plot_map3(na.omit(LMA[,c("lon","lat","LMA")]),varnam = "LMA",latmin = -65, latmax = 85,combine=FALSE)
 d15 <- gg$ggmap +labs(title = "LMA")+theme_grey(base_size = 15)+ white;d16 <- gg$gglegend+ labs(title =~paste("g ","m"^-2))+ white
 
-plot_grid(d1,d2,d3,d4,d5,d6,
-          d7,d8,d9,d10,d11,d12,
-          d13,d14,d15,d16,
-          nrow=3,rel_widths = c(3/12, 1/12,3/12,1/12,3/12,1/12),
-          labels = c('(a)',' ','(b)',' ','(c)',' ',
-                     '(d)',' ','(e)',' ','(f)',' ',
-                     '(g)',' ','(h)',' '),label_size = 15)+ white
+#plot_grid(d1,d2,d3,d4,d5,d6,
+#          d7,d8,d9,d10,d11,d12,
+#          d13,d14,d15,d16,
+#          nrow=3,rel_widths = c(3/12, 1/12,3/12,1/12,3/12,1/12),
+#          labels = c('(a)',' ','(b)',' ','(c)',' ',
+#                     '(d)',' ','(e)',' ','(f)',' ',
+#                     '(g)',' ','(h)',' '),label_size = 15)+ white
 
 #ggsave(paste("./output/newphy_figS2.jpg",sep=""),width = 20, height = 10)
 
@@ -1584,10 +1584,10 @@ final1_nue8 <- ggplot()+xlim(5.5,6.3) +geom_line(data = nue8c$fit, aes(PPFD_a, v
   geom_ribbon(data=nue8c$fit,aes(PPFD_a, ymin=visregLwr, ymax=visregUpr),fill="gray",alpha=0.5)+
   theme_classic()+theme(text = element_text(size=20),legend.position="none")+scale_colour_manual(values=c(Measurement="black",ISAM="red",ORCHICNP="cyan",JSBACH="burlywood1",LPX="darkgreen"))
 
-plot_grid(final1,final2,final3,legend_info,
-          final1b,final1c,final1d,white,
-          final1_nue6,final1_nue8,final1_nue4,white,
-          nrow=3,label_x = 0.8, label_y = 0.8)+white
+#plot_grid(final1,final2,final3,legend_info,
+#          final1b,final1c,final1d,white,
+#          final1_nue6,final1_nue8,final1_nue4,white,
+#          nrow=3,label_x = 0.8, label_y = 0.8)+white
 
 #ggsave(paste("./output/newphy_fig4.jpg",sep=""), width = 20, height = 15)
 
@@ -1624,9 +1624,9 @@ final1_nue6 <- ggplot() +geom_line(data = nue6c$fit, aes(Tg_a, visregFit),size=2
 final1_nue7 <- ggplot() +geom_line(data = nue7c$fit, aes(vcmax25_a, visregFit),size=2) + xlab("ln vcmax25") + ylab(" ")+theme_classic()+theme(text = element_text(size=20),legend.position="none")
 final1_nue8 <- ggplot() +geom_line(data = nue8c$fit, aes(PPFD_a, visregFit),size=2) + xlab("ln PPFD") + ylab(" ")+theme_classic()+theme(text = element_text(size=20),legend.position="none")
 
-plot_grid(final1_nue1,final1_nue2,final1_nue3,final1_nue4,
-          final1_nue5,final1_nue6,final1_nue7,final1_nue8,
-          nrow=2,label_x = 0.8, label_y = 0.8)+white
+#plot_grid(final1_nue1,final1_nue2,final1_nue3,final1_nue4,
+#          final1_nue5,final1_nue6,final1_nue7,final1_nue8,
+#          nrow=2,label_x = 0.8, label_y = 0.8)+white
 
 #ggsave(paste("./output/newphy_figs8.jpg",sep=""), width = 20, height = 10)
 
@@ -1699,9 +1699,9 @@ pp14 <- analyse_modobs2(NPP_statistical,"JSBACH_NPP","Measured_BP", type = "poin
 pp15 <- analyse_modobs2(NPP_statistical,"LPX_NPP","Measured_BP", type = "points",relative=TRUE)$gg + larger_size+
   labs(y = ~paste("Forest ", BP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("LPX ", BP[pred.], " (gC m"^-2,"yr"^-1,")"))
 
-plot_grid(pp2,pp4,pp5,pp6,pp7,pp8,pp9,pp10,pp11,pp12,pp13,pp14,pp15,
-          labels = c('(a)','(b)','(c)','(d)','(e)','(f)','(g)','(h)','(i)','(j)','(k)','(l)','(m)'),
-          nrow=5,label_x = 0.9,label_y=0.92,label_size = 20)+white
+#plot_grid(pp2,pp4,pp5,pp6,pp7,pp8,pp9,pp10,pp11,pp12,pp13,pp14,pp15,
+#          labels = c('(a)','(b)','(c)','(d)','(e)','(f)','(g)','(h)','(i)','(j)','(k)','(l)','(m)'),
+#          nrow=5,label_x = 0.9,label_y=0.92,label_size = 20)+white
 
 #ggsave(paste("./output/newphy_fortable2a.jpg",sep=""), width = 23, height = 25)
 
@@ -1733,9 +1733,9 @@ ppp6 <- analyse_modobs2(Nmin_statistical,"LPX_fNup","Nmin", type = "points",rela
   labs(y = ~paste("Net ", minerlization[obs.], " (gN m"^-2,"yr"^-1,")")) +labs(x = ~paste("LPX N ", uptake[pred.], " (gN m"^-2,"yr"^-1,")"))
 
 
-plot_grid(ppp1,ppp3,ppp4,ppp5,ppp6,
-          labels = c('(a)','(b)','(c)','(d)','(e)'),
-          nrow=2,label_x = 0.9,label_y=0.92,label_size = 20)+white
+#plot_grid(ppp1,ppp3,ppp4,ppp5,ppp6,
+#          labels = c('(a)','(b)','(c)','(d)','(e)'),
+#          nrow=2,label_x = 0.9,label_y=0.92,label_size = 20)+white
 
 #ggsave(paste("./output/newphy_fortable2b.jpg",sep=""), width = 20, height = 10)
 
@@ -1832,17 +1832,17 @@ a16 <- ~{
 
 #ggsave(paste("./output/newphy_figs3.jpg",sep=""), width = 20, height = 20)
 
-plot_grid(a1,a2,a3,a4,a5,
-          a6,a7,a8,a9,white,nrow=2)+white
+#plot_grid(a1,a2,a3,a4,a5,
+#          a6,a7,a8,a9,white,nrow=2)+white
 
 #ggsave(paste("./output/newphy_figs3a.jpg",sep=""), width = 20, height = 20*0.4)
 
-plot_grid(a10,a11,a12,white,white,
-          a13,a14,white,white,white,nrow=2)+white
+#plot_grid(a10,a11,a12,white,white,
+#          a13,a14,white,white,white,nrow=2)+white
 
 #ggsave(paste("./output/newphy_figs3b.jpg",sep=""), width = 20, height = 20*0.4)
 
-plot_grid(a15,a16,white,white,white,nrow=1)+white
+#plot_grid(a15,a16,white,white,white,nrow=1)+white
 
 #ggsave(paste("./output/newphy_figs3c.jpg",sep=""), width = 20, height = 20*0.2)
 
@@ -2059,8 +2059,8 @@ a9 <- ~{
 
 
 
-plot_grid(a1,a2,a3,a4,a5,
-          a6,a7,a8,a9,white,
-          nrow=2)+white
+#plot_grid(a1,a2,a3,a4,a5,
+#          a6,a7,a8,a9,white,
+#          nrow=2)+white
 
 #ggsave(paste("./output/newphy_figs4.jpg",sep=""), width = 20, height = 10)
