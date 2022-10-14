@@ -1,7 +1,6 @@
 # Setup 
 library(MLmetrics)
 library(vhs) ##remotes::install_github("cj-holmes/vhs")
-library(tidyverse) 
 library(ncmeta)
 library(viridis)
 library(ggthemes)
@@ -403,7 +402,7 @@ a2 <- ~{
 
 a3 <- ~{
   p1a <- visreg(bp_model,"CNrt_a",type="contrast")
-  plot(p1a,ylab="Forest BP",xlab="ln soil C/N",
+  plot(p1a,ylab="Forest BP",xlab="ln soil C:N",
        cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
 
 a4 <- ~{
@@ -418,37 +417,37 @@ a5 <- ~{
 
 a6 <- ~{
   p1a <- visreg(anpp_tnpp_model,"Tg_a",type="contrast")
-  plot(p1a,ylab="logit ANPP/BP",xlab="Tg",
+  plot(p1a,ylab="logit ABP/BP",xlab="Tg",
        cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
 
 a7 <- ~{
   p1a <- visreg(anpp_tnpp_model,"PPFD_a",type="contrast")
-  plot(p1a,ylab="logit ANPP/BP",xlab="ln PPFD",
+  plot(p1a,ylab="logit ABP/BP",xlab="ln PPFD",
        cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
 
 a8 <- ~{
   p1a <- visreg(anpp_tnpp_model,"CNrt_a",type="contrast")
-  plot(p1a,ylab="logit ANPP/BP",xlab="ln soil C/N",
+  plot(p1a,ylab="logit ABP/BP",xlab="ln soil C:N",
        cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
 
 a9 <- ~{
   p1a <- visreg(anpp_tnpp_model,"age_a",type="contrast")
-  plot(p1a,ylab="logit ANPP/BP",xlab="ln age",
+  plot(p1a,ylab="logit ABP/BP",xlab="ln age",
        cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
 
 a10 <- ~{
   p1a <- visreg(anpp_leafnpp_model,"fAPAR_a",type="contrast")
-  plot(p1a,ylab="logit leaf-NPP/ANPP",xlab="fAPAR",
+  plot(p1a,ylab="logit leaf-BP/ABP",xlab="fAPAR",
        cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
 
 a11 <- ~{
   p1a <- visreg(anpp_leafnpp_model,"PPFD_a",type="contrast")
-  plot(p1a,ylab="logit leaf-NPP/ANPP",xlab="ln PPFD",
+  plot(p1a,ylab="logit leaf-BP/ABP",xlab="ln PPFD",
        cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
 
 a12 <- ~{
   p1a <- visreg(anpp_leafnpp_model,"vpd_a",type="contrast")
-  plot(p1a,ylab="logit leaf-NPP/ANPP",xlab="ln D",
+  plot(p1a,ylab="logit leaf-BP/ABP",xlab="ln D",
        cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
 
 a13 <- ~{
@@ -479,12 +478,12 @@ plot_grid(a1,a2,a3,a4,a5,
           a15,a16,white,white,white,
           nrow=5)+white
 
-ggsave(paste("/Users/yunpeng/yunkepeng/CNuptake_MS/output/newphy_figs3_large.jpg",sep=""), width = 20, height = 20)
+ggsave(paste("/Users/yunpeng/yunkepeng/CNuptake_MS/output/figs5.jpg",sep=""), width = 20, height = 20)
 
 
 
-
-#look at validation
+#not run 
+#look at validation when using soil C/N
 NPP_forest$pred_npp <- summary(bp_model)$coefficients[1,1] +  
   summary(bp_model)$coefficients[2,1] * NPP_forest$Tg_a +
   summary(bp_model)$coefficients[3,1] * NPP_forest$fAPAR_a +
