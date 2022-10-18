@@ -1,3 +1,5 @@
+
+# Setup 
 library(MLmetrics)
 library(vhs) ##remotes::install_github("cj-holmes/vhs")
 library(ncmeta)
@@ -45,8 +47,12 @@ source("/Users/yunpeng/yunkepeng/CNuptake_MS/R/calc_area.R")
 # reset validation metrics info
 white <- theme(plot.background=element_rect(fill="white", color="white"))
 
-larger_size <- theme(axis.text=element_text(size=20),axis.title=element_text(size=20),
-                     plot.subtitle=element_text(size=15))
+larger_size <- theme(axis.text=element_text(size=20),axis.title=element_text(size=20), plot.subtitle=element_text(size=15))
+larger_plot_title<-theme(plot.title = element_text(size=15))
+
+# Empirical models
+
+## Read data and pre-processing
 
 #remove alpha throughout all analyses because 
 #(1) D and alpha shows contridictory results for NUE 
@@ -55,15 +61,20 @@ larger_size <- theme(axis.text=element_text(size=20),axis.title=element_text(siz
 #input NPP file
 NPP_all <- read.csv("~/data/NPP_Yunke/NPP_Nmin_dataset_with_predictors.csv")
 
-#check some percentage
+#metric_info check some percentage
 dim(subset(NPP_all, is.na(Nmin)==T & pft =="Forest"))
 dim(subset(NPP_all, is.na(Nmin)==T & pft =="Grassland"))
 
 dim(subset(NPP_all, is.na(Nmin)==T & lat<=23.5 & lat>=-23.5)) 
 dim(subset(NPP_all, is.na(Nmin)==T & lat<=50 & lat>23.5))
 dim(subset(NPP_all, is.na(Nmin)==T & lat>= -50 & lat< -23.5))
+
 dim(subset(NPP_all, is.na(Nmin)==T ))
 
+#check measured data casues what extent of reduction
+nrow(subset(NPP_all,is.na(Nmin)==T &is.na(observedfAPAR)==F&
+              is.na(age)==F&is.na(soilCN)==F))
+1-(133/977)
 #summarise number of sites
 dim(subset(NPP_all,is.na(Nmin)==TRUE) %>% group_by(site)  %>% summarise(mean = mean(lon)))
 
@@ -120,17 +131,16 @@ nre_grassland_constant <- 0.69
 #applying null model of anpp/bp - see below code
 anpp_bp_grassland <- 0.50
 
+### Map with sites
 #check why some grassland BP and ANPP is so high
 outliers <- subset(NPP_all,pft=="Grassland" & ANPP_2>500)
 newmap <- getMap(resolution = "low")
 sp::plot(newmap, xlim = c(-180, 180), ylim = c(-75, 75), asp = 1)
 points(outliers$lon,outliers$lat, col="green", pch=16,cex=2)
 
-
 ## Fit NPP models
 
 ### BP
-
 BP_dataset <- na.omit(NPP_forest[,c("tnpp_a","obs_age_a","observedfAPAR_a","soilCN_a","Tg_a","PPFD_a","vpd_a","site_a")])
 #model1 <- stepwise(BP_dataset,"tnpp_a")
 #model1[[1]]
@@ -155,6 +165,7 @@ stepwise(BP_dataset_lat,"tnpp_a")[[1]]
 stepwise(BP_dataset_lat,"tnpp_a")[[3]]
 #lat will not help us to improve the model!
 
+### ANPP
 #ndep check - ANPP/BP adding ndep - works!
 anpp_tnpp_dataset_ndep <- na.omit(NPP_forest[,c("anpp_tnpp_a","ndep_a","age_a","fAPAR_a","CNrt_a","Tg_a","PPFD_a","vpd_a","site_a")])
 stepwise(anpp_tnpp_dataset_ndep,"anpp_tnpp_a")[[1]]
@@ -167,6 +178,8 @@ stepwise(anpp_leafnpp_dataset_noage_ndep,"anpp_leafnpp_a")[[1]]
 r.squaredGLMM(lmer(anpp_leafnpp_a~Tg_a+PPFD_a+vpd_a+(1|site_a),data=anpp_leafnpp_dataset_noage_ndep))
 summary(lmer(anpp_leafnpp_a~ndep_a+vpd_a+Tg_a+(1|site_a),data=anpp_leafnpp_dataset_noage_ndep))
 r.squaredGLMM(lmer(anpp_leafnpp_a~ndep_a+vpd_a+Tg_a+(1|site_a),data=anpp_leafnpp_dataset_noage_ndep))
+
+### BP vs. model predictors
 
 #now, start works
 BP_dataset2 <- na.omit(NPP_forest[,c("tnpp_a","age_a","fAPAR_a","CNrt_a","Tg_a","PPFD_a","vpd_a","site_a")])
@@ -192,6 +205,8 @@ summary((lmer(tnpp_a~Tg_a+fAPAR_a+age_a+CNrt_a+(1|site_a),data=BP_dataset2)))
 summary((lmer(tnpp_a~Tg_a+fAPAR_a+PPFD_a+CNrt_a+age_a+(1|site_a),data=BP_dataset2)))
 summary((lmer(tnpp_a~Tg_a+fAPAR_a+PPFD_a+CNrt_a+age_a+vpd_a+(1|site_a),data=BP_dataset2)))
 
+### ANPP vs. modelled predictors
+
 anpp_tnpp_dataset2 <- na.omit(NPP_forest[,c("anpp_tnpp_a","age_a","fAPAR_a","CNrt_a","Tg_a","PPFD_a","vpd_a","site_a")])
 dim(subset(NPP_forest,ANPP_2>0))
 model2a <- stepwise(anpp_tnpp_dataset2,"anpp_tnpp_a")
@@ -212,6 +227,7 @@ summary(lmer(anpp_tnpp_a~CNrt_a+PPFD_a+Tg_a+age_a+(1|site_a),data=anpp_tnpp_data
 summary(lmer(anpp_tnpp_a~CNrt_a+PPFD_a+Tg_a+age_a+vpd_a+(1|site_a),data=anpp_tnpp_dataset2))
 summary(lmer(anpp_tnpp_a~CNrt_a+PPFD_a+Tg_a+age_a+vpd_a+fAPAR_a+(1|site_a),data=anpp_tnpp_dataset2))
 
+### Leaf NPP
 #with age, but age should be removed since it shows higher AIC and lower R2
 anpp_leafnpp_dataset_age <- na.omit(NPP_forest[,c("anpp_leafnpp_a","age_a","fAPAR_a","CNrt_a","Tg_a","PPFD_a","vpd_a","site_a")])
 model3a <- stepwise(anpp_leafnpp_dataset_age,"anpp_leafnpp_a")
@@ -248,6 +264,7 @@ summary(lmer(anpp_leafnpp_a~fAPAR_a+PPFD_a+vpd_a+(1|site_a),data=anpp_leafnpp_da
 summary(lmer(anpp_leafnpp_a~fAPAR_a+PPFD_a+vpd_a+CNrt_a+(1|site_a),data=anpp_leafnpp_dataset)) 
 summary(lmer(anpp_leafnpp_a~fAPAR_a+PPFD_a+vpd_a+CNrt_a+Tg_a+(1|site_a),data=anpp_leafnpp_dataset)) 
 
+### BP grassland
 #check tnpp grassland
 #not filtering any management/non-management! while previous do so
 #removing tiandi's grassland
@@ -273,6 +290,7 @@ summary(lm(tnpp_a~PPFD_a+Tg_a+vpd_a,data=BP_dataset_grass))
 summary(lm(tnpp_a~PPFD_a+Tg_a+vpd_a+fAPAR_a,data=BP_dataset_grass))
 summary(lm(tnpp_a~PPFD_a+Tg_a+vpd_a+fAPAR_a+CNrt_a,data=BP_dataset_grass))
 
+### ANPP grassland
 #anpp/tnpp
 dim(subset(grassland_sitemean,TNPP_1>0))
 dim(subset(grassland_sitemean,TNPP_1>0 & ANPP_2>0))
@@ -285,12 +303,16 @@ summary(lm(anpp_tnpp_a~Tg_a,data=anpp_tnpp_dataset_grass))
 summary((lm(anpp_a~-1+tnpp_a,data=grassland_sitemean))) # 0.50
 
 
+## leaf Nmass
+
+### Pre-process data
 #leaf Nmass
 ###2. leaf Nmass basing on a site-species model
 SP_input <- read.csv(file="~/data/leaf_traits/combined_leaf_traits_updated.csv") #new one
 summary(SP_input$C_percent)
 dim(subset(SP_input,C_percent>0))
 dim(unique(subset(SP_input,C_percent>0)[,c("lon","lat")]))
+#metric_info
 #median of value of leaf C = 0.47 or 47%
 
 #remove bahar, as repeated to atkin - and filter a few points with vcmax25<0
@@ -330,7 +352,9 @@ hist(sitespecies_final$narea) # g/m2
 hist(sitespecies_final$lma) # g/m2
 hist(sitespecies_final$Vcmax.25) # umol/m2/s
 
+### Fit model
 #Fit (Nmass) ~ Ns + Nr * (Vcmax25/LMA) - for site-species data
+#metric_info: site and species number of Nmass model
 n1 <- lmer(nmass_a~vcmax25_lma_a + (1|sitename_a)+(1|species_a))
 summary(n1)
 r.squaredGLMM(n1)
@@ -345,6 +369,9 @@ p11 <- analyse_modobs2(sitemean,"pred_nmass","obs_nmass", type = "points",relati
 
 length(na.omit(sitemean$obs_nmass))
 
+
+## NRE
+### Read and pre-process data
 ###3. NRE model basing site-mean (lm)
 NRE_climate <- read.csv("~/data/NRE_various/NRE_dataset.csv")
 NRE_climate$nre_a <- log(NRE_climate$nre/(1-NRE_climate$nre))
@@ -354,6 +381,8 @@ NRE_climate$PPFD_a <- log(NRE_climate$PPFD)
 NRE_climate$ndep_a <- log(NRE_climate$ndep)
 NRE_climate2 <- na.omit(NRE_climate[,c("nre_a","vpd_a","Tg_a","PPFD_a","ndep_a")])
 
+
+### Fit model
 stepwise_lm(NRE_climate2,"nre_a")[[1]]
 nre_model <- lm(nre_a~Tg_a+vpd_a,data=NRE_climate2)
 summary(nre_model)
@@ -363,25 +392,36 @@ length(na.omit(NRE_climate$nre_a))
 NRE_climate$pred_nre <- (1/(1+exp(-(summary(nre_model)$coefficients[1,1] + summary(nre_model)$coefficients[2,1] *NRE_climate$Tg_a + 
                                       summary(nre_model)$coefficients[3,1] * NRE_climate$vpd_a))))
 
+
+### Evaluation
 p12 <- analyse_modobs2(NRE_climate,"pred_nre","nre", type = "points",relative=TRUE)$gg + larger_size+coord_obs_pred()+
   labs(y = ~paste("Forest ", NRE[obs.])) +labs(x = ~paste("Forest ", NRE[pred.]))
 
+
+## Other variables
+### Cmass
 # Cmass constant = 47%
 SP_input <- read.csv(file="~/data/leaf_traits/combined_leaf_traits_updated.csv") #new one
 SP_input_mean <- aggregate(SP_input,by=list(SP_input$lon,SP_input$lat), FUN=mean, na.rm=TRUE)
 summary(SP_input_mean$C_percent,na.rm=TRUE)
 dim(subset(SP_input_mean,C_percent>0))
 
+
+### Forest Root C:N 
+#metric_info
 # Root C/N = 94 - as derived from median values of collected samples
 NPP_forest_sitemean <- aggregate(NPP_forest,by=list(NPP_forest$site), FUN=mean, na.rm=TRUE) 
 summary(NPP_forest_sitemean$CN_root_final) # using median = 94
 dim(subset(NPP_forest,CN_root_final>0))
 
+### Forest Wood C:N - not used
 # Wood C/N = 100 - as derived median values of TRY database
 wood_cn <- read.csv("~/data/CN_wood/wood_cn.csv")
 wood_cn_sitemean <- aggregate(wood_cn,by=list(wood_cn$lon,wood_cn$lat), FUN=mean, na.rm=TRUE) 
 summary(wood_cn_sitemean$OrigValueStr)
 dim(wood_cn_sitemean)
+
+## NRE 
 
 #NRE = 69%
 NRE_Du <- read.csv(file="~/data/NRE_various/NRE_Du/NRE_Du.csv")
@@ -414,26 +454,30 @@ NRE_df <- rbind(NRE_Du_df,NRE_Dong_df)
 summary(NRE_df$NRE)
 length(NRE_df$NRE)
 #median of NRE in grassland is 0.69, site  =26
-
+#metric_info: site number of NRE in total: forest = 184 (shown in Fig.1), grassland  = 26 (shown here). Total = 210
 #final model look
 #bp_model,anpp_tnpp_model,anpp_leafnpp_model,bp_grass_model,0.49/0.51,n1,nre_model
 
+
+## Model evaluation
+### Variable importance
 #check model vif
 #vif_bp,vif_anpp_tnpp,vif_anpp_leafnpp,vif_bp_grass
 
 b1 <- as.ggplot(~barplot(vif_bp, main = "VIF of Forest BP model", horiz = TRUE, col = "steelblue",
-                         names.arg = c("Tg", "fAPAR", "ln PPFD", "ln soil C/N", "ln age", "ln vpd")))
-b2 <- as.ggplot(~barplot(vif_anpp_tnpp, main = "VIF of Forest ANPP/BP model", horiz = TRUE, col = "steelblue",
-                         names.arg = c("Tg", "fAPAR", "ln PPFD", "ln soil C/N", "ln age", "ln vpd")))
-b3 <- as.ggplot(~barplot(vif_anpp_leafnpp, main = "VIF of Forest leaf-NPP/ANPP model", horiz = TRUE, col = "steelblue",
-                         names.arg = c("Tg", "fAPAR", "ln PPFD", "ln soil C/N", "ln age", "ln vpd")))
+                         names.arg = c("Tg", "fAPAR", "ln PPFD", "ln soil C:N", "ln age", "ln vpd")))
+b2 <- as.ggplot(~barplot(vif_anpp_tnpp, main = "VIF of Forest ABP/BP model", horiz = TRUE, col = "steelblue",
+                         names.arg = c("Tg", "fAPAR", "ln PPFD", "ln soil C:N", "ln age", "ln vpd")))
+b3 <- as.ggplot(~barplot(vif_anpp_leafnpp, main = "VIF of Forest leaf-BP/ABP model", horiz = TRUE, col = "steelblue",
+                         names.arg = c("Tg", "fAPAR", "ln PPFD", "ln soil C:N", "ln age", "ln vpd")))
 b4 <- as.ggplot(~barplot(vif_bp_grass, main = "VIF of Grassland BP model", horiz = TRUE, col = "steelblue",
-                         names.arg = c("Tg", "ln PPFD", "ln vpd", "ln soil C/N", "fAPAR")))
+                         names.arg = c("Tg", "ln PPFD", "ln vpd", "ln soil C:N", "fAPAR")))
 #plot_grid(b1,b2,b3,b4,
 #          labels = c('(a)','(b)','(c)','(d)'),
 #          ncol=2,label_x = 0.9,label_y=0.92)+white
-#ggsave(paste("./output/newphy_figs6.jpg",sep=""),width = 10, height = 13)
+#ggsave(paste("./output/figs4.jpg",sep=""),width = 10, height = 13)
 
+### Goodness of fit
 #forest validation
 NPP_forest$pred_npp <- summary(bp_model)$coefficients[1,1] +  
   summary(bp_model)$coefficients[2,1] * NPP_forest$Tg_a +
@@ -484,16 +528,16 @@ p1 <- analyse_modobs2(NPP_forest, "pred_npp","TNPP_1",type = "points",relative=T
   labs(y = ~paste("Forest ", BP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest ", BP[pred.], " (gC m"^-2,"yr"^-1,")"))
 
 p2 <- analyse_modobs2(NPP_forest,"pred_anpp", "ANPP_2",type = "points",relative=TRUE)$gg+ larger_size+coord_obs_pred()+
-  labs(y = ~paste("Forest ", ANPP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest ", ANPP[pred.], " (gC m"^-2,"yr"^-1,")"))
+  labs(y = ~paste("Forest ", ABP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest ", ABP[pred.], " (gC m"^-2,"yr"^-1,")"))
 
 p3 <- analyse_modobs2(NPP_forest,"pred_lnpp","NPP.foliage", type = "points",relative=TRUE)$gg + larger_size+coord_obs_pred()+
-  labs(y = ~paste("Forest leaf ", NPP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest leaf ", NPP[pred.], " (gC m"^-2,"yr"^-1,")"))
+  labs(y = ~paste("Forest leaf ", BP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest leaf ", BP[pred.], " (gC m"^-2,"yr"^-1,")"))
 
 p4 <- analyse_modobs2(NPP_forest, "pred_wnpp","NPP.wood",type = "points",relative=TRUE)$gg+ larger_size+coord_obs_pred()+
-  labs(y = ~paste("Forest wood ", NPP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest wood ", NPP[pred.], " (gC m"^-2,"yr"^-1,")"))
+  labs(y = ~paste("Forest wood ", BP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest wood ", BP[pred.], " (gC m"^-2,"yr"^-1,")"))
 
 p5 <- analyse_modobs2(NPP_forest,"pred_bnpp","BNPP_1", type = "points",relative=TRUE)$gg+ larger_size+coord_obs_pred()+
-  labs(y = ~paste("Forest ", BNPP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest ", BNPP[pred.], " (gC m"^-2,"yr"^-1,")"))
+  labs(y = ~paste("Forest ", BBP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest ", BBP[pred.], " (gC m"^-2,"yr"^-1,")"))
 
 p6 <- analyse_modobs2(NPP_forest,"pred_lnf","lnf_obs_final", type = "points",relative=TRUE)$gg+ larger_size+coord_obs_pred()+
   labs(y = ~paste("Forest leaf N ", flux[obs.], " (gN m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest leaf N ", flux[pred.], " (gN m"^-2,"yr"^-1,")"))
@@ -501,16 +545,18 @@ p6 <- analyse_modobs2(NPP_forest,"pred_lnf","lnf_obs_final", type = "points",rel
 p7 <- analyse_modobs2(NPP_forest,"pred_nuptake","Nmin", type = "points",relative=TRUE)$gg+ larger_size+coord_obs_pred()+
   labs(y = ~paste("Net ", minerlization[obs.], " (gN m"^-2,"yr"^-1,")")) +labs(x = ~paste("Forest N ", uptake[pred.], " (gN m"^-2,"yr"^-1,")"))
 
+#metric_info: site and individual numbers of N uptake
 #check how many samples = 225, sites = 84
 dim(subset(NPP_forest,is.na(pred_nuptake)==F & is.na(Nmin)==F))
 dim(unique(subset(NPP_forest,pred_nuptake>0 & Nmin>0)[c("lon","lat")]))
 
+### Goodness of fit grassland
 #grass validation
 NPP_grassland$grassland_pred_npp <- summary(bp_grass_model)$coefficients[1,1] +  
   summary(bp_grass_model)$coefficients[2,1] * NPP_grassland$PPFD_a +
   summary(bp_grass_model)$coefficients[3,1] * NPP_grassland$Tg_a 
 
-summary((lm(anpp_a~-1+tnpp_a,data=grassland_sitemean))) #0.49 as constant scalling
+summary((lm(anpp_a~-1+tnpp_a,data=grassland_sitemean))) #0.50 as constant scalling
 
 NPP_grassland$grassland_pred_anpp <- NPP_grassland$grassland_pred_npp * anpp_bp_grassland
 NPP_grassland$grassland_pred_lnf <- NPP_grassland$grassland_pred_anpp/leaf_cn_grassland
@@ -522,10 +568,10 @@ p8 <- analyse_modobs2(NPP_grassland,"grassland_pred_npp","TNPP_1", type = "point
   labs(y = ~paste("Grassland ", BP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Grassland ", BP[pred.], " (gC m"^-2,"yr"^-1,")"))
 
 p9 <- analyse_modobs2(NPP_grassland,"grassland_pred_anpp","ANPP_2", type = "points",relative=TRUE)$gg + larger_size+coord_obs_pred()+
-  labs(y = ~paste("Grassland ", ANPP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Grassland ", ANPP[pred.], " (gC m"^-2,"yr"^-1,")"))
+  labs(y = ~paste("Grassland ", ABP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Grassland ", ABP[pred.], " (gC m"^-2,"yr"^-1,")"))
 
 p10 <- analyse_modobs2(NPP_grassland,"grassland_pred_bnpp","BNPP_1", type = "points",relative=TRUE)$gg + larger_size+coord_obs_pred()+
-  labs(y = ~paste("Grassland ", BNPP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Grassland ", BNPP[pred.], " (gC m"^-2,"yr"^-1,")"))
+  labs(y = ~paste("Grassland ", BBP[obs.], " (gC m"^-2,"yr"^-1,")")) +labs(x = ~paste("Grassland ", BBP[pred.], " (gC m"^-2,"yr"^-1,")"))
 
 white <- theme(plot.background=element_rect(fill="white", color="white"))
 
@@ -543,6 +589,7 @@ mean(abs((NPP_grassland$BNPP_1-NPP_grassland$grassland_pred_bnpp)/NPP_grassland$
 mean(abs((NRE_climate$nre-NRE_climate$pred_nre)/NRE_climate$nre),na.rm=TRUE) * 100
 mean(abs((sitemean$obs_nmass-sitemean$pred_nmass)/sitemean$obs_nmass),na.rm=TRUE) * 100
 
+### Figure 2
 #fig.2 validation
 #plot_grid(p1,p2,p5,
 #          p8,p9,p10,
@@ -550,8 +597,12 @@ mean(abs((sitemean$obs_nmass-sitemean$pred_nmass)/sitemean$obs_nmass),na.rm=TRUE
 #          p6,p12,p7, 
 #          labels = c('(a)','(b)','(c)','(d)','(e)','(f)','(g)','(h)','(i)','(j)','(k)','(l)'),
 #          ncol=3,label_x = 0.9,label_y=0.92,label_size = 25)+white
-#ggsave(paste("./output/newphy_fig1.jpg",sep=""),width = 24, height = 25)
+#ggsave(paste("./output/fig1.jpg",sep=""),width = 24, height = 25)
 
+# Global upscaling
+
+## Read data 
+### Predictor fields
 #now, inputting all predictors
 vcmax25_df <- as.data.frame(nc_to_df(read_nc_onefile(
   "~/data/nimpl_sofun_inputs/map/Final_ncfile/vcmax25.nc"),
@@ -585,6 +636,7 @@ LMA <- as.data.frame(nc_to_df(read_nc_onefile(
   "~/data/nimpl_sofun_inputs/map/Final_ncfile/LMA.nc"),
   varnam = "LMA"))
 
+### Forest cover
 ###input land cover
 ncin <- nc_open("~/data/landcover/modis_landcover_halfdeg_2010_FILLED.nc")
 lon <- ncvar_get(ncin,"lon")
@@ -622,6 +674,7 @@ summary(all_predictors)
 
 #available_grid2 here was used as a list of data to identify if a grid is available (=1) or any prediction fields shown as NA 
 
+## Upscaling global fields
 npp_f <- summary(bp_model)$coefficients[1,1] +  
   summary(bp_model)$coefficients[2,1] * Tg$Tg +
   summary(bp_model)$coefficients[3,1] * fAPAR$fAPAR +
@@ -670,6 +723,16 @@ bnf_f <- bnpp_f/root_cn_forest
 #94 is constant root c/n
 nuptake_f <- lnf_f + wnf_f + bnf_f
 
+#produce forest NUE vs. forest BP-leaf/BP
+nue_f_output <- npp_f/nuptake_f
+lnpp_allocation_f_output <- lnpp_f/anpp_f
+data_output <- as.data.frame(cbind(nue_f_output,lnpp_allocation_f_output))
+ggplot(data=data_output, aes(x=lnpp_allocation_f_output, y=nue_f_output))+
+  geom_point()+
+  geom_smooth(method="lm")+xlab("Leaf-BP/ABP")+ylab("NUE")+
+  theme(axis.text=element_text(size=10),axis.title=element_text(size=15))
+#ggsave(paste("./output/figs8.jpg",sep=""),width = 5, height = 5)
+
 #LMG test in forest
 df_all <- (as.data.frame(cbind(nuptake_f, npp_f, all_predictors)))
 df_all$nue <- df_all$npp_f/df_all$nuptake_f
@@ -682,6 +745,7 @@ df_all$leafnre <- nre_f
 head(df_all)
 df_all <- na.omit(df_all)
 
+### Variable importance
 gpa.model<-lm(nuptake_f~npp_f+anpp_bp+leafnpp_anpp+leafcn+leafnre, data=df_all)
 calc.relimp(gpa.model, rela=TRUE)
 
@@ -694,6 +758,7 @@ calc.relimp(gpa.model, rela=TRUE)
 gpa.model<-lm(nue~Tg+PPFD+vpd+fAPAR+age+CNrt+LMA+vcmax25, data=df_all)
 calc.relimp(gpa.model, rela=TRUE)
 
+## Upscaling global fields, grasslands
 #grass
 npp_g <- summary(bp_grass_model)$coefficients[1,1] +  
   summary(bp_grass_model)$coefficients[2,1] * log(PPFD$PPFD) +
@@ -724,6 +789,9 @@ lnf_g <- anpp_g*leafnc_g*(1-nre_g)
 bnf_g <- bnpp_g *(1/root_cn_grassland)
 nuptake_g <- lnf_g + bnf_g
 
+
+## Combine forest and grassland global fields
+#combine into 2 pfts
 npp_pft <- available_grid2* (npp_f*forest_percent +npp_g*grass_percent)
 npp_forest <- available_grid2* (npp_f*forest_percent)
 npp_grass <- available_grid2* (npp_g*grass_percent)
@@ -777,7 +845,6 @@ all_maps <- as.data.frame(cbind(vcmax25_df,npp_pft,npp_forest,npp_grass,
 
 summary(all_maps)
 
-source("/Users/yunpeng/yunkepeng/CNuptake_MS/R/calc_area.R")
 lonlat <- vcmax25_df[,c("lon","lat")]
 area_m2 <- calc_area(lonlat$lat,0.5,0.5)
 #fland - to show each grid's land cover percentage
@@ -787,6 +854,7 @@ fland <- output_fland$fland
 #include conversion factor (from g to Pg)
 conversion <- area_m2 * fland /1e+15
 
+## Figure 3
 white <- theme(plot.background=element_rect(fill="white", color="white"))
 npp_f1 <- (NPP_forest %>% filter(TNPP_1>0) %>% filter(pred_npp>0))[,c("lon","lat")]
 npp_g1 <- (NPP_grassland %>% filter(TNPP_1>0) %>% filter(grassland_pred_npp>0))[,c("lon","lat")]
@@ -799,9 +867,9 @@ a3 <- gg$ggmap +
   geom_point(data=npp_f1,aes(lon,lat),col="red",size=1.5)+
   geom_point(data=npp_g1,aes(lon,lat),col="blue",size=1.5)+
   labs(title = paste("BP:", total_value, "PgC/yr", sep=" " ))+
-  theme_grey(base_size = 12)+ white
+  theme_grey(base_size = 12)+ white+larger_plot_title
 
-a4 <- gg$gglegend+labs(title = ~paste("gC m"^-2,"yr"^-1))+ white
+a4 <- gg$gglegend+labs(title = ~paste("gC m"^-2,"yr"^-1))+ white+larger_plot_title
 
 #3.anpp
 anpp_f1 <- (NPP_forest %>% filter(ANPP_2>0) %>% filter(pred_anpp>0))[,c("lon","lat")]
@@ -814,10 +882,10 @@ gg <- plot_map3(na.omit(all_maps[,c("lon","lat","anpp_pft")]),
 a5 <- gg$ggmap +
   geom_point(data=anpp_f1,aes(lon,lat),col="red",size=1.5)+
   geom_point(data=anpp_g1,aes(lon,lat),col="blue",size=1.5)+
-  labs(title = paste("ANPP:", total_value, "PgC/yr", sep=" " ))+
-  theme_grey(base_size = 12)+ white
+  labs(title = paste("ABP:", total_value, "PgC/yr", sep=" " ))+
+  theme_grey(base_size = 12)+ white+larger_plot_title
 
-a6 <- gg$gglegend+labs(title = ~paste("gC m"^-2,"yr"^-1))+ white
+a6 <- gg$gglegend+labs(title = ~paste("gC m"^-2,"yr"^-1))+ white+larger_plot_title
 
 #4. leaf c/n
 SP_input <- read.csv(file="~/data/leaf_traits/combined_leaf_traits_updated.csv") #new one 
@@ -834,10 +902,10 @@ gg <- plot_map3(na.omit(all_maps[,c("lon","lat","leafcn_pft")]),
 total_value <- round(mean(leafcn_pft,na.rm=TRUE),2)
 a7 <- gg$ggmap +
   geom_point(data=laefcn,aes(lon,lat),col="red",size=1.5)+
-  labs(title = paste("Leaf C/N: ", total_value))+
-  theme_grey(base_size = 12)+ white
+  labs(title = paste("Leaf C:N: ", total_value))+
+  theme_grey(base_size = 12)+ white+larger_plot_title
 
-a8 <- gg$gglegend+ white
+a8 <- gg$gglegend+ white+larger_plot_title
 
 #5. NRE
 nre_site <- (NRE_climate %>% filter(pred_nre>0) %>% filter(NRE>0))[,c("lon","lat")]
@@ -850,9 +918,9 @@ total_value <- round(mean(nre_pft,na.rm=TRUE),2)
 a9 <- gg$ggmap +
   geom_point(data=nre_site,aes(lon,lat),col="red",size=1.5)+
   labs(title = paste("NRE: ", total_value))+
-  theme_grey(base_size = 12)+ white
+  theme_grey(base_size = 12)+ white+larger_plot_title
 
-a10 <- gg$gglegend+ white
+a10 <- gg$gglegend+ white+larger_plot_title
 
 #6. nuptake
 nuptake_f1 <- (NPP_forest %>% filter(pred_nuptake>0) %>% filter(Nmin>0))[,c("lon","lat")]
@@ -865,9 +933,9 @@ gg <- plot_map3(na.omit(all_maps[,c("lon","lat","nuptake_pft")]),
 a11 <- gg$ggmap +
   geom_point(data=nuptake_f1,aes(lon,lat),col="red",size=1.5)+
   labs(title = paste("N uptake: ", total_value, "TgN/yr", sep=" " ))+
-  theme_grey(base_size = 12)+ white
+  theme_grey(base_size = 12)+ white+larger_plot_title
 
-a12 <- gg$gglegend+labs(title = ~paste("gN m"^-2,"yr"^-1))+ white
+a12 <- gg$gglegend+labs(title = ~paste("gN m"^-2,"yr"^-1))+ white+larger_plot_title
 
 #NUE
 all_maps$NUE <- all_maps$npp_pft/all_maps$nuptake_pft
@@ -879,9 +947,9 @@ total_value<- round(sum(all_maps[,"npp_pft"]*conversion,na.rm=TRUE)/sum(all_maps
 
 a13 <- gg$ggmap +
   labs(title = paste("NUE: ", total_value, " ", sep=" " ))+
-  theme_grey(base_size = 12)+ white
+  theme_grey(base_size = 12)+ white+larger_plot_title
 
-a14 <- gg$gglegend+ white
+a14 <- gg$gglegend+ white+larger_plot_title
 
 #plot_grid(a3,a4,a5,a6,
 #          a7,a8,a9,a10,
@@ -893,25 +961,27 @@ a14 <- gg$gglegend+ white
 #                     '(e)',' ','(f)',' '))
 
 #this is for showing points
-#ggsave(paste("./output/newphy_figs5.jpg",sep=""),width = 16, height = 12)
+#ggsave(paste("./output/figs3.jpg",sep=""),width = 16, height = 12)
 
+
+## Figure 3 without points
 #preparing one without showing points - in MS
 total_value <- round(sum(all_maps[,"npp_pft"]*conversion,na.rm=TRUE),2)
 gg <- plot_map3(na.omit(all_maps[,c("lon","lat","npp_pft")]),
                 varnam = "npp_pft",latmin = -65, latmax = 85,combine=FALSE)
 a3 <- gg$ggmap +
   labs(title = paste("BP:", total_value, "PgC/yr", sep=" " ))+
-  theme_grey(base_size = 12)+ white
-a4 <- gg$gglegend+labs(title = ~paste("gC m"^-2,"yr"^-1))+ white
+  theme_grey(base_size = 12)+ white+larger_plot_title
+a4 <- gg$gglegend+labs(title = ~paste("gC m"^-2,"yr"^-1))+ white+larger_plot_title
 
 #3.anpp
 total_value <- round(sum(all_maps[,"anpp_pft"]*conversion,na.rm=TRUE),2)
 gg <- plot_map3(na.omit(all_maps[,c("lon","lat","anpp_pft")]),
                 varnam = "anpp_pft",latmin = -65, latmax = 85,combine=FALSE)
 a5 <- gg$ggmap +
-  labs(title = paste("ANPP:", total_value, "PgC/yr", sep=" " ))+
-  theme_grey(base_size = 12)+ white
-a6 <- gg$gglegend+labs(title = ~paste("gC m"^-2,"yr"^-1))+ white
+  labs(title = paste("ABP:", total_value, "PgC/yr", sep=" " ))+
+  theme_grey(base_size = 12)+ white+larger_plot_title
+a6 <- gg$gglegend+labs(title = ~paste("gC m"^-2,"yr"^-1))+ white+larger_plot_title
 
 #4. leaf c/n
 gg <- plot_map3(na.omit(all_maps[,c("lon","lat","leafcn_pft")]),
@@ -919,9 +989,9 @@ gg <- plot_map3(na.omit(all_maps[,c("lon","lat","leafcn_pft")]),
 
 total_value <- round(mean(leafcn_pft,na.rm=TRUE),2)
 a7 <- gg$ggmap +
-  labs(title = paste("Leaf C/N: ", total_value))+
-  theme_grey(base_size = 12)+ white
-a8 <- gg$gglegend+ white
+  labs(title = paste("Leaf C:N: ", total_value))+
+  theme_grey(base_size = 12)+ white+larger_plot_title
+a8 <- gg$gglegend+ white+larger_plot_title
 
 #5. NRE
 gg <- plot_map3(na.omit(all_maps[,c("lon","lat","nre_pft")]),
@@ -930,8 +1000,8 @@ total_value <- round(mean(nre_pft,na.rm=TRUE),2)
 
 a9 <- gg$ggmap +
   labs(title = paste("NRE: ", total_value))+
-  theme_grey(base_size = 12)+ white
-a10 <- gg$gglegend+ white
+  theme_grey(base_size = 12)+ white+larger_plot_title
+a10 <- gg$gglegend+ white+larger_plot_title
 
 #6. nuptake
 total_value <- 1000*round(sum(all_maps[,"nuptake_pft"]*conversion,na.rm=TRUE),2) #unit convert from PgN/yr to TgN/yr
@@ -939,9 +1009,9 @@ gg <- plot_map3(na.omit(all_maps[,c("lon","lat","nuptake_pft")]),
                 varnam = "nuptake_pft",latmin = -65, latmax = 85,combine=FALSE)
 a11 <- gg$ggmap +
   labs(title = paste("N uptake: ", total_value, "TgN/yr", sep=" " ))+
-  theme_grey(base_size = 12)+ white
+  theme_grey(base_size = 12)+ white+larger_plot_title
 
-a12 <- gg$gglegend+labs(title = ~paste("gN m"^-2,"yr"^-1))+ white
+a12 <- gg$gglegend+labs(title = ~paste("gN m"^-2,"yr"^-1))+ white+larger_plot_title
 
 #NUE
 all_maps$NUE <- all_maps$npp_pft/all_maps$nuptake_pft
@@ -953,9 +1023,9 @@ total_value<- round(sum(all_maps[,"npp_pft"]*conversion,na.rm=TRUE)/sum(all_maps
 
 a13 <- gg$ggmap +
   labs(title = paste("NUE: ", total_value, " ", sep=" " ))+
-  theme_grey(base_size = 12)+ white
+  theme_grey(base_size = 12)+ white+larger_plot_title
 
-a14 <- gg$gglegend+ white
+a14 <- gg$gglegend+ white+larger_plot_title
 
 #plot_grid(a3,a4,a5,a6,
 #          a7,a8,a9,a10,
@@ -965,11 +1035,12 @@ a14 <- gg$gglegend+ white
 #          labels = c('(a)',' ','(b)',' ',
 #                     '(c)',' ','(d)',' ',
 #                     '(e)',' ','(f)',' '))
-#ggsave(paste("./output/newphy_fig2.jpg",sep=""),width = 16, height = 12)
+#ggsave(paste("./output/fig2.jpg",sep=""),width = 16, height = 12)
 
+# Effect on Nup
 #work on effect of each factor on NUE
 #now, work on NUE
-nue_final <- all_maps$NUE # by default
+nue_final <- available_grid2*npp_f/nuptake_f # by default
 
 nue_standard <- cal_nue(Tg$Tg,PPFD$PPFD,vpd$vpd,fAPAR$fAPAR,
                         age$age,CNrt$CNrt,LMA$LMA,vcmax25_df$vcmax25)
@@ -997,6 +1068,8 @@ nue_all <- as.data.frame(cbind(all_predictors,nue_Tg,nue_PPFD,nue_vpd,nue_fAPAR,
 summary(nue_all)
 nue_all$NUE <- all_maps$NUE
 
+
+### Figure 3
 #show soil C/N effects on NUE
 #aggregate
 nue_all$name[nue_all$lat< -60] <- "90°S ~ 60°S"
@@ -1009,7 +1082,7 @@ nue_all$name[nue_all$lat >= 60]<- "60°N ~ 90°N"
 nue_all$name <- factor(nue_all$name,levels = c("90°S ~ 60°S","60°S ~ 30°S","30°S ~ 0",
                                                "0 ~ 30°N","30°N ~ 60°N","60°N ~ 90°N"))
 nue_all <- subset(nue_all,name!="90°S ~ 60°S")
-a1 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = nue_CNrt),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="blue")+ geom_vline(xintercept=0, linetype="dashed")+labs(y= " ", x = "Soil C/N effect") +larger_size
+a1 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = nue_CNrt),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="blue")+ geom_vline(xintercept=0, linetype="dashed")+labs(y= " ", x = "Soil C:N effect") +larger_size
 a2 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = nue_age),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="blue")+ geom_vline(xintercept=0, linetype="dashed")+labs(y= " ", x = "Age effect") +larger_size
 a3 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = nue_fAPAR),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="blue")+ geom_vline(xintercept=0, linetype="dashed")+labs(y= " ", x = "fAPAR effect") +larger_size
 a4 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = nue_Tg),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="blue")+ geom_vline(xintercept=0, linetype="dashed")+labs(y= " ", x = "Tg effect") +larger_size
@@ -1019,7 +1092,7 @@ a7 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = nue_vcma
 a8 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = nue_LMA),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="blue")+ geom_vline(xintercept=0, linetype="dashed")+labs(y= " ", x = "LMA effect") +larger_size
 a9 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = NUE),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="blue")+labs(y= " ", x = "NUE") +larger_size
 
-aa1 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = CNrt),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="black")+labs(y= " ", x = "Soil C/N") +larger_size
+aa1 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = CNrt),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="black")+labs(y= " ", x = "Soil C:N") +larger_size
 aa2 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = age),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="black")+labs(y= " ", x = "Age") +larger_size
 aa3 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = fAPAR),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="black")+labs(y= " ", x = "fAPAR") +larger_size
 aa4 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = Tg),fun.min = function(z) { quantile(z,0.25) },fun.max = function(z) { quantile(z,0.75) },fun = median,color="black")+labs(y= " ", x = "Tg") +larger_size
@@ -1030,16 +1103,17 @@ aa8 <- ggplot(data = nue_all) + stat_summary(mapping = aes(y = name, x = LMA),fu
 
 #plot_grid(a1,a2,a3,a4,a5,a6,a7,a8,a9,
 #          labels = c('(a)','(b)','(c)','(d)','(e)','(f)','(g)','(h)','(i)'),label_size = 15)+white
-#ggsave(paste("./output/newphy_fig3.jpg",sep=""),width = 22, height = 10)
+#ggsave(paste("./output/fig3.jpg",sep=""),width = 22, height = 10)
 
 #plot_grid(aa1,aa2,aa3,aa4,aa5,aa6,aa7,aa8,
 #          labels = c('(a)','(b)','(c)','(d)','(e)','(f)','(g)','(h)','(i)'),label_size = 15)+white
-#ggsave(paste("./output/newphy_figs7.jpg",sep=""),width = 22, height = 10)
+#ggsave(paste("./output/figs7.jpg",sep=""),width = 22, height = 10)
 
+### Global maps of each predictors
 
 #figs2 representing all predictors
 gg <- plot_map3(na.omit(CNrt[,c("lon","lat","CNrt")]),varnam = "CNrt",latmin = -65, latmax = 85,combine=FALSE)
-d1 <- gg$ggmap +labs(title = "Soil C/N")+theme_grey(base_size = 15)+ white;d2 <- gg$gglegend+ white
+d1 <- gg$ggmap +labs(title = "Soil C:N")+theme_grey(base_size = 15)+ white;d2 <- gg$gglegend+ white
 
 gg <- plot_map3(na.omit(age[,c("lon","lat","age")]),varnam = "age",latmin = -65, latmax = 85,combine=FALSE)
 d3 <- gg$ggmap +labs(title = "Age")+theme_grey(base_size = 15)+ white;d4 <- gg$gglegend+labs(title = ~paste("years"))+ white
@@ -1070,8 +1144,11 @@ d15 <- gg$ggmap +labs(title = "LMA")+theme_grey(base_size = 15)+ white;d16 <- gg
 #                     '(d)',' ','(e)',' ','(f)',' ',
 #                     '(g)',' ','(h)',' '),label_size = 15)+ white
 
-#ggsave(paste("./output/newphy_figS2.jpg",sep=""),width = 20, height = 10)
+#ggsave(paste("./output/figs2.jpg",sep=""),width = 20, height = 10)
 
+# TRENDY analysis
+
+## Read data
 #trendy
 #model output
 #CABLE-POP
@@ -1148,22 +1225,6 @@ ORCHIDEE_GPP <- as.data.frame(nc_to_df(read_nc_onefile("~/data/trendy/v8/ORCHIDE
 ORCHIDEE_NPP <- as.data.frame(nc_to_df(read_nc_onefile("~/data/trendy/v8/ORCHIDEE_S2_npp_ANN_mean.nc"), varnam = "npp"))
 
 #ORCHIDEE-CNP
-nc_flip_lat <- function(nc){
-  
-  nc$lat <- rev(nc$lat)
-  
-  # nlat <- length(nc$lat)
-  # nc$vars[[1]] <- nc$vars[[1]][,nlat:1]
-  
-  arr_flip_lat <- function(arr){
-    nlat <- dim(arr)[2]
-    arr <- arr[,nlat:1]
-    return(arr)
-  }
-  nc$vars <- purrr::map(nc$vars[1], ~arr_flip_lat(.))
-  
-  return(nc)
-}
 ORCHICNP_fNup <- as.data.frame(nc_to_df(read_nc_onefile("~/data/trendy/v8/ORCHIDEE-CNP_S2_fNup_ANN_mean.nc"), varnam = "fNup"))
 ORCHICNP_GPP <- as.data.frame(nc_to_df(read_nc_onefile("~/data/trendy/v8/ORCHIDEE-CNP_S2_gpp_ANN_mean.nc"), varnam = "gpp"))
 ORCHICNP_NPP <- as.data.frame(nc_to_df(read_nc_onefile("~/data/trendy/v8/ORCHIDEE-CNP_S2_npp_ANN_mean.nc"), varnam = "npp"))
@@ -1192,6 +1253,9 @@ obj_name <- c("CABLE_GPP","CABLE_NPP","ISAM_fNup","ISAM_gpp","ISAM_npp","ISBA_GP
 summary( ISAM_npp$npp/ISAM_fNup$fNup)
 summary(na.omit(ORCHICNP_NPP$npp/ORCHICNP_fNup$fNup))
 
+
+## BP
+
 #aggregate based on lon and lat firstly
 sitemean <- unique(NPP_forest[,c("lon","lat")])
 sp_sites <- SpatialPoints(sitemean) # only select lon and lat
@@ -1209,6 +1273,7 @@ for (i in c(1:length(allmaps))){
     right_join(sitemean, by = c("lon", "lat"))
   sitemean_final[,i+2] <- sp_sites_new[,1]
 }
+#for some maps that may not be directly extract from above, using an alternative method (checked that both method should have the same results)
 
 #CLM has some problem here for coordinates (ranging from 0 to 360 in lon) - need convert # CLM_NPP$lon[CLM_NPP$lon>180] <- CLM_NPP$lon[CLM_NPP$lon>180]-360
 sitemean2 <- sitemean
@@ -1238,8 +1303,11 @@ sitemean_final$JULES_NPP[sitemean_final$JULES_NPP==0] <- NA
 sitemean_final$LPX_NPP[sitemean_final$LPX_NPP==0] <- NA
 sitemean_final$LPX_fNup[sitemean_final$LPX_fNup==0] <- NA
 
+### Fit models
+
 #first, our model - using predicted data
-BP_dataset3 <- na.omit(NPP_forest[,c("pred_npp","age_a","fAPAR_a","CNrt_a","Tg_a","PPFD_a","vpd_a","site_a","lon","lat")])
+NPP_forest2 <- subset(NPP_forest,TNPP_1>0)
+BP_dataset3 <- na.omit(NPP_forest2[,c("pred_npp","age_a","fAPAR_a","CNrt_a","Tg_a","PPFD_a","vpd_a","site_a","lon","lat")])
 BP_dataset3<- aggregate(BP_dataset3,by=list(BP_dataset3$lon,BP_dataset3$lat), FUN=mean, na.rm=TRUE)%>% dplyr::select(-c(Group.1,Group.2,lon,lat,site_a))
 
 bp_model_ours <- (lm(pred_npp~Tg_a+PPFD_a+vpd_a,data=BP_dataset3))
@@ -1330,6 +1398,7 @@ mod1$coefficients;mod2$coefficients;mod3$coefficients;mod4$coefficients;
 mod5$coefficients;mod6$coefficients;mod7$coefficients;mod8$coefficients;
 mod9$coefficients;mod10$coefficients;mod11$coefficients;mod12$coefficients
 
+### Plot partial dependencies
 
 t1a <- visreg(mod1,"Tg_a",type="contrast");t2a <-visreg(mod2,"Tg_a",type="contrast");t3a <-visreg(mod3,"Tg_a",type="contrast");t4a <- visreg(mod4,"Tg_a",type="contrast");t5a <- visreg(mod5,"Tg_a",type="contrast");t6a <-visreg(mod6,"Tg_a",type="contrast");t7a <- visreg(mod7,"Tg_a",type="contrast");t8a <-visreg(mod8,"Tg_a",type="contrast");t9a <-visreg(mod9,"Tg_a",type="contrast");t10a <-visreg(mod10,"Tg_a",type="contrast");t11a <-visreg(mod11,"Tg_a",type="contrast");t12a <-visreg(mod12,"Tg_a",type="contrast")
 p1a <- visreg(mod1,"PPFD_a",type="contrast");p2a <- visreg(mod2,"PPFD_a",type="contrast");p3a <- visreg(mod3,"PPFD_a",type="contrast");p4a <- visreg(mod4,"PPFD_a",type="contrast");p5a <- visreg(mod5,"PPFD_a",type="contrast");p6a <- visreg(mod6,"PPFD_a",type="contrast");p7a <- visreg(mod7,"PPFD_a",type="contrast");p8a <- visreg(mod8,"PPFD_a",type="contrast");p9a <- visreg(mod9,"PPFD_a",type="contrast");p10a <- visreg(mod10,"PPFD_a",type="contrast");p11a <- visreg(mod11,"PPFD_a",type="contrast");p12a <- visreg(mod12,"PPFD_a",type="contrast")
@@ -1352,9 +1421,10 @@ final1_legend <- ggplot() +geom_line(data = fits_PPFD, aes(PPFD_a, visregFit, gr
 
 legend_info <- as_ggplot(get_legend(final1_legend))
 
+## TRENDY analysis - N uptake
 #nuptake figure
 #N minerlization
-Nmin_statistical <- subset(NPP_forest,Nmin>0)
+Nmin_statistical <- subset(NPP_forest,is.na(Nmin)==FALSE)
 
 sitemean2 <- unique(Nmin_statistical[,c("lon","lat")])
 sp_sites2 <- SpatialPoints(sitemean2) # only select lon and lat
@@ -1469,11 +1539,12 @@ final1d <- ggplot()+xlim(-0.8,1) +geom_line(data = subset(fits_vpd1,plt=="Measur
   theme_classic()+theme(text = element_text(size=20),legend.position="none")+
   scale_colour_manual(values=c(Measurement="black",ISAM="red",ORCHICNP="cyan",JSBACH="burlywood1",LPX="darkgreen"))
 
+### NUE
 
 #nue model for TRENDY
-#nuptake figure
-#N minerlization
-NUE_test <- NPP_all
+NUE_test1 <- subset(NPP_forest,TNPP_1>0)
+NUE_test2 <- subset(NPP_forest,is.na(Nmin)==FALSE)
+NUE_test <- rbind(NUE_test1,NUE_test2)
 
 sitemean3 <- unique(NUE_test[,c("lon","lat")])
 sp_sites3 <- SpatialPoints(sitemean3) # only select lon and lat
@@ -1550,11 +1621,11 @@ nue6e <- visreg(mod_nue4,"Tg_a",type="contrast")
 nue8e <- visreg(mod_nue4,"PPFD_a",type="contrast")
 
 #also, our simulations
-NPP_grassland_remove <- NPP_grassland
-forest_NUE <- NPP_forest[,c("lon","lat","pred_nuptake","pred_npp","Tg_a","PPFD_a","vpd_a")]
-grassland_NUE <- NPP_grassland_remove[,c("lon","lat","grassland_pred_nuptake","grassland_pred_npp","Tg_a","PPFD_a","vpd_a")]
-names(grassland_NUE) <- c("lon","lat","pred_nuptake","pred_npp","Tg_a","PPFD_a","vpd_a")
-nue_allplots <- as.data.frame(rbind(forest_NUE,grassland_NUE))
+NUE_test1 <- subset(NPP_forest,TNPP_1>0)
+NUE_test2 <- subset(NPP_forest,is.na(Nmin)==FALSE)
+NUE_test <- as.data.frame(rbind(NUE_test1,NUE_test2))
+nue_allplots <- NUE_test[,c("lon","lat","pred_nuptake","pred_npp","Tg_a","PPFD_a","vpd_a")]
+
 nue_allplots$nue <-nue_allplots$pred_npp/nue_allplots$pred_nuptake
 nue_allplots <- na.omit(nue_allplots[,c("nue","Tg_a","vpd_a","PPFD_a","lon","lat")])
 nue_allplots <- aggregate(nue_allplots,by=list(nue_allplots$lon,nue_allplots$lat), FUN=mean, na.rm=TRUE)
@@ -1593,9 +1664,9 @@ final1_nue8 <- ggplot()+xlim(5.5,6.3) +geom_line(data = nue8c$fit, aes(PPFD_a, v
 #          final1_nue6,final1_nue8,final1_nue4,white,
 #          nrow=3,label_x = 0.8, label_y = 0.8)+white
 
-#ggsave(paste("./output/newphy_fig4.jpg",sep=""), width = 20, height = 15)
+#ggsave(paste("./output/fig4.jpg",sep=""), width = 20, height = 15)
 
-
+## NUE vs. all predictors
 #nue and nuptake relation
 #also, our simulations
 NPP_grassland_remove <- NPP_grassland
@@ -1623,7 +1694,7 @@ final1_nue1 <- ggplot() +geom_line(data = nue1c$fit, aes(LMA_a, visregFit),size=
 final1_nue2 <- ggplot() +geom_line(data = nue2c$fit, aes(fAPAR_a, visregFit),size=2) + xlab("fAPAR") + ylab(" ")+theme_classic()+theme(text = element_text(size=20),legend.position="none")
 final1_nue3 <- ggplot() +geom_line(data = nue3c$fit, aes(age_a, visregFit),size=2) + xlab("ln age") + ylab(" ")+theme_classic()+theme(text = element_text(size=20),legend.position="none")
 final1_nue4 <- ggplot() +geom_line(data = nue4c$fit, aes(vpd_a, visregFit),size=2) + xlab("ln D") + ylab(" ")+theme_classic()+theme(text = element_text(size=20),legend.position="none")
-final1_nue5 <- ggplot() +geom_line(data = nue5c$fit, aes(CNrt_a, visregFit),size=2)+ylab("NUE")  + xlab("ln soil C/N") +theme_classic()+theme(text = element_text(size=20),legend.position="none")
+final1_nue5 <- ggplot() +geom_line(data = nue5c$fit, aes(CNrt_a, visregFit),size=2)+ylab("NUE")  + xlab("ln soil C:N") +theme_classic()+theme(text = element_text(size=20),legend.position="none")
 final1_nue6 <- ggplot() +geom_line(data = nue6c$fit, aes(Tg_a, visregFit),size=2) + xlab("Tg") + ylab(" ")+theme_classic()+theme(text = element_text(size=20),legend.position="none")
 final1_nue7 <- ggplot() +geom_line(data = nue7c$fit, aes(vcmax25_a, visregFit),size=2) + xlab("ln vcmax25") + ylab(" ")+theme_classic()+theme(text = element_text(size=20),legend.position="none")
 final1_nue8 <- ggplot() +geom_line(data = nue8c$fit, aes(PPFD_a, visregFit),size=2) + xlab("ln PPFD") + ylab(" ")+theme_classic()+theme(text = element_text(size=20),legend.position="none")
@@ -1632,8 +1703,9 @@ final1_nue8 <- ggplot() +geom_line(data = nue8c$fit, aes(PPFD_a, visregFit),size
 #          final1_nue5,final1_nue6,final1_nue7,final1_nue8,
 #          nrow=2,label_x = 0.8, label_y = 0.8)+white
 
-#ggsave(paste("./output/newphy_figs8.jpg",sep=""), width = 20, height = 10)
+#ggsave(paste("./output/figs8.jpg",sep=""), width = 20, height = 10)
 
+## Nuptake vs. all predictors
 
 # n uptake
 mod_nue3 <- (lm(pred_nuptake~LMA_a+fAPAR_a+age_a+vpd_a+CNrt_a+Tg_a+vcmax25_a+PPFD_a,data=nue_allplots))
@@ -1651,7 +1723,7 @@ final1_nue1 <- ggplot() +geom_line(data = nue1c$fit, aes(LMA_a, visregFit),size=
 final1_nue2 <- ggplot() +geom_line(data = nue2c$fit, aes(fAPAR_a, visregFit),size=2) + xlab("fAPAR") + ylab(" ")+theme_classic()+theme(text = element_text(size=20),legend.position="none")
 final1_nue3 <- ggplot() +geom_line(data = nue3c$fit, aes(age_a, visregFit),size=2) + xlab("ln age") + ylab(" ")+theme_classic()+theme(text = element_text(size=20),legend.position="none")
 final1_nue4 <- ggplot() +geom_line(data = nue4c$fit, aes(vpd_a, visregFit),size=2) + xlab("ln D") + ylab(" ")+theme_classic()+theme(text = element_text(size=20),legend.position="none")
-final1_nue5 <- ggplot() +geom_line(data = nue5c$fit, aes(CNrt_a, visregFit),size=2)+ylab("N uptake")  + xlab("ln soil C/N") +theme_classic()+theme(text = element_text(size=20),legend.position="none")
+final1_nue5 <- ggplot() +geom_line(data = nue5c$fit, aes(CNrt_a, visregFit),size=2)+ylab("N uptake")  + xlab("ln soil C:N") +theme_classic()+theme(text = element_text(size=20),legend.position="none")
 final1_nue6 <- ggplot() +geom_line(data = nue6c$fit, aes(Tg_a, visregFit),size=2) + xlab("Tg") + ylab(" ")+theme_classic()+theme(text = element_text(size=20),legend.position="none")
 final1_nue7 <- ggplot() +geom_line(data = nue7c$fit, aes(vcmax25_a, visregFit),size=2) + xlab("ln vcmax25") + ylab(" ")+theme_classic()+theme(text = element_text(size=20),legend.position="none")
 final1_nue8 <- ggplot() +geom_line(data = nue8c$fit, aes(PPFD_a, visregFit),size=2) + xlab("ln PPFD") + ylab(" ")+theme_classic()+theme(text = element_text(size=20),legend.position="none")
@@ -1659,7 +1731,6 @@ final1_nue8 <- ggplot() +geom_line(data = nue8c$fit, aes(PPFD_a, visregFit),size
 #plot_grid(final1_nue1,final1_nue2,final1_nue3,final1_nue4,
 #          final1_nue5,final1_nue6,final1_nue7,final1_nue8,
 #          nrow=2,label_x = 0.8, label_y = 0.8)+white
-
 
 #validation - BP
 NPP_statistical$Measured_BP <- NPP_statistical$TNPP_1
@@ -1707,9 +1778,9 @@ pp15 <- analyse_modobs2(NPP_statistical,"LPX_NPP","Measured_BP", type = "points"
 #          labels = c('(a)','(b)','(c)','(d)','(e)','(f)','(g)','(h)','(i)','(j)','(k)','(l)','(m)'),
 #          nrow=5,label_x = 0.9,label_y=0.92,label_size = 20)+white
 
-#ggsave(paste("./output/newphy_fortable2a.jpg",sep=""), width = 23, height = 25)
+#ggsave(paste("./output/fortable2a.jpg",sep=""), width = 23, height = 25)
 
-
+## N uptake validation between models
 #validation - N uptake
 Nmin_statistical$pred_nuptake
 
@@ -1741,9 +1812,9 @@ ppp6 <- analyse_modobs2(Nmin_statistical,"LPX_fNup","Nmin", type = "points",rela
 #          labels = c('(a)','(b)','(c)','(d)','(e)'),
 #          nrow=2,label_x = 0.9,label_y=0.92,label_size = 20)+white
 
-#ggsave(paste("./output/newphy_fortable2b.jpg",sep=""), width = 20, height = 10)
+#ggsave(paste("./output/fortable2b.jpg",sep=""), width = 20, height = 10)
 
-
+### visreg for BP and anpp/bp vs. all measured predictors
 #visreg
 
 a1 <- ~{
@@ -1758,7 +1829,7 @@ a2 <- ~{
 
 a3 <- ~{
   p1a <- visreg(bp_model,"CNrt_a",type="contrast")
-  plot(p1a,ylab="Forest BP",xlab="ln soil C/N",
+  plot(p1a,ylab="Forest BP",xlab="ln soil C:N",
        cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
 
 a4 <- ~{
@@ -1783,7 +1854,7 @@ a7 <- ~{
 
 a8 <- ~{
   p1a <- visreg(anpp_tnpp_model,"CNrt_a",type="contrast")
-  plot(p1a,ylab="logit ANPP/BP",xlab="ln soil C/N",
+  plot(p1a,ylab="logit ANPP/BP",xlab="ln soil C:N",
        cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
 
 a9 <- ~{
@@ -1847,8 +1918,13 @@ a16 <- ~{
 #ggsave(paste("./output/newphy_figs3b.jpg",sep=""), width = 20, height = 20*0.4)
 
 #plot_grid(a15,a16,white,white,white,nrow=1)+white
-
+#
 #ggsave(paste("./output/newphy_figs3c.jpg",sep=""), width = 20, height = 20*0.2)
+
+
+# Total estimations and Uncertainty quantification
+
+## total estimations
 
 #table s1
 names(all_maps)
@@ -1861,6 +1937,10 @@ for (i in 4:30){
 
 #it seems that forest + grassland doesn't completely equal to pft (with decimal degree uncertainty 0.01)
 #in this way, we re-calculate grassland = pft - forest 
+
+
+## Error propagation
+### BP, ANPP
 
 #error propagation - needs updates fapar
 
@@ -1888,10 +1968,14 @@ summary(mod_anpp_uncertainty) #uncertainty of anpp/npp
 uncertainty_anpp <- anpp_f * sqrt( (uncertainty_npp/npp_f)^2 +
                                      (mod_anpp_uncertainty/(anpp_f/npp_f))^2)
 
+
+### BNPP
 #uncertainty of bnpp. BNPP = NPP - ANPP
 uncertainty_bnpp <- sqrt((uncertainty_npp)^2 + (uncertainty_anpp)^2)
 summary(uncertainty_bnpp/bnpp_f)
 
+
+### Leaf NPP
 ## Uncertainty of LNPP/ANPP
 mod_lnpp_uncertainty <- summary(anpp_leafnpp_model)$sigma
 lnpp_b <- summary(anpp_leafnpp_model)$coefficients[1,1]+
@@ -1919,6 +2003,8 @@ n1 <- lmer(nmass_a~vcmax25_lma_a + (1|sitename_a)+(1|species_a))
 mod_leafnc_uncertainty <-summary(n1)$sigma/leaf_c_forest
 summary(mod_leafnc_uncertainty)
 
+
+### NRE
 #NRE
 mod_nre_uncertainty <- summary(nre_model)$sigma
 nre_b <- summary(nre_model)$coefficients[1,1]  +
@@ -1934,15 +2020,24 @@ uncertainty_lnf <- lnf_f * sqrt( (uncertainty_npp/npp_f)^2 +
                                    (mod_nre_uncertainty/(1-nre_f))^2)
 summary(uncertainty_lnf/lnf_f)
 
+
+### Wood N flux
 #now, uncertainty of wood n uptake flux
 uncertainty_wnf <- wood_tissue_percentage*uncertainty_wnpp/wood_cn_forest
 summary(uncertainty_wnf/wnf_f)
 
+
+### Root N flux
 #root N flux = uncertainty of bnpp * root N/C
 uncertainty_bnf <- uncertainty_bnpp/root_cn_forest
 
+
+### N uptake
 #nuptake
 uncertainty_nuptake <- sqrt(uncertainty_lnf^2 + uncertainty_wnf^2 + uncertainty_bnf^2) #N uptake
+
+
+## Grassland
 
 # 0.49, as explained above - are anpp/npp ratio in grassland (see line 552)
 # 0.51, is 1- 0.51, for bnpp/npp ratio
@@ -1954,6 +2049,8 @@ uncertainty_bnpp_grassland <- uncertainty_npp_grassland*(1-anpp_bp_grassland)
 uncertainty_lnf_grassland <- uncertainty_npp_grassland*anpp_bp_grassland*(1-nre_grassland_constant)/leaf_cn_grassland
 uncertainty_bnf_grassland <- uncertainty_npp_grassland*(1-anpp_bp_grassland)/root_cn_grassland
 uncertainty_nuptake_grassland <- sqrt(uncertainty_lnf_grassland^2 + uncertainty_bnf_grassland^2)
+
+### statistics of uncertainty
 
 #all statistics
 #forest
@@ -1997,6 +2094,7 @@ sqrt(sum(uncertainty_nuptake*(forest_percent *conversion)*available_grid2,na.rm=
 #pft
 (72.10/0.95) * sqrt( (14.40/72.10)^2 +(0.26/0.95)^2)
 
+### BP partial relationship vs. observations
 #partial residual figure
 BP_dataset <- na.omit(NPP_forest[,c("tnpp_a","obs_age_a","observedfAPAR_a","soilCN_a","Tg_a","PPFD_a","vpd_a","site_a")])
 #model1 <- stepwise(BP_dataset,"tnpp_a")
@@ -2028,7 +2126,7 @@ a2 <- ~{
 
 a3 <- ~{
   p1a <- visreg(bp_model,"soilCN_a",type="contrast")
-  plot(p1a,ylab="Forest BP",xlab="ln soil C/N",line=list(col="white",lwd=0.01,lty=9), band=FALSE,
+  plot(p1a,ylab="Forest BP",xlab="ln soil C:N",line=list(col="white",lwd=0.01,lty=9), band=FALSE,
        cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
 
 a4 <- ~{
@@ -2043,22 +2141,22 @@ a5 <- ~{
 
 a6 <- ~{
   p1a <- visreg(anpp_tnpp_model,"Tg_a",type="contrast")
-  plot(p1a,ylab="logit ANPP/BP",xlab="Tg",
+  plot(p1a,ylab="logit ABP/BP",xlab="Tg",
        cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
 
 a7 <- ~{
   p1a <- visreg(anpp_tnpp_model,"PPFD_a",type="contrast")
-  plot(p1a,ylab="logit ANPP/BP",xlab="ln PPFD",line=list(col="white",lwd=0.01,lty=9), band=FALSE,
+  plot(p1a,ylab="logit ABP/BP",xlab="ln PPFD",line=list(col="white",lwd=0.01,lty=9), band=FALSE,
        cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
 
 a8 <- ~{
   p1a <- visreg(anpp_tnpp_model,"soilCN_a",type="contrast")
-  plot(p1a,ylab="logit ANPP/BP",xlab="ln soil C/N",
+  plot(p1a,ylab="logit ABP/BP",xlab="ln soil C:N",
        cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
 
 a9 <- ~{
   p1a <- visreg(anpp_tnpp_model,"obs_age_a",type="contrast")
-  plot(p1a,ylab="logit ANPP/BP",xlab="ln age",
+  plot(p1a,ylab="logit ABP/BP",xlab="ln age",
        cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
 
 
@@ -2067,4 +2165,4 @@ a9 <- ~{
 #          a6,a7,a8,a9,white,
 #          nrow=2)+white
 
-#ggsave(paste("./output/newphy_figs4.jpg",sep=""), width = 20, height = 10)
+#ggsave(paste("./output/figs6.jpg",sep=""), width = 20, height = 10)
