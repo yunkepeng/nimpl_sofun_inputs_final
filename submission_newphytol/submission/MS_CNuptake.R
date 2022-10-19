@@ -733,6 +733,13 @@ ggplot(data=data_output, aes(x=lnpp_allocation_f_output, y=nue_f_output))+
   theme(axis.text=element_text(size=10),axis.title=element_text(size=15))
 #ggsave(paste("./output/figs8.jpg",sep=""),width = 5, height = 5)
 
+anpp_allocation_f_output <- anpp_f/npp_f
+
+summary(lm(nue_f_output~npp_f+anpp_allocation_f_output+
+             lnpp_allocation_f_output+leafnc_f+nre_f))
+
+summary(lm(nue_f_output~PPFD$PPFD+Tg$Tg+vpd$vpd))
+
 #LMG test in forest
 df_all <- (as.data.frame(cbind(nuptake_f, npp_f, all_predictors)))
 df_all$nue <- df_all$npp_f/df_all$nuptake_f
@@ -1174,7 +1181,7 @@ CLASS_NPP <- as.data.frame(nc_to_df(read_nc_onefile("~/data/trendy/v8/CLASS-CTEM
 
 ISAM_fNup <- as.data.frame(nc_to_df(read_nc_onefile("~/data/trendy/v8/ISAM_S2_fNup_ANN_mean.nc"), varnam = "fNup"))
 
-# The values multiply here is for unit from kg/m2/month to g/m2/yr (1000 for kg to g, and 31556952 from 1/second to 1/year)
+# The values multiply here is for unit from kg/m2/s to g/m2/yr (1000 for kg to g, and 31556952 from 1/second to 1/year)
 ISAM_fNup$fNup<- ISAM_fNup$fNup*1000*31556952
 
 ISAM_gpp <- as.data.frame(nc_to_df(read_nc_onefile("~/data/trendy/v8/ISAM_S2_gpp_ANN_mean.nc"), varnam = "gpp"))
