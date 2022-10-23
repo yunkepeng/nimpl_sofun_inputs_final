@@ -478,7 +478,7 @@ plot_grid(a1,a2,a3,a4,a5,
           a15,a16,white,white,white,
           nrow=5)+white
 
-ggsave(paste("/Users/yunpeng/yunkepeng/CNuptake_MS/output/figs5.jpg",sep=""), width = 20, height = 20)
+ggsave(paste("/Users/yunpeng/yunkepeng/CNuptake_MS/output/fig1.jpg",sep=""), width = 20, height = 20)
 
 
 

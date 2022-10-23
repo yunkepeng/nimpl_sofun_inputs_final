@@ -1221,7 +1221,7 @@ JULES_GPP$lon[JULES_GPP$lon>180] <- JULES_GPP$lon[JULES_GPP$lon>180]-360
 JULES_NPP <- as.data.frame(nc_to_df(read_nc_onefile("~/data/trendy/v8/jule_npp.nc"), varnam = "npp"))
 JULES_NPP$lon[JULES_NPP$lon>180] <- JULES_NPP$lon[JULES_NPP$lon>180]-360
 #looks ok 
-#plot_map3(na.omit(JULES_GPP[,c("lon","lat","myvar")]),varnam = "myvar",latmin = -65, latmax = 85)
+#plot_map3(na.omit(JULES_GPP[,c("lon","lat","gpp")]),varnam = "gpp",latmin = -65, latmax = 85)
 
 #LPJ
 LPJ_GPP <- as.data.frame(nc_to_df(read_nc_onefile("~/data/trendy/v8/LPJ-GUESS_S2_gpp_ANN_mean.nc"), varnam = "gpp"))
@@ -1584,6 +1584,7 @@ sitemean3_final <- as.data.frame(cbind(sitemean3_final,new_added3))
 
 sitemean3_final$ORCHICNP_fNup[sitemean3_final$ORCHICNP_fNup==0] <- NA
 sitemean3_final$ISAM_npp[sitemean3_final$ISAM_npp==0] <- NA
+sitemean3_final$ISAM_fNup[sitemean3_final$ISAM_fNup==0] <- NA
 sitemean3_final$LPX_NPP[sitemean3_final$LPX_NPP==0] <- NA
 sitemean3_final$LPX_fNup[sitemean3_final$LPX_fNup==0] <- NA
 
