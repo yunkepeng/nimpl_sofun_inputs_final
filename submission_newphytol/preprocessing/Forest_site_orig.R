@@ -907,7 +907,7 @@ dataset6$wnf_obs_final  <- dataset6$NPP.wood/dataset6$CN_wood_final
 dataset6 <- dataset6[,!(names(dataset6) %in% c("Evergreen.Deciduous","Management.code",
                                                "Management","pred_gpp_c3","max_vcmax25_c3",
                                                "alpha_sites","PPFD_sites","Tg_sites","vpd_sites",
-                                               "PPFD_total_fapar","PPFD_total","alpha","mapped_gpp"))]
+                                               "PPFD_total_fapar","alpha","mapped_gpp"))]
 #check if all stem < wood ->yes 
 summary(dataset6$NPP.stem/dataset6$NPP.wood)
 subset(dataset6,NPP.stem+NPP.foliage-ANPP_2>0) # this three samples from "ORNL-FACE" are strange - where stem+foliage - ANPP_2 >0 - we removed stem values here since it is not reasonable
