@@ -31,11 +31,9 @@ cdo -O timmean a5.nc LPX-Bern_S2_gpp_ANN_mean.nc
 
 #DLEM --> cannot conver to normal nc
 
-#ISAM
+#ISAM --> unit still in kg/m2/s --> needs to convert to g/m2/yr in R code (by multiplying 1000*31556952) then
 cdo seltimestep,127/156 ISAM_S2_fNup.nc a1.nc
-#cdo mulc,1000 -vertsum a1.nc a2.nc
-#cdo seltimestep,127/156 a2.nc a3.nc
-cdo -O timmean a4.nc ISAM_S2_fNup_ANN_mean.nc
+cdo -O timmean a1.nc ISAM_S2_fNup_ANN_mean.nc
 
 
 CLM5.0_S2_fNup.nc
