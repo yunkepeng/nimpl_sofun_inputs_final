@@ -22,12 +22,12 @@ exit
 module load gcc/4.8.2 cdo/1.6.4
 
 #all others
-cdo selyear,1986/2014 LPX-Bern_S2_gpp.nc a1.nc
+cdo selyear,1901/2015 CLM5.0_S2_fNup a1.nc
 cdo muldpm a1.nc a2.nc
 cdo mulc,86400000 a2.nc a3.nc
 cdo yearsum a3.nc a4.nc
 cdo -O selyear,1986/2015 a4.nc a5.nc
-cdo -O timmean a5.nc LPX-Bern_S2_gpp_ANN_mean.nc
+cdo -O timmean a5.nc CLM5.0_S2_fNup_ANN_mean.nc
 
 #DLEM --> cannot conver to normal nc
 
