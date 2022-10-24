@@ -21,8 +21,8 @@ exit
 
 module load gcc/4.8.2 cdo/1.6.4
 
-#all others
-cdo selyear,1901/2015 CLM5.0_S2_fNup a1.nc
+#all others (except for LPX-Bern that uses 1986-2014, since in obtain_TRENDY_year.sh it claims that 2015 has some issue, all others using 1986-2015)
+cdo selyear,1901/2015 CLM5.0_S2_fNup.nc a1.nc
 cdo muldpm a1.nc a2.nc
 cdo mulc,86400000 a2.nc a3.nc
 cdo yearsum a3.nc a4.nc
