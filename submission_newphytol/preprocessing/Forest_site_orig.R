@@ -915,7 +915,7 @@ dataset6$NPP.stem[dataset6$site=="ORNL-FACE"] <- NA
   
 #check npp.fine or npp.coarse
 summary(dataset6$NPP.fine+dataset6$NPP.coarse-dataset6$BNPP_1)
-unique(subset(dataset6,NPP.fine+NPP.coarse-BNPP_1>5 |NPP.fine+NPP.coarse-BNPP_1< -5)$site) # these site's corase and fine root converted to NA
+unique(subset(dataset6,NPP.fine+NPP.coarse-BNPP_1>5 |NPP.fine+NPP.coarse-BNPP_1< -5)$site) # these site's coarse and fine root's sum is not equal to BNPP, converted to NA
 dataset6$NPP.fine[dataset6$site=="Podocarpus 1"] <- NA;dataset6$NPP.coarse[dataset6$site=="Podocarpus 1"] <- NA
 dataset6$NPP.fine[dataset6$site=="ORNL-FACE"] <- NA;dataset6$NPP.coarse[dataset6$site=="ORNL-FACE"] <- NA
 dataset6$NPP.fine[dataset6$site=="POP-EUROFACE"] <- NA;dataset6$NPP.coarse[dataset6$site=="POP-EUROFACE"] <- NA
