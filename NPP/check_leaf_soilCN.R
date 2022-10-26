@@ -362,6 +362,10 @@ SP_input4$leafCN <- SP_input4$C_percent/100/SP_input4$nmass
 SP_input4$cmass <- SP_input4$C_percent/100
 SP_input4$carea <- SP_input4$cmass/SP_input4$lma
 
+#output to data frame
+csvfile <- paste("~/data/leaf_traits/leaf_soil.csv")
+write.csv(SP_input4, csvfile, row.names = TRUE)
+
 SP_input4_sitemean <- aggregate(SP_input4,by=list(SP_input4$lon_2,SP_input4$lat_2), FUN=mean, na.rm=TRUE) #site-mean
 
 #log-transformmed
