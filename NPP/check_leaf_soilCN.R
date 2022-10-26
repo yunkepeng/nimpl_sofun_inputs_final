@@ -362,6 +362,10 @@ SP_input4$leafCN <- SP_input4$C_percent/100/SP_input4$nmass
 SP_input4$cmass <- SP_input4$C_percent/100
 SP_input4$carea <- SP_input4$cmass/SP_input4$lma
 
+#only included measured soil C/N
+SP_input4 <- subset(SP_input4,CN>0)
+dim(SP_input4)
+unique(SP_input4$source)
 #output to data frame
 csvfile <- paste("~/data/leaf_traits/leaf_soil.csv")
 write.csv(SP_input4, csvfile, row.names = TRUE)
