@@ -155,6 +155,10 @@ NPP_Forest$max_vcmax25_c3 <- NA
 
 
 #using rsofun
+### XXX Error warning: if set makecheck == TRUE, then it shows error as:
+#if (is.nanull(params_siml)) if (is.nanull(params_siml$spinup)) {: the condition has length > 1
+#Not sure how to best solve it - the best way is to set makecheck = F.
+#We don't use this code's data (site simulated gpp and vcmax25) in current chap.1 - just to highlight here.
 for (i in 1:nrow(NPP_Forest)) {
   tryCatch({
     #c3
