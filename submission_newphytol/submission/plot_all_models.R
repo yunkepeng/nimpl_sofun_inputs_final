@@ -397,7 +397,7 @@ a1 <- ~{
 
 a2 <- ~{
   p1a <- visreg(bp_model,"PPFD_a",type="contrast")
-  plot(p1a,ylab="Forest BP",xlab="ln PPFD",
+  plot(p1a,ylab="Forest BP",xlab="ln gPPFD",
        cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
 
 a3 <- ~{
@@ -422,7 +422,7 @@ a6 <- ~{
 
 a7 <- ~{
   p1a <- visreg(anpp_tnpp_model,"PPFD_a",type="contrast")
-  plot(p1a,ylab="logit ABP/BP",xlab="ln PPFD",
+  plot(p1a,ylab="logit ABP/BP",xlab="ln gPPFD",
        cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
 
 a8 <- ~{
@@ -442,7 +442,7 @@ a10 <- ~{
 
 a11 <- ~{
   p1a <- visreg(anpp_leafnpp_model,"PPFD_a",type="contrast")
-  plot(p1a,ylab="logit leaf-BP/ABP",xlab="ln PPFD",
+  plot(p1a,ylab="logit leaf-BP/ABP",xlab="ln gPPFD",
        cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
 
 a12 <- ~{
@@ -467,9 +467,8 @@ a15 <- ~{
 
 a16 <- ~{
   p1a <- visreg(bp_grass_model,"PPFD_a",type="contrast")
-  plot(p1a,ylab="Grassland BP",xlab="ln PPFD",
+  plot(p1a,ylab="Grassland BP",xlab="ln gPPFD",
        cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5)}
-
 
 plot_grid(a1,a2,a3,a4,a5,
           a6,a7,a8,a9,white,
@@ -478,9 +477,8 @@ plot_grid(a1,a2,a3,a4,a5,
           a15,a16,white,white,white,
           nrow=5)+white
 
-ggsave(paste("/Users/yunpeng/yunkepeng/CNuptake_MS/output/fig1.jpg",sep=""), width = 20, height = 20)
-
-
+ggsave(paste("/Users/yunpeng/yunkepeng/CNuptake_MS/output/fig1.jpg",
+             sep=""), width = 20, height = 20)
 
 #not run 
 #look at validation when using soil C/N
