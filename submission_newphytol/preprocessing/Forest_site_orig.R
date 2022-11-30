@@ -461,11 +461,26 @@ for (i in 1:nrow(Cam_df)){
 Cam_npp <- Cam_df[,c("site","lon","lat","elevation","period_start","period_end","tnpp","anpp","anpp","bnpp","managment","biome")]
 names(Cam_npp) <- c("site","lon","lat","z","Begin_year","End_year","TNPP_1","ANPP_2","NPP.foliage","BNPP_1","management_MCampioli","biome_MCampioli")
 
+Cam_npp$Begin_year[Cam_npp$Begin_year==9999] <- Cam_npp$End_year[Cam_npp$Begin_year==9999]
+
 #rbind them and manually add some input
 Cam_npp$file <- "MCampioli"
 Cam_npp$pft <- Cam_npp$biome_MCampioli
 Cam_npp$Management.code <- Cam_npp$management_MCampioli
 Cam_npp$Source_NPP <- "MCampioli"
+
+#add citation as newly sent by Matteo Campioli, to merge them basing on site-name
+citation <- read.csv("~/data/campioli/grassland_dataset_20221121.csv")
+dim(citation)
+length(unique(citation$site))
+
+#merged with Cam_npp data
+Cam_npp <- merge(Cam_npp,citation[,c("site","references")],by=c("site"),all.x=TRUE)
+Cam_npp$file <- Cam_npp$references
+Cam_npp$Source_NPP <- Cam_npp$references
+
+#remove reference columns
+Cam_npp <- Cam_npp[,!(names(Cam_npp) %in% c("references"))]
 
 NPP_final <- dplyr::bind_rows(NPP_all, Tiandi_npp,Cam_npp) 
 
@@ -923,8 +938,46 @@ dataset6$NPP.fine[dataset6$site=="Xiaohu NF"] <- NA;dataset6$NPP.coarse[dataset6
 dataset6$NPP.fine[dataset6$site=="Jadraas Class I"] <- NA;dataset6$NPP.coarse[dataset6$site=="Jadraas Class I"] <- NA
 summary(dataset6$NPP.fine+dataset6$NPP.coarse-dataset6$BNPP_1) # else are tiny - it is fine
 
+#change citations at the end
+dataset6$file[dataset6$file=="ForC"] <- "Anderson-Teixeira et al., 2016, 2018"
+
+dataset6$file[dataset6$file=="Sara Vicca"] <- "Vicca et al. 2012;Luyssaert et al., 2007"
+
+dataset6$file[dataset6$file=="Vicca_validation_file"] <- "Vicca et al. 2012;Luyssaert et al., 2007"
+
+dataset6$file[dataset6$file=="Keith"] <- "Vicca et al. 2012;Luyssaert et al., 2007"
+
+dataset6$file[dataset6$file=="~/data/npp_stoichiometry_forests_tiandi/"] <- "Tian et al., 2019; Wang & Zhao, 2022"
+
+dataset6$file[dataset6$file=="Malhi 2011"] <- "Malhi et al. 2011"
+
+dataset6$file[dataset6$file=="Malhi 2016"] <- "Malhi et al. 2016"
+
+dataset6$file[dataset6$file=="Finzi"] <- "Gill and Finzi, 2016"
+
+
+#remove source_NPP and change column name
+dataset6 <- dataset6[,!(names(dataset6) %in% c("Source_NPP"))]
+colnames(dataset6)[colnames(dataset6) == "file"] <- "references"
+
+#get the site-citation table
+NPP_data <- subset(dataset6,is.na(Nmin)==T)
+
+citation_table <- unique(NPP_data[,c("lon","lat","site","references")])
+citation_table <- citation_table[order(citation_table$references,citation_table$lon,citation_table$lat,citation_table$site),]
+
+citation_table$ID <- paste0("ID",c(1:nrow(citation_table)))
+
+#merge this ID to dataset
+dim(dataset6)
+dataset6 <- merge(dataset6,citation_table,all.x=TRUE)
+dim(dataset6)
+
 csvfile <- paste("~/data/NPP_Yunke/NPP_Nmin_dataset_with_predictors.csv")
 write_csv(dataset6, path = csvfile)
+
+csvfile <- paste("~/data/NPP_Yunke/NPP_citation_table.csv")
+write_csv(citation_table, path = csvfile)
 
 #check: plot missing data - p model's vcmax25 - many of them are missing due to on the edge
 
