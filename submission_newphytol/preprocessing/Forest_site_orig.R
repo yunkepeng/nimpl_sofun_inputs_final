@@ -970,7 +970,8 @@ citation_table$ID <- paste0("ID",c(1:nrow(citation_table)))
 
 #merge this ID to dataset
 dim(dataset6)
-dataset6 <- merge(dataset6,citation_table,all.x=TRUE)
+dataset6 <- merge(dataset6,citation_table,by=c("lon","lat","site","references"),
+                  all.x=TRUE)
 dim(dataset6)
 
 csvfile <- paste("~/data/NPP_Yunke/NPP_Nmin_dataset_with_predictors.csv")
