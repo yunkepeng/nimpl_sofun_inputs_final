@@ -478,6 +478,7 @@ length(unique(citation$site))
 Cam_npp <- merge(Cam_npp,citation[,c("site","references")],by=c("site"),all.x=TRUE)
 Cam_npp$file <- Cam_npp$references
 Cam_npp$Source_NPP <- Cam_npp$references
+Cam_npp$contributor <- "Matteo Campioli"
 
 #remove reference columns
 Cam_npp <- Cam_npp[,!(names(Cam_npp) %in% c("references"))]
@@ -939,22 +940,34 @@ dataset6$NPP.fine[dataset6$site=="Jadraas Class I"] <- NA;dataset6$NPP.coarse[da
 summary(dataset6$NPP.fine+dataset6$NPP.coarse-dataset6$BNPP_1) # else are tiny - it is fine
 
 #change citations at the end
+#check all contributor
+unique(subset(dataset6,is.na(contributor)==T)$file)
+
+dataset6$contributor[dataset6$file=="ForC"] <- "ForC"
 dataset6$file[dataset6$file=="ForC"] <- "Anderson-Teixeira et al., 2016, 2018"
 
+dataset6$contributor[dataset6$file=="Sara Vicca"] <- "Sara Vicca"
 dataset6$file[dataset6$file=="Sara Vicca"] <- "Vicca et al. 2012;Luyssaert et al., 2007"
 
+dataset6$contributor[dataset6$file=="Vicca_validation_file"] <- "Sara Vicca"
 dataset6$file[dataset6$file=="Vicca_validation_file"] <- "Vicca et al. 2012;Luyssaert et al., 2007"
 
+dataset6$contributor[dataset6$file=="Keith"] <- "Sara Vicca"
 dataset6$file[dataset6$file=="Keith"] <- "Vicca et al. 2012;Luyssaert et al., 2007"
 
-dataset6$file[dataset6$file=="~/data/npp_stoichiometry_forests_tiandi/"] <- "Tian et al., 2019; Wang & Zhao, 2022"
+dataset6$contributor[dataset6$file=="~/data/npp_stoichiometry_forests_tiandi/"] <- "Tian Di"
+dataset6$file[dataset6$file=="~/data/npp_stoichiometry_forests_tiandi/"] <- "Tian et al., 2019;Wang & Zhao, 2022"
 
+dataset6$contributor[dataset6$file=="Malhi 2011"] <- "Literatures"
 dataset6$file[dataset6$file=="Malhi 2011"] <- "Malhi et al. 2011"
 
-dataset6$file[dataset6$file=="Malhi 2016"] <- "Malhi et al. 2016"
+dataset6$contributor[dataset6$file=="Malhi 2017"] <- "Literatures"
+dataset6$file[dataset6$file=="Malhi 2017"] <- "Malhi et al. 2017"
 
+dataset6$contributor[dataset6$file=="Finzi"] <- "Literatures"
 dataset6$file[dataset6$file=="Finzi"] <- "Gill and Finzi, 2016"
 
+unique(dataset6$contributor)
 
 #remove source_NPP and change column name
 dataset6 <- dataset6[,!(names(dataset6) %in% c("Source_NPP"))]
