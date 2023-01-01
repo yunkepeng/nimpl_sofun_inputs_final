@@ -22,7 +22,7 @@
 8. Simulated GPP for forest npp + grassland npp + Nuptake: pmodel_simulation.R. This takes time, and output data in ~/data/NPP_Yunke/simulated_gpp/site_simulated_gpp_vcmax.csv
 
 ---collect site level Tg, vpd, alpha and PPFD basing on measurement year, using gwr. 
-9. This take time and see climate_site_data.R. This takes time, and output data in ...
+9. This take time and see climate_site_data.R. This takes time, and output data in ~data/NPP_Yunke/predictors/climates_sites.csv
 
 ---collect site level Tg, vpd, alpha and PPFD from Map, using gwr. 
 10. This take time and see map_site_data.R.

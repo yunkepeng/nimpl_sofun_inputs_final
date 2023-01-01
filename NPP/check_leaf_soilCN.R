@@ -304,7 +304,7 @@ analyse_modobs2 <- function(
 devtools::load_all("/Users/yunpeng/yunkepeng/latest_packages/rbeni/") # using beni's latest package.
 
 #### Input all indiduals data, and applied pre-processing ("input individuals.csv")
-SP_input <- read.csv("/Users/yunpeng/data/leaf_traits/combined_leaf_traits_updated.csv")
+SP_input <- read.csv("/Users/yunpeng/data/leaf_traits/combined_leaf_traits_updated_with_climates.csv")
 
 #SP_input <- subset(SP_input,source!="Bahar et al 2017 New Phytologist")
 #if remove Bahar - set soil coordinates resolution as 1, so that to get more points and not being filtered (atkin and bahar points are not having same coordinates that cannot be consistenly merged with soil - so annoyed!).
@@ -380,9 +380,19 @@ SP_input4_sitemean$log_LMA <- log(SP_input4_sitemean$lma)
 SP_input4_sitemean$log_Vcmax25 <- log(SP_input4_sitemean$Vcmax25)
 SP_input4_sitemean$log_cmass <- log(SP_input4_sitemean$cmass)
 SP_input4_sitemean$log_carea <- log(SP_input4_sitemean$carea)
+SP_input4_sitemean$log_vpd <- log(SP_input4_sitemean$newvpd)
+SP_input4_sitemean$log_ppfd <- log(SP_input4_sitemean$newPPFD)
+SP_input4_sitemean$Tg <- SP_input4_sitemean$newtg
 
 larger_size <- theme(axis.text=element_text(size=20),axis.title=element_text(size=20),
                      plot.subtitle=element_text(size=15))
+#SP_input<-subset(SP_input,Vcmax25>0&narea>0&parea>0)
+#SP_input4_sitemean <- aggregate(SP_input,by=list(SP_input$lon,SP_input$lat), FUN=mean, na.rm=TRUE) #site-mean
+#SP_input4_sitemean$log_vpd <- log(SP_input4_sitemean$newvpd)
+#SP_input4_sitemean$log_ppfd <- log(SP_input4_sitemean$newPPFD)
+#SP_input4_sitemean$Tg <- SP_input4_sitemean$newtg
+#SP_input4_sitemean$log_vcmax25 <- log(SP_input4_sitemean$Vcmax25)
+#summary(lm(log_vcmax25~log_vpd+log_ppfd+Tg,SP_input4_sitemean))
 
 a1 <- analyse_modobs2(SP_input4_sitemean,"CN","log_narea", type = "points",shortsubtitle=TRUE,rsquared=FALSE)$gg+labs(x ="Soil C/N")+larger_size
 
