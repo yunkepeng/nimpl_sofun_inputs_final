@@ -317,7 +317,6 @@ new_NPP_GPP2 <- merge(new_NPP_GPP1,new_GPP_sitemean,by=c("sites.sitename"),all.x
 #primarily using GPP_sitename_yr, and secondily using GPP_sitename
 new_NPP_GPP3 <- new_NPP_GPP2 %>% mutate(GPP = coalesce(GPP_sitename_yr,GPP_sitename))
 
-#now, removing new_GPP sites
 ForC_all <- new_NPP_GPP3[,!(names(new_NPP_GPP3) %in% c("repeated","GPP_sitename_yr","GPP_sitename"))]
 
 #finally, combine with coordinates
