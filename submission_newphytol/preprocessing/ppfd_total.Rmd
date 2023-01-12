@@ -8,7 +8,7 @@ output: html_document
 ## Introduction about Global nc files
 
 #1. Total PPFD (description and main calculation were provided)
-PPFD is instantaneous photosynthetic photon flux density (umol/m2/s). We used the 30 yrs average data (1982-2011), which was originally derived from time-integrated (24 hrs) daily Shortwave radiation (SWdown) from WFDEI. In order to convert from SWdown to PPFD, we need to calculate them as:
+PPFD is instantaneous photosynthetic photon flux density (umol/m2/s). We used the 37 yrs average data (1980-2016), which was originally derived from time-integrated (24 hrs) daily Shortwave radiation (SWdown) from WFDEI. In order to convert from SWdown to PPFD, we need to calculate them as:
 
 PPFD (umol/m2/s) = SWdown (w/m2) * 4.6 * 0.5 
 
