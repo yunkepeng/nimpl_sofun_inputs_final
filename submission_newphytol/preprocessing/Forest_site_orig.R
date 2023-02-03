@@ -1070,7 +1070,7 @@ df_etopo <- ingest(
 
 NRE_df$elevation <- as.numeric(as.data.frame(df_etopo$data))
 subset(NRE_df,elevation<0)
-#Some grids > 0, lets' assume -3062 as NA, and others as 0 firstly?
+#one point looks like in the sea, set as NA
 NRE_df$elevation[NRE_df$elevation< -50] <- NA
 NRE_df$elevation[NRE_df$elevation< 0] <- 0
 
