@@ -1,5 +1,8 @@
 #prepare sites
 rm(list=ls())
+devtools::load_all("/Users/yunpeng/yunkepeng/latest_packages/rbeni/") 
+library(rworldmap)
+library(spgwr)
 #input site info
 allsites <- read.csv("/Users/yunpeng/data/NPP_Yunke/NPP_Nmin_dataset.csv")
 gwr_sites <- aggregate(allsites,by=list(allsites$lon,allsites$lat,allsites$z,allsites$Begin_year,allsites$End_year), FUN=mean, na.rm=TRUE)
@@ -22,7 +25,7 @@ elev <- as.data.frame(nc_to_df(read_nc_onefile("~/data/watch_wfdei/WFDEI-elevati
 
 monthly_tmn$lon <- elev$lon
 monthly_tmn$lat <- elev$lat
-monthly_tmn$z <- elev$myvar
+monthly_tmn$z <- elev$elevation
 monthly_tmn <- monthly_tmn[,c(3: (total_month+5))] #lon, lat, z in last 3
 monthly_tmn <- subset(monthly_tmn,z>=0)
 
@@ -35,25 +38,25 @@ points(monthly_tmn$lon,monthly_tmn$lat, col="red", pch=16,cex=1)
 
 monthly_tmx$lon <-  elev$lon
 monthly_tmx$lat <- elev$lat
-monthly_tmx$z <- elev$myvar
+monthly_tmx$z <- elev$elevation
 monthly_tmx <- monthly_tmx[,c(3:(total_month+5))] #lon, lat, z in last 3
 monthly_tmx <- subset(monthly_tmx,z>=0)
 
 monthly_vap$lon <-  elev$lon
 monthly_vap$lat <- elev$lat
-monthly_vap$z <- elev$myvar
+monthly_vap$z <- elev$elevation
 monthly_vap <- monthly_vap[,c(3:(total_month+5))] #lon, lat, z in last 3
 monthly_vap <- subset(monthly_vap,z>=0)
 
 monthly_pre$lon <-  elev$lon
 monthly_pre$lat <-  elev$lat
-monthly_pre$z <- elev$myvar
+monthly_pre$z <- elev$elevation
 monthly_pre <- monthly_pre[,c(3:(total_month+5))] #lon, lat, z in last 3
 monthly_pre <- subset(monthly_pre,z>=0)
 
 monthly_radi$lon <- elev$lon
 monthly_radi$lat <- elev$lat
-monthly_radi$z <- elev$myvar
+monthly_radi$z <- elev$elevation
 monthly_radi <- monthly_radi[,c(3:(total_month+5))] #lon, lat, z in last 3
 monthly_radi <- subset(monthly_radi,z>=0)
 
@@ -70,7 +73,7 @@ for (i in 80:116){ #here 82:111 means 1980-2016
 
 empty_alpha$lon <- elev$lon
 empty_alpha$lat <- elev$lat
-empty_alpha$z <- elev$myvar
+empty_alpha$z <- elev$elevation
 
 empty_alpha <- subset(empty_alpha,z>=0)
 dim(empty_alpha) #lon, lat, z in last 3

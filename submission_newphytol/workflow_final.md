@@ -29,4 +29,7 @@
 
 
 ---Now,my analysis
-/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/submission_newphytol/submission/all_analyses.R
+#for partial residual figure
+/Users/yunpeng/yunkepeng/nimpl_sofun_inputs_final/submission_newphytol/submission/plot_all_models.R
+#for all MS
+/Users/yunpeng/yunkepeng/CNuptake_MS/MS_CNuptake.Rmd
