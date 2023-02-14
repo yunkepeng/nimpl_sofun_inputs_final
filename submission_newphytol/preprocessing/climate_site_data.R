@@ -3,6 +3,7 @@ rm(list=ls())
 devtools::load_all("/Users/yunpeng/yunkepeng/latest_packages/rbeni/") 
 library(rworldmap)
 library(spgwr)
+library(readr)
 #input site info
 allsites <- read.csv("/Users/yunpeng/data/NPP_Yunke/NPP_Nmin_dataset.csv")
 gwr_sites <- aggregate(allsites,by=list(allsites$lon,allsites$lat,allsites$z,allsites$Begin_year,allsites$End_year), FUN=mean, na.rm=TRUE)
