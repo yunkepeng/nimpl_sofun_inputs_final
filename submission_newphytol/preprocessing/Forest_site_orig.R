@@ -992,6 +992,13 @@ write_csv(dataset6, path = csvfile)
 csvfile <- paste("~/data/NPP_Yunke/NPP_citation_table.csv")
 write_csv(citation_table, path = csvfile)
 
+#only show campioli's database
+citation_table_campioli <- subset(citation_table,references!="Anderson-Teixeira et al., 2016, 2018"&
+                                    references!="Malhi et al. 2011"& references!="Malhi et al. 2017"&
+                                    references!="Tian et al., 2019;Wang & Zhao, 2022"&references!="Vicca et al. 2012;Luyssaert et al., 2007")
+csvfile <- paste("~/data/NPP_Yunke/NPP_citation_table_campioli.csv")
+write_csv(citation_table_campioli, path = csvfile)
+
 #check: plot missing data - p model's vcmax25 - many of them are missing due to on the edge
 
 #already checked all missing sites, comparing with past attempt of validations in NPP_final or NPP_grassland_final, all consistent.
