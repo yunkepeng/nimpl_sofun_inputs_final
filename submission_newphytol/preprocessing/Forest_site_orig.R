@@ -966,6 +966,9 @@ dataset6$file[dataset6$file=="Malhi 2017"] <- "Malhi et al. 2017"
 dataset6$contributor[dataset6$file=="Finzi"] <- "Literatures"
 dataset6$file[dataset6$file=="Finzi"] <- "Gill and Finzi, 2016"
 
+#change vicca's grassland dataset reference (from keith file) to actual reference
+dataset6$file[dataset6$pft=="Grassland"&dataset6$file=="Vicca et al. 2012;Luyssaert et al., 2007"] <- dataset6$Source_NPP[dataset6$pft=="Grassland"&dataset6$file=="Vicca et al. 2012;Luyssaert et al., 2007"]
+
 unique(dataset6$contributor)
 
 #remove source_NPP and change column name
@@ -992,7 +995,7 @@ write_csv(dataset6, path = csvfile)
 csvfile <- paste("~/data/NPP_Yunke/NPP_citation_table.csv")
 write_csv(citation_table, path = csvfile)
 
-#only show campioli's database
+#only show grassland database
 citation_table_campioli <- subset(citation_table,references!="Anderson-Teixeira et al., 2016, 2018"&
                                     references!="Malhi et al. 2011"& references!="Malhi et al. 2017"&
                                     references!="Tian et al., 2019;Wang & Zhao, 2022"&references!="Vicca et al. 2012;Luyssaert et al., 2007")
