@@ -19,7 +19,7 @@ The steps include
  * input original raster (1/120 resolution) that includes SUID, and then aggregate it to 1/6 resolution
  * Merge this grid data (for SUID) with HULL.csv (for SUID and soil CN), so that each grid has soil C/N data - based on weighted-sum method (see below PROP calculation) in top layer (20-60cm)
  * Resample 1/6 resolution to half resolution (no need for cdo!)
- * Using knn method to fill all grids (training data 59801; testing data 5428)
+ * Using knn method to fill all grids
 
 ## First time
 1. Input original raster (1/120 resolution), aggregate to half degree resolution, combine with soil csv data to get soil C/N map.
@@ -151,8 +151,6 @@ dim(testing_data)
 
 training_data <- training_data[,c("lon","lat","CNrt")]
 testing_data <- testing_data[,c("lon","lat","CNrt")]
-
-# we will use those 59804 grids to predict those 5046 grids
 
 # 3. knn training
 cv <- trainControl(
@@ -339,8 +337,6 @@ dim(testing_data)
 training_data <- training_data[,c("lon","lat","CNrt")]
 testing_data <- testing_data[,c("lon","lat","CNrt")]
 
-# we will use those 59804 grids to predict those 5046 grids
-
 # 3. knn training
 cv <- trainControl(
   method = "cv", 
@@ -525,8 +521,6 @@ dim(testing_data)
 
 training_data <- training_data[,c("lon","lat","CNrt")]
 testing_data <- testing_data[,c("lon","lat","CNrt")]
-
-# we will use those 59804 grids to predict those 5046 grids
 
 # 3. knn training
 cv <- trainControl(

@@ -24,10 +24,6 @@ A brief information about LMA, and three main predictors that will be used in kn
 
 alpha, PPFD, Tg will directly use 0.5 * 0.5 grids data from final_ncfile/
 
-Training data 19020 grids 
-
-Testing data 44816 grids
-
 
 ## First time LMA output
 ```{r}
@@ -130,7 +126,6 @@ testing_data <- subset(all_data,is.na(LMA)==TRUE)  #only select NA-LMA data as t
 dim(training_data)
 dim(testing_data)
 
-# we will use those 19020 grids to predict those 44816 grids
 # 3. knn training
 cv <- trainControl(
   method = "cv", 
@@ -298,7 +293,6 @@ testing_data <- subset(all_data,is.na(LMA)==TRUE)  #only select NA-LMA data as t
 dim(training_data)
 dim(testing_data)
 
-# we will use those 19020 grids to predict those 44816 grids
 # 3. knn training
 cv <- trainControl(
   method = "cv", 
@@ -465,7 +459,6 @@ testing_data <- subset(all_data,is.na(LMA)==TRUE)  #only select NA-LMA data as t
 dim(training_data)
 dim(testing_data)
 
-# we will use those 19020 grids to predict those 44816 grids
 # 3. knn training
 cv <- trainControl(
   method = "cv", 
@@ -632,7 +625,6 @@ testing_data <- subset(all_data,is.na(LMA)==TRUE)  #only select NA-LMA data as t
 dim(training_data)
 dim(testing_data)
 
-# we will use those 19020 grids to predict those 44816 grids
 # 3. knn training
 cv <- trainControl(
   method = "cv", 
