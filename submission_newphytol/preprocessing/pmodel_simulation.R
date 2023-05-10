@@ -5,6 +5,7 @@ devtools::load_all("/Users/yunpeng/yunkepeng/rbeni/")
 
 devtools::load_all("/Users/yunpeng/yunkepeng/Grassland_new_ingestr_rsofun_20210326/rsofun/")
 library(dplyr)
+library(ggpubr)
 library(tidyverse)  # depends
 library(ncmeta)
 library(viridis)

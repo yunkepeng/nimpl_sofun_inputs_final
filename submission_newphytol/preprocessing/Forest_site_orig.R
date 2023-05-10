@@ -989,8 +989,22 @@ dataset6 <- merge(dataset6,citation_table,by=c("lon","lat","site","references"),
                   all.x=TRUE)
 dim(dataset6)
 
-csvfile <- paste("~/data/NPP_Yunke/NPP_Nmin_dataset_with_predictors.csv")
-write_csv(dataset6, path = csvfile)
+#separate npp and nmin dataset
+npp_dataset <- subset(dataset6,is.na(Nmin)==T)
+npp_dataset <- npp_dataset[,!(names(npp_dataset) %in% "Nmin")]
+
+csvfile <- paste("~/data/NPP_Yunke/NPP_dataset.csv")
+write_csv(npp_dataset, path = csvfile)
+
+nmin_dataset <- subset(dataset6,is.na(Nmin)==F)
+nmin_dataset <- nmin_dataset[,c("lon","lat","site","references","z",
+                                "year_start","year_end","Begin_year","End_year",
+                                "pft","contributor","Nmin",
+                                "PPFD_total","Tg","PPFD","vpd","fAPAR","mapped_age",
+                                "CNrt","LMA","vcmax25","nhx","noy","ndep","ID")]
+
+csvfile <- paste("~/data/Nmin_Finzi/Nmin_dataset.csv")
+write_csv(nmin_dataset, path = csvfile)
 
 csvfile <- paste("~/data/NPP_Yunke/NPP_citation_table.csv")
 write_csv(citation_table, path = csvfile)
