@@ -58,8 +58,10 @@ larger_size <- theme(axis.text=element_text(size=20),axis.title=element_text(siz
 #(1) D and alpha shows contridictory results for NUE 
 #(2) D and alpha repeated in model selection
 
-#input NPP file
-NPP_all <- read.csv("~/data/NPP_Yunke/NPP_Nmin_dataset_with_predictors.csv")
+#input NPP and nmin file and combine
+npp_dataset <- read.csv("~/data/NPP_Yunke/NPP_dataset.csv")
+nmin_dataset <- read.csv("~/data/Nmin_Finzi/Nmin_dataset.csv")
+NPP_all <- dplyr::bind_rows(npp_dataset, nmin_dataset) 
 
 #summarise number of sites
 dim(subset(NPP_all,is.na(Nmin)==TRUE) %>% group_by(site)  %>% summarise(mean = mean(lon)))
