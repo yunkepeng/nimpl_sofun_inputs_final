@@ -59,7 +59,10 @@ larger_plot_title<-theme(plot.title = element_text(size=15))
 #(2) D and alpha repeated in model selection
 
 #input NPP file
-NPP_all <- read.csv("~/data/NPP_Yunke/NPP_Nmin_dataset_with_predictors.csv")
+#input NPP and nmin file and combine
+npp_dataset <- read.csv("~/data/NPP_Yunke/NPP_dataset.csv")
+nmin_dataset <- read.csv("~/data/Nmin_Finzi/Nmin_dataset.csv")
+NPP_all <- dplyr::bind_rows(npp_dataset, nmin_dataset) 
 
 #metric_info check some percentage
 dim(subset(NPP_all, is.na(Nmin)==T & pft =="Forest"))
@@ -810,6 +813,15 @@ nuptake_g <- lnf_g + bnf_g
 ## Combine forest and grassland global fields
 #combine into 2 pfts
 npp_pft <- available_grid2* (npp_f*forest_percent +npp_g*grass_percent)
+#define an available available_grid3 - that includes NA information of npp_f and npp_g:
+#for npp_f and npp_g, we transfer those negative values (<0) to NA. we need to know this NA information and use it through calculations
+#this is important, as it will make balance for weighted-sum calculations.
+
+available_grid3 <- npp_pft
+available_grid3[is.na(available_grid3)==F] <- 1
+#combine available_grid3 and available_grid2
+available_grid2 <- available_grid3*available_grid2
+  
 npp_forest <- available_grid2* (npp_f*forest_percent)
 npp_grass <- available_grid2* (npp_g*grass_percent)
 
