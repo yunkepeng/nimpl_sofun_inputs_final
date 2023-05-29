@@ -1074,10 +1074,9 @@ subset(NRE_df,repeated==TRUE)
 NRE_df <- subset(NRE_df,repeated==FALSE)
 
 #project data
-newmap <- getMap(resolution = "low")
-plot(newmap, xlim = c(-180, 180), ylim = c(-75, 75), asp = 1)
-
-points(NRE_df$lon,NRE_df$lat, col="red", pch=16,cex=1)
+#newmap <- getMap(resolution = "low")
+#plot(newmap, xlim = c(-180, 180), ylim = c(-75, 75), asp = 1)
+#points(NRE_df$lon,NRE_df$lat, col="red", pch=16,cex=1)
 
 #3. add elevation in this df, based on ingtestr 
 siteinfo <- NRE_df[,c("lon","lat")] # present x and y separately
@@ -1226,5 +1225,43 @@ summary(NRE_climate)
 NRE_climate$vpd[NRE_climate$vpd<=0] <-NA
 NRE_climate$nre <- NRE_climate$NRE/100
 summary(NRE_climate)
+NRE_climate$pft <- "forest"
+
+#additionally, add grassland NRE
+NRE_Du <- read.csv(file="~/data/NRE_various/NRE_Du/NRE_Du.csv")
+NRE_Dong <- read.csv(file="~/data/NRE_various/NRE_Deng/NRE_Deng.csv")
+
+#first - make forest model only
+NRE_Du_df <- NRE_Du[,c("lon","lat","NRE","MAT","MAP","VegeType")]
+#vegetype =1 is woody ecosystem (all assumed as forest here)
+#vegetype = 2 is grassland ecosystem
+NRE_Du_df <- subset(NRE_Du_df,VegeType==2)
+NRE_Du_df <- aggregate(NRE_Du_df,by=list(NRE_Du_df$lon,NRE_Du_df$lat), FUN=mean, na.rm=TRUE) #site-mean
+NRE_Du_df <- NRE_Du_df[,c(3:7)]
+head(NRE_Du_df)
+dim(NRE_Du_df)
+
+NRE_Dong_df <- NRE_Dong[,c("Longitude","Latitude","NRE.nitrogen.resorption.efficiency.","MAT","MAP","Biome.abbreviation...")]
+names(NRE_Dong_df) <- c("lon","lat","NRE","MAT","MAP","biome")
+NRE_Dong_df <- subset(NRE_Dong_df,biome=="Grs")
+#Forest is TRF,STF,TF,BF
+#Desert is Des; Tundra is TUN
+#Grassland is Grs
+NRE_Dong_df <- aggregate(NRE_Dong_df,by=list(NRE_Dong_df$lon,NRE_Dong_df$lat), FUN=mean, na.rm=TRUE) #site-mean
+head(NRE_Dong_df)
+NRE_Dong_df <- NRE_Dong_df[,c(3:7)]
+dim(NRE_Dong_df)
+
+NRE_Dong_df$source <- "Dong"
+NRE_Du_df$source <- "Du"
+NRE_df <- rbind(NRE_Du_df,NRE_Dong_df)
+summary(NRE_df$NRE)
+length(NRE_df$NRE)
+NRE_df$nre <- NRE_df$NRE/100
+NRE_df$pft <- "grassland"
+#bind them
+NRE_final <- dplyr::bind_rows(NRE_climate, NRE_df) 
+NRE_final <- NRE_final[,!(names(NRE_final) %in% c("NRE","MAT","MAP"))]
+
 csvfile <- paste("~/data/NRE_various/NRE_dataset.csv")
-write.csv(NRE_climate, csvfile, row.names = TRUE)
+write.csv(NRE_final, csvfile, row.names = TRUE)
